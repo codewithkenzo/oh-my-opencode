@@ -154,8 +154,9 @@ export function createThinkingBlockValidatorHook(): MessagesTransformHook {
         // Only check assistant messages
         if (msg.info.role !== "assistant") continue
 
-        // Check if message has tool parts but doesn't start with thinking
-        if (hasToolParts(msg.parts) && !startsWithThinkingBlock(msg.parts)) {
+        // Check if message doesn't start with thinking (fixes both tool_use AND text errors)
+        // Claude API requires ALL assistant messages to start with thinking when enabled
+        if (msg.parts && msg.parts.length > 0 && !startsWithThinkingBlock(msg.parts)) {
           // Find thinking content from previous turns
           const previousThinking = findPreviousThinkingContent(messages, i)
 
