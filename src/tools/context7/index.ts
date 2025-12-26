@@ -1,18 +1,50 @@
 import { tool } from "@opencode-ai/plugin/tool"
 
-const CONTEXT7_BASE = "https://context7.com/api"
+const CONTEXT7_MCP = "https://mcp.context7.com/mcp"
 
-interface Library {
-  id: string
-  name: string
-  description: string
-  codeSnippets: number
-  trustLevel: string
+interface McpResponse {
+  result?: {
+    content?: Array<{ type: string; text: string }>
+  }
+  error?: {
+    code: number
+    message: string
+  }
 }
 
-interface DocsResponse {
-  content: string
-  source: string
+async function callContext7(method: string, args: Record<string, unknown>): Promise<string> {
+  const response = await fetch(CONTEXT7_MCP, {
+    method: "POST",
+    headers: {
+      "Accept": "application/json, text/event-stream",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      method: "tools/call",
+      params: {
+        name: method,
+        arguments: args,
+      },
+      id: Date.now(),
+    }),
+  })
+
+  if (!response.ok) {
+    return `Error: Context7 returned ${response.status}`
+  }
+
+  const data = await response.json() as McpResponse
+
+  if (data.error) {
+    return `Error: ${data.error.message}`
+  }
+
+  if (data.result?.content?.[0]?.text) {
+    return data.result.content[0].text
+  }
+
+  return "No content returned from Context7"
 }
 
 export const context7_resolve_library_id = tool({
@@ -41,25 +73,7 @@ For ambiguous queries, request clarification before proceeding with a best-guess
   },
   execute: async (args) => {
     try {
-      const response = await fetch(`${CONTEXT7_BASE}/search?q=${encodeURIComponent(args.libraryName)}`, {
-        headers: { "Accept": "application/json" }
-      })
-      
-      if (!response.ok) {
-        return `Error: Context7 API returned ${response.status}`
-      }
-      
-      const data = await response.json() as { libraries?: Library[] }
-      
-      if (!data.libraries || data.libraries.length === 0) {
-        return `No libraries found for "${args.libraryName}". Try a different search term.`
-      }
-      
-      const results = data.libraries.slice(0, 5).map((lib, i) => 
-        `${i + 1}. **${lib.name}** (${lib.id})\n   ${lib.description}\n   Snippets: ${lib.codeSnippets} | Trust: ${lib.trustLevel}`
-      ).join("\n\n")
-      
-      return `## Libraries Found\n\n${results}\n\n**Recommended**: Use library ID \`${data.libraries[0].id}\` with context7_get_library_docs`
+      return await callContext7("resolve-library-id", { libraryName: args.libraryName })
     } catch (e) {
       return `Error: ${e instanceof Error ? e.message : String(e)}`
     }
@@ -76,22 +90,14 @@ export const context7_get_library_docs = tool({
   },
   execute: async (args) => {
     try {
-      const params = new URLSearchParams()
-      if (args.topic) params.set("topic", args.topic)
-      if (args.mode) params.set("mode", args.mode)
-      if (args.page) params.set("page", String(args.page))
-      
-      const url = `${CONTEXT7_BASE}/docs${args.context7CompatibleLibraryID}?${params}`
-      const response = await fetch(url, {
-        headers: { "Accept": "application/json" }
-      })
-      
-      if (!response.ok) {
-        return `Error: Context7 API returned ${response.status}`
+      const mcpArgs: Record<string, unknown> = {
+        context7CompatibleLibraryID: args.context7CompatibleLibraryID,
       }
-      
-      const data = await response.json() as DocsResponse
-      return data.content || "No documentation content returned."
+      if (args.topic) mcpArgs.topic = args.topic
+      if (args.mode) mcpArgs.mode = args.mode
+      if (args.page) mcpArgs.page = args.page
+
+      return await callContext7("get-library-docs", mcpArgs)
     } catch (e) {
       return `Error: ${e instanceof Error ? e.message : String(e)}`
     }

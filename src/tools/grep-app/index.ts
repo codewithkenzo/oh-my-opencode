@@ -1,17 +1,62 @@
 import { tool } from "@opencode-ai/plugin/tool"
 
-const GREP_APP_BASE = "https://grep.app/api"
+const GREP_APP_MCP = "https://mcp.grep.app"
 
-interface SearchResult {
-  repo: string
-  path: string
-  content: string
-  line: number
+interface McpResponse {
+  result?: {
+    content?: Array<{ type: string; text: string }>
+  }
+  error?: {
+    code: number
+    message: string
+  }
 }
 
-interface SearchResponse {
-  results?: SearchResult[]
-  total?: number
+async function callGrepApp(args: Record<string, unknown>): Promise<string> {
+  const response = await fetch(GREP_APP_MCP, {
+    method: "POST",
+    headers: {
+      "Accept": "application/json, text/event-stream",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      method: "tools/call",
+      params: {
+        name: "searchGitHub",
+        arguments: args,
+      },
+      id: Date.now(),
+    }),
+  })
+
+  if (!response.ok) {
+    return `Error: grep.app returned ${response.status}`
+  }
+
+  // grep.app returns SSE format, need to parse it
+  const text = await response.text()
+  
+  // Parse SSE: find the data line
+  const lines = text.split('\n')
+  for (const line of lines) {
+    if (line.startsWith('data: ')) {
+      const jsonStr = line.slice(6)
+      try {
+        const data = JSON.parse(jsonStr) as McpResponse
+        if (data.error) {
+          return `Error: ${data.error.message}`
+        }
+        if (data.result?.content?.[0]?.text) {
+          return data.result.content[0].text
+        }
+      } catch {
+        continue
+      }
+    }
+  }
+  
+  return "No results from grep.app"
 }
 
 export const grep_app_searchGitHub = tool({
@@ -38,7 +83,7 @@ Use regular expressions with useRegexp=true for flexible patterns like '(?s)useS
 Filter by language, repository, or file path to narrow results.`,
   args: {
     query: tool.schema.string().describe("The literal code pattern to search for (e.g., 'useState(', 'export function'). Use actual code that would appear in files, not keywords or questions."),
-    language: tool.schema.array(tool.schema.string()).optional().describe("Filter by programming language. Examples: ['TypeAssistant', 'TSX'], ['JavaScript'], ['Python'], ['Java'], ['C#'], ['Markdown'], ['YAML']"),
+    language: tool.schema.array(tool.schema.string()).optional().describe("Filter by programming language. Examples: ['TypeScript', 'TSX'], ['JavaScript'], ['Python'], ['Java'], ['C#'], ['Markdown'], ['YAML']"),
     repo: tool.schema.string().optional().describe("Filter by repository. Examples: 'facebook/react', 'microsoft/vscode', 'vercel/ai'. Can match partial names, for example 'vercel/' will find repositories in the vercel org."),
     path: tool.schema.string().optional().describe("Filter by file path. Examples: 'src/components/Button.tsx', 'README.md'. Can match partial paths, for example '/route.ts' will find route.ts files at any level."),
     useRegexp: tool.schema.boolean().optional().describe("Whether to interpret the query as a regular expression"),
@@ -47,39 +92,15 @@ Filter by language, repository, or file path to narrow results.`,
   },
   execute: async (args) => {
     try {
-      const params = new URLSearchParams()
-      params.set("q", args.query)
-      if (args.useRegexp) params.set("regexp", "true")
-      if (args.matchCase) params.set("case", "true")
-      if (args.matchWholeWords) params.set("words", "true")
-      if (args.repo) params.set("repo", args.repo)
-      if (args.path) params.set("path", args.path)
-      if (args.language) {
-        args.language.forEach(lang => params.append("lang", lang))
-      }
-      
-      const response = await fetch(`${GREP_APP_BASE}/search?${params}`, {
-        headers: { 
-          "Accept": "application/json",
-          "User-Agent": "OpenCode/1.0"
-        }
-      })
-      
-      if (!response.ok) {
-        return `Error: grep.app API returned ${response.status}`
-      }
-      
-      const data = await response.json() as SearchResponse
-      
-      if (!data.results || data.results.length === 0) {
-        return `No results found for "${args.query}". Try:\n- A different search pattern\n- Removing language/repo filters\n- Using useRegexp=true for flexible matching`
-      }
-      
-      const results = data.results.slice(0, 10).map((r, i) => 
-        `### ${i + 1}. ${r.repo}\n**File**: \`${r.path}\` (line ${r.line})\n\`\`\`\n${r.content.slice(0, 500)}\n\`\`\``
-      ).join("\n\n")
-      
-      return `## Found ${data.total || data.results.length} results\n\n${results}`
+      const mcpArgs: Record<string, unknown> = { query: args.query }
+      if (args.language) mcpArgs.language = args.language
+      if (args.repo) mcpArgs.repo = args.repo
+      if (args.path) mcpArgs.path = args.path
+      if (args.useRegexp) mcpArgs.useRegexp = args.useRegexp
+      if (args.matchCase) mcpArgs.matchCase = args.matchCase
+      if (args.matchWholeWords) mcpArgs.matchWholeWords = args.matchWholeWords
+
+      return await callGrepApp(mcpArgs)
     } catch (e) {
       return `Error: ${e instanceof Error ? e.message : String(e)}`
     }
