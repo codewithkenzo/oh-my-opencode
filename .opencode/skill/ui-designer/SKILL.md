@@ -158,15 +158,89 @@ For each component, define:
 - [Things to avoid for this brand]
 ```
 
-## Collaboration
+## Integration with Agent Team
 
-After design phase:
-1. Save design language to `docs/DESIGN.md` or component AGENTS.md
-2. Hand off to `frontend-ui-ux-engineer` for orchestration
-3. The frontend team uses these specs for implementation
+After design phase, hand off to:
+- **Shokunin - designer**: Orchestrates frontend implementation
+- **Takumi - builder**: Builds components per design specs
+- **Tantei - debugger**: Visual debugging with screenshots
 
-## Tools to Use
+### Handoff Example
 
-- **webfetch**: Browse design sites for inspiration
-- **look_at**: Analyze screenshots and images
-- **Write**: Save design specs to files
+```typescript
+// After design language is defined, delegate to Shokunin
+background_task({
+  agent: "Shokunin - designer",
+  description: "Implement landing page",
+  prompt: `
+    ## Design Language
+    See: docs/DESIGN.md
+    
+    ## Components to Build
+    1. Hero section - minimalist, bold typography
+    2. Feature cards - glassmorphism, subtle shadows
+    3. CTA button - accent color, hover scale
+    
+    ## Tokens (from design language)
+    --color-bg: #0a0a0a
+    --color-accent: #3b82f6
+    --font-display: 'Space Grotesk'
+  `
+})
+```
+
+## Practical Scripts
+
+### Generate CSS Variables from Palette
+
+```bash
+# Generate Tailwind-compatible CSS variables
+cat > src/styles/tokens.css << 'EOF'
+:root {
+  /* Colors */
+  --color-bg: #0a0a0a;
+  --color-surface: #141414;
+  --color-text: #fafafa;
+  --color-text-muted: #a1a1aa;
+  --color-accent: #3b82f6;
+  --color-accent-hover: #2563eb;
+  
+  /* Typography */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  /* Spacing (Tailwind scale) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+}
+EOF
+```
+
+### Font Import Helper
+
+```bash
+# Add Google Fonts to HTML head or CSS
+echo '@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap");' >> src/styles/fonts.css
+```
+
+## Tools Reference
+
+| Tool | Use For | Example |
+|------|---------|---------|
+| `webfetch` | Browse design sites | `webfetch({ url: "https://dribbble.com/..." })` |
+| `look_at` | Analyze screenshots | `look_at({ file_path: "tmp/ref.png", goal: "Extract colors" })` |
+| `Write` | Save design specs | Write to `docs/DESIGN.md` |
+
+**Important**: `webfetch` only takes `url` and optional `timeout`. NO `format` parameter.
+
+## Output Artifacts
+
+| Artifact | Location | Purpose |
+|----------|----------|---------|
+| Design language | `docs/DESIGN.md` | Brand identity, tokens |
+| CSS tokens | `src/styles/tokens.css` | CSS variables |
+| Component specs | In design doc | Visual specifications |
