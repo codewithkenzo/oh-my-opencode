@@ -68,7 +68,7 @@ function detectInterrupt(error: unknown): boolean {
   return false
 }
 
-const COUNTDOWN_SECONDS = 2
+const COUNTDOWN_SECONDS = 7
 const TOAST_DURATION_MS = 900 // Slightly less than 1s so toasts don't overlap
 
 interface CountdownState {
