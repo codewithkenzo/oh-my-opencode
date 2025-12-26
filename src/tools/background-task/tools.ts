@@ -66,18 +66,7 @@ export function createBackgroundTask(manager: BackgroundManager) {
           parentModel,
         })
 
-        return `Background task launched successfully.
-
-Task ID: ${task.id}
-Session ID: ${task.sessionID}
-Description: ${task.description}
-Agent: ${task.agent}
-Status: ${task.status}
-
-The system will notify you when the task completes.
-Use \`background_output\` tool with task_id="${task.id}" to check progress:
-- block=false (default): Check status immediately - returns full status info
-- block=true: Wait for completion (rarely needed since system notifies)`
+        return `✓ Task ${task.id} launched (${task.agent}): ${task.description}`
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
         return `❌ Failed to launch background task: ${message}`
