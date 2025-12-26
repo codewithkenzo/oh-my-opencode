@@ -50,7 +50,12 @@ export function createContextWindowMonitorHook(ctx: PluginInput) {
       if (assistantMessages.length === 0) return
 
       const lastAssistant = assistantMessages[assistantMessages.length - 1]
-      if (lastAssistant.providerID !== "anthropic") return
+
+      const modelID = (lastAssistant as { modelID?: string }).modelID
+
+      const isSupported = lastAssistant.providerID === "anthropic" ||
+        (lastAssistant.providerID === "google" && (modelID?.toLowerCase().includes("claude") || false))
+      if (!isSupported) return
 
       // Use only the last assistant message's input tokens
       // This reflects the ACTUAL current context window usage (post-compaction)

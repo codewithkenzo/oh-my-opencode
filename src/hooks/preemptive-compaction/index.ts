@@ -54,7 +54,7 @@ interface MessageWrapper {
   info: MessageInfo
 }
 
-const CLAUDE_MODEL_PATTERN = /claude-(opus|sonnet|haiku)/i
+const CLAUDE_MODEL_PATTERN = /claude-(opus|sonnet|haiku)|google\/claude/i
 const CLAUDE_DEFAULT_CONTEXT_LIMIT = 200_000
 
 function isSupportedModel(modelID: string): boolean {
@@ -98,6 +98,38 @@ export function createPreemptiveCompactionHook(
 
   const state = createState()
 
+  const notifiedThresholds = new Map<string, Set<number>>()
+
+  function getNotifiedThresholds(sessionID: string): Set<number> {
+    if (!notifiedThresholds.has(sessionID)) {
+      notifiedThresholds.set(sessionID, new Set())
+    }
+    return notifiedThresholds.get(sessionID)!
+  }
+
+  async function notifyContextProgress(
+    sessionID: string,
+    usageRatio: number
+  ): Promise<void> {
+    const thresholds = getNotifiedThresholds(sessionID)
+    const percentages = [25, 50, 75]
+
+    for (const pct of percentages) {
+      const ratio = pct / 100
+      if (usageRatio >= ratio && !thresholds.has(pct)) {
+        thresholds.add(pct)
+        await ctx.client.tui.showToast({
+          body: {
+            title: "Context Window",
+            message: `${pct}% context used (${(usageRatio * 100).toFixed(0)}%)`,
+            variant: pct >= 75 ? "warning" : "info",
+            duration: 2000,
+          },
+        }).catch(() => {})
+      }
+    }
+  }
+
   const checkAndTriggerCompaction = async (
     sessionID: string,
     lastAssistant: MessageInfo
@@ -132,6 +164,8 @@ export function createPreemptiveCompactionHook(
     if (totalUsed < MIN_TOKENS_FOR_COMPACTION) return
 
     const usageRatio = totalUsed / contextLimit
+
+    await notifyContextProgress(sessionID, usageRatio)
 
     log("[preemptive-compaction] checking", {
       sessionID,
@@ -216,6 +250,7 @@ export function createPreemptiveCompactionHook(
         state.lastCompactionTime.delete(sessionInfo.id)
         state.compactionInProgress.delete(sessionInfo.id)
         cleanupSession(sessionInfo.id)
+        notifiedThresholds.delete(sessionInfo.id)
       }
       return
     }
