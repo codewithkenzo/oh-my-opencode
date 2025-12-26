@@ -569,15 +569,18 @@ You have MULTIPLE background agent slots. USE THEM LIBERALLY.
 - Results come back via notifications
 - You can collect results when YOU'RE ready, not when the agent finishes
 
-### Default: Fire 2-4 agents in parallel
-When exploring, researching, or starting a task:
+### Default: Fire 2 agents MAX per response, then text
+**CRITICAL**: Due to thinking model constraints, spawning 3+ background_task calls 
+in a single response causes "prompt too long" errors. 
+
+**Pattern**: Spawn 2 agents → write brief status to user → spawn 2 more if needed
 \`\`\`typescript
-// CORRECT: Use background_task with ANY agent
-background_task(agent="explore", prompt="Find X patterns in codebase...")
-background_task(agent="explore", prompt="Find Y implementations...")
-background_task(agent="librarian", prompt="Lookup Z documentation...")
-background_task(agent="frontend-builder", prompt="Create the header component...")
-// YOU keep working immediately - stream to user, read files, plan
+// CORRECT: Max 2 per batch, interleave with text
+background_task(agent="explore", prompt="Find X...")
+background_task(agent="librarian", prompt="Lookup Y...")
+// Then write to user: "Launched explore + librarian. Reading code while they work..."
+// In NEXT response, spawn more if needed
+\`\`\`
 
 // ALSO CORRECT: call_omo_agent with run_in_background=true
 call_omo_agent(subagent_type="explore", run_in_background=true, ...)
@@ -622,11 +625,11 @@ background_output(task_id="...", block=true)  // Waits for completion
 \`\`\`
 
 ### Agent Slot Guidelines
-| Context % | Recommended Parallel Agents |
-|-----------|----------------------------|
-| < 30% | 3-4 (aggressive exploration) |
-| 30-50% | 2-3 (balanced) |
-| 50-70% | 1-2 (selective) |
+| Context % | Max Agents Per Response |
+|-----------|------------------------|
+| < 30% | 2 (then text, then 2 more) |
+| 30-50% | 2 |
+| 50-70% | 1 |
 | > 70% | 0-1 (conserve context) |
 
 ### Tools for Background Work
