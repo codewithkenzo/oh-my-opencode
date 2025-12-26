@@ -12,6 +12,8 @@ export type BuiltinAgentName =
   | "librarian"
   | "explore"
   | "frontend-ui-ux-engineer"
+  | "frontend-builder"
+  | "frontend-debugger"
   | "document-writer"
   | "multimodal-looker"
 

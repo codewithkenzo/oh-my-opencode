@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import { isGptModel } from "./types"
 
-const DEFAULT_MODEL = "openai/gpt-5.2"
+const DEFAULT_MODEL = "zai-coding-plan/glm-4.7"
 
 const ORACLE_SYSTEM_PROMPT = `You are a strategic technical advisor with deep reasoning capabilities, operating as a specialized consultant within an AI-assisted development environment.
 

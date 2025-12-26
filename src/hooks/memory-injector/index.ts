@@ -51,6 +51,13 @@ ${memories.map((m, i) => `${i + 1}. ${m}`).join("\n")}
         type: "text",
         text: memoryContext
       })
+
+      return {
+        notifications: [{
+          type: "info" as const,
+          message: `Recalled ${memories.length} memories from previous sessions`
+        }]
+      }
     },
 
     event: async ({ event }: { event: { type: string; properties?: unknown } }) => {
