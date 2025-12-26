@@ -1,4 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from "fs"
+import { homedir } from "os"
 import { join, basename } from "path"
 import type { AgentConfig } from "@opencode-ai/sdk"
 import { parseFrontmatter } from "../../shared/frontmatter"
