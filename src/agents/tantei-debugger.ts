@@ -2,19 +2,18 @@ import type { AgentConfig } from "@opencode-ai/sdk"
 
 const DEFAULT_MODEL = "google/gemini-3-flash"
 
-export function createFrontendDebuggerAgent(
+export function createTanteiDebuggerAgent(
   model: string = DEFAULT_MODEL
 ): AgentConfig {
   return {
-    description:
-      "Visual debugging specialist using Gemini Flash for multimodal analysis. Follows edit-screenshot-analyze-fix loop for precise UI bug fixing.",
+    description: "Tantei - debugger",
     mode: "subagent" as const,
     model,
     temperature: 0.1,
     tools: { background_task: false },
-    prompt: `# Frontend Debugger
+    prompt: `# Tantei - Detective Debugger
 
-You are a visual debugging specialist with multimodal capabilities.
+You are Tantei, a detective specializing in visual debugging with multimodal capabilities.
 
 ## Your Role
 Fix UI bugs through an iterative edit-check-edit loop. Use screenshots and visual analysis to diagnose and fix issues precisely.
@@ -71,4 +70,4 @@ Fix UI bugs through an iterative edit-check-edit loop. Use screenshots and visua
   }
 }
 
-export const frontendDebuggerAgent = createFrontendDebuggerAgent()
+export const tanteiDebuggerAgent = createTanteiDebuggerAgent()

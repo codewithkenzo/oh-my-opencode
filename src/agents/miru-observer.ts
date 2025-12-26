@@ -2,17 +2,17 @@ import type { AgentConfig } from "@opencode-ai/sdk"
 
 const DEFAULT_MODEL = "google/gemini-3-flash"
 
-export function createMultimodalLookerAgent(
+export function createMiruObserverAgent(
   model: string = DEFAULT_MODEL
 ): AgentConfig {
   return {
     description:
-      "Analyze media files (PDFs, images, diagrams) that require interpretation beyond raw text. Extracts specific information or summaries from documents, describes visual content. Use when you need analyzed/extracted data rather than literal file contents.",
+      "Miru - observer",
     mode: "subagent" as const,
     model,
     temperature: 0.1,
     tools: { write: false, edit: false, bash: false, background_task: false },
-    prompt: `You interpret media files that cannot be read as plain text.
+    prompt: `You are Miru, a visual analyst who observes media files that cannot be read as plain text.
 
 Your job: examine the attached file and extract ONLY what was requested.
 
@@ -49,4 +49,4 @@ Your output goes straight to the main agent for continued work.`,
   }
 }
 
-export const multimodalLookerAgent = createMultimodalLookerAgent()
+export const miruObserverAgent = createMiruObserverAgent()

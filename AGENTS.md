@@ -23,7 +23,7 @@ This fork includes enhancements beyond upstream:
 ```
 oh-my-opencode/
 ├── src/
-│   ├── agents/        # AI agents (9): Sisyphus, oracle, librarian, explore, frontend-ui-ux-engineer, frontend-builder, frontend-debugger, document-writer, multimodal-looker
+│   ├── agents/        # AI agents (9): Musashi, Kenja, Shisho, Ninja, Shokunin, Takumi, Tantei, Sakka, Miru
 │   ├── hooks/         # 21 lifecycle hooks - see src/hooks/AGENTS.md
 │   ├── tools/         # LSP, AST-Grep, Grep, Glob, etc. - see src/tools/AGENTS.md
 │   ├── mcp/           # MCP servers: context7, websearch_exa, grep_app
@@ -89,22 +89,22 @@ oh-my-opencode/
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| Sisyphus | google/claude-opus-4-5-thinking | Primary orchestrator |
-| oracle | zai-coding-plan/glm-4.7 | Strategic advisor, code review |
-| librarian | opencode/kimi-k2 | Multi-repo analysis, docs |
-| explore | opencode/grok-code | Fast codebase exploration |
-| frontend-ui-ux-engineer | minimax/MiniMax-M2.1 | UI orchestrator, leads frontend team |
-| frontend-builder | minimax/MiniMax-M2.1 | Primary UI component builder |
-| frontend-debugger | google/gemini-3-flash | Visual debugging with multimodal |
-| document-writer | google/gemini-3-flash | Technical docs |
-| multimodal-looker | google/gemini-3-flash | PDF/image analysis |
+| Musashi | google/claude-opus-4-5-thinking | Primary orchestrator |
+| Kenja - advisor | zai-coding-plan/glm-4.7 | Strategic advisor, code review |
+| Shisho - researcher | opencode/kimi-k2 | Multi-repo analysis, docs |
+| Ninja - explorer | opencode/grok-code | Fast codebase exploration |
+| Shokunin - designer | minimax/MiniMax-M2.1 | UI orchestrator, leads frontend team |
+| Takumi - builder | minimax/MiniMax-M2.1 | Primary UI component builder |
+| Tantei - debugger | google/gemini-3-flash | Visual debugging with multimodal |
+| Sakka - writer | google/gemini-3-flash | Technical docs |
+| Miru - observer | google/gemini-3-flash | PDF/image analysis |
 
 ### Frontend Agent Hierarchy
 
 ```
-frontend-ui-ux-engineer (MiniMax M2.1) - Orchestrator
-├── frontend-builder (MiniMax M2.1) - Primary component builder
-└── frontend-debugger (Gemini Flash) - Visual debugging loops
+Shokunin - designer (MiniMax M2.1) - Orchestrator
+├── Takumi - builder (MiniMax M2.1) - Primary component builder
+└── Tantei - debugger (Gemini Flash) - Visual debugging loops
 ```
 
 ## COMMANDS

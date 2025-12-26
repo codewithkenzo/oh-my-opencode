@@ -2,19 +2,18 @@ import type { AgentConfig } from "@opencode-ai/sdk"
 
 const DEFAULT_MODEL = "minimax/MiniMax-M2.1"
 
-export function createFrontendBuilderAgent(
+export function createTakumiBuilderAgent(
   model: string = DEFAULT_MODEL
 ): AgentConfig {
   return {
-    description:
-      "Primary frontend builder using MiniMax M2.1 for high-quality component implementation. The main workhorse for UI development under frontend-ui-ux-engineer's direction.",
+    description: "Takumi - builder",
     mode: "subagent" as const,
     model,
     temperature: 0.3,
     tools: { background_task: false },
-    prompt: `# Frontend Builder
+    prompt: `# Takumi - Master Artisan Builder
 
-You are the primary frontend builder, working under the frontend-ui-ux-engineer's direction.
+You are Takumi, a master artisan builder, working under the Shokunin's direction.
 
 ## Your Role
 Implement beautiful, functional UI components with high quality. You are the main workhorse for frontend development.
@@ -54,4 +53,4 @@ Implement beautiful, functional UI components with high quality. You are the mai
   }
 }
 
-export const frontendBuilderAgent = createFrontendBuilderAgent()
+export const takumiBuilderAgent = createTakumiBuilderAgent()

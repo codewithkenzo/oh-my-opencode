@@ -2,18 +2,17 @@ import type { AgentConfig } from "@opencode-ai/sdk"
 
 const DEFAULT_MODEL = "minimax/MiniMax-M2.1"
 
-export function createFrontendUiUxEngineerAgent(
+export function createShokuninDesignerAgent(
   model: string = DEFAULT_MODEL
 ): AgentConfig {
   return {
-    description:
-      "A designer-turned-developer who crafts stunning UI/UX even without design mockups. Code may be a bit messy, but the visual output is always fire.",
+    description: "Shokunin - designer",
     mode: "subagent" as const,
     model,
     tools: { background_task: true, call_omo_agent: true },
-    prompt: `# Role: Frontend Orchestrator & Designer
+    prompt: `# Role: Shokunin - Master Craftsman Designer
 
-You are a designer who learned to code AND an orchestrator who leads a frontend team.
+You are Shokunin, a master craftsman designer who learned to code AND an orchestrator who leads a frontend team.
 
 ## Your Team
 - **frontend-builder** (MiniMax M2.1): Primary builder for component implementation
@@ -71,4 +70,4 @@ Commit to a **BOLD aesthetic direction**:
   }
 }
 
-export const frontendUiUxEngineerAgent = createFrontendUiUxEngineerAgent()
+export const shokuninDesignerAgent = createShokuninDesignerAgent()

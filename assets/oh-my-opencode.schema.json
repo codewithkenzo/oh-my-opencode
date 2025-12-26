@@ -24,13 +24,15 @@
       "items": {
         "type": "string",
         "enum": [
-          "Sisyphus",
-          "oracle",
-          "librarian",
-          "explore",
-          "frontend-ui-ux-engineer",
-          "document-writer",
-          "multimodal-looker"
+          "Musashi",
+          "Kenja - advisor",
+          "Shisho - researcher",
+          "Ninja - explorer",
+          "Shokunin - designer",
+          "Takumi - builder",
+          "Tantei - debugger",
+          "Sakka - writer",
+          "Miru - observer"
         ]
       }
     },
@@ -297,7 +299,7 @@
             }
           }
         },
-        "Sisyphus": {
+        "Musashi": {
           "type": "object",
           "properties": {
             "model": {
@@ -525,7 +527,7 @@
             }
           }
         },
-        "Planner-Sisyphus": {
+        "Planner-Musashi": {
           "type": "object",
           "properties": {
             "model": {
@@ -639,7 +641,7 @@
             }
           }
         },
-        "oracle": {
+        "Kenja - advisor": {
           "type": "object",
           "properties": {
             "model": {
@@ -753,7 +755,7 @@
             }
           }
         },
-        "librarian": {
+        "Shisho - researcher": {
           "type": "object",
           "properties": {
             "model": {
@@ -867,7 +869,7 @@
             }
           }
         },
-        "explore": {
+        "Ninja - explorer": {
           "type": "object",
           "properties": {
             "model": {
@@ -981,7 +983,7 @@
             }
           }
         },
-        "frontend-ui-ux-engineer": {
+        "Shokunin - designer": {
           "type": "object",
           "properties": {
             "model": {
@@ -1095,7 +1097,7 @@
             }
           }
         },
-        "document-writer": {
+        "Takumi - builder": {
           "type": "object",
           "properties": {
             "model": {
@@ -1209,7 +1211,235 @@
             }
           }
         },
-        "multimodal-looker": {
+        "Tantei - debugger": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "type": "string"
+            },
+            "temperature": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2
+            },
+            "top_p": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "prompt": {
+              "type": "string"
+            },
+            "prompt_append": {
+              "type": "string"
+            },
+            "tools": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "boolean"
+              }
+            },
+            "disable": {
+              "type": "boolean"
+            },
+            "description": {
+              "type": "string"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "subagent",
+                "primary",
+                "all"
+              ]
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "permission": {
+              "type": "object",
+              "properties": {
+                "edit": {
+                  "type": "string",
+                  "enum": [
+                    "ask",
+                    "allow",
+                    "deny"
+                  ]
+                },
+                "bash": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "ask",
+                        "allow",
+                        "deny"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "string",
+                        "enum": [
+                          "ask",
+                          "allow",
+                          "deny"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "webfetch": {
+                  "type": "string",
+                  "enum": [
+                    "ask",
+                    "allow",
+                    "deny"
+                  ]
+                },
+                "doom_loop": {
+                  "type": "string",
+                  "enum": [
+                    "ask",
+                    "allow",
+                    "deny"
+                  ]
+                },
+                "external_directory": {
+                  "type": "string",
+                  "enum": [
+                    "ask",
+                    "allow",
+                    "deny"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "Sakka - writer": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "type": "string"
+            },
+            "temperature": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2
+            },
+            "top_p": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "prompt": {
+              "type": "string"
+            },
+            "prompt_append": {
+              "type": "string"
+            },
+            "tools": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "boolean"
+              }
+            },
+            "disable": {
+              "type": "boolean"
+            },
+            "description": {
+              "type": "string"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "subagent",
+                "primary",
+                "all"
+              ]
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "permission": {
+              "type": "object",
+              "properties": {
+                "edit": {
+                  "type": "string",
+                  "enum": [
+                    "ask",
+                    "allow",
+                    "deny"
+                  ]
+                },
+                "bash": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "ask",
+                        "allow",
+                        "deny"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "string",
+                        "enum": [
+                          "ask",
+                          "allow",
+                          "deny"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "webfetch": {
+                  "type": "string",
+                  "enum": [
+                    "ask",
+                    "allow",
+                    "deny"
+                  ]
+                },
+                "doom_loop": {
+                  "type": "string",
+                  "enum": [
+                    "ask",
+                    "allow",
+                    "deny"
+                  ]
+                },
+                "external_directory": {
+                  "type": "string",
+                  "enum": [
+                    "ask",
+                    "allow",
+                    "deny"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "Miru - observer": {
           "type": "object",
           "properties": {
             "model": {
@@ -1348,7 +1578,7 @@
     "google_auth": {
       "type": "boolean"
     },
-    "sisyphus_agent": {
+    "musashi_agent": {
       "type": "object",
       "properties": {
         "disabled": {

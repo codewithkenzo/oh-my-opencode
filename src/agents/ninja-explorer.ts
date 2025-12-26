@@ -2,15 +2,15 @@ import type { AgentConfig } from "@opencode-ai/sdk"
 
 const DEFAULT_MODEL = "opencode/grok-code"
 
-export function createExploreAgent(model: string = DEFAULT_MODEL): AgentConfig {
+export function createNinjaExplorerAgent(model: string = DEFAULT_MODEL): AgentConfig {
   return {
     description:
-      'Contextual grep for codebases. Answers "Where is X?", "Which file has Y?", "Find the code that does Z". Fire multiple in parallel for broad searches. Specify thoroughness: "quick" for basic, "medium" for moderate, "very thorough" for comprehensive analysis.',
+      'Ninja - explorer: Contextual grep for codebases. Answers "Where is X?", "Which file has Y?", "Find the code that does Z". Fire multiple in parallel for broad searches. Specify thoroughness: "quick" for basic, "medium" for moderate, "very thorough" for comprehensive analysis.',
     mode: "subagent" as const,
     model,
     temperature: 0.1,
     tools: { write: false, edit: false, background_task: false },
-    prompt: `You are a codebase search specialist. Your job: find files and code, return actionable results.
+    prompt: `You are Ninja, a fast codebase explorer. Your job: find files and code, return actionable results.
 
 ## Your Mission
 
@@ -104,4 +104,4 @@ Flood with parallel calls. Trust only cross-validated results.`,
   }
 }
 
-export const exploreAgent = createExploreAgent()
+export const ninjaExplorerAgent = createNinjaExplorerAgent()
