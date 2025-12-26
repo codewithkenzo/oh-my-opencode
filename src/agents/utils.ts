@@ -6,6 +6,7 @@ import { createShishoResearcherAgent } from "./shisho-researcher"
 import { createNinjaExplorerAgent } from "./ninja-explorer"
 import { createShokuninDesignerAgent } from "./shokunin-designer"
 import { createTakumiBuilderAgent } from "./takumi-builder"
+import { createHayaiBuilderAgent } from "./hayai-builder"
 import { createTanteiDebuggerAgent } from "./tantei-debugger"
 import { createSakkaWriterAgent } from "./sakka-writer"
 import { createMiruObserverAgent } from "./miru-observer"
@@ -20,6 +21,7 @@ const agentSources: Record<BuiltinAgentName, AgentSource> = {
   "Ninja - explorer": createNinjaExplorerAgent,
   "Shokunin - designer": createShokuninDesignerAgent,
   "Takumi - builder": createTakumiBuilderAgent,
+  "Hayai - builder": createHayaiBuilderAgent,
   "Tantei - debugger": createTanteiDebuggerAgent,
   "Sakka - writer": createSakkaWriterAgent,
   "Miru - observer": createMiruObserverAgent,

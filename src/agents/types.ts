@@ -13,6 +13,7 @@ export type BuiltinAgentName =
   | "Ninja - explorer"
   | "Shokunin - designer"
   | "Takumi - builder"
+  | "Hayai - builder"
   | "Tantei - debugger"
   | "Sakka - writer"
   | "Miru - observer"
