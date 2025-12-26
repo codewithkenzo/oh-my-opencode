@@ -1,6 +1,6 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 
-const DEFAULT_MODEL = "anthropic/claude-sonnet-4-5"
+const DEFAULT_MODEL = "opencode/kimi-k2"
 
 export function createLibrarianAgent(model: string = DEFAULT_MODEL): AgentConfig {
   return {

@@ -23,7 +23,7 @@ This fork includes enhancements beyond upstream:
 ```
 oh-my-opencode/
 ├── src/
-│   ├── agents/        # AI agents (7): Sisyphus, oracle, librarian, explore, frontend, document-writer, multimodal-looker
+│   ├── agents/        # AI agents (9): Sisyphus, oracle, librarian, explore, frontend-ui-ux-engineer, frontend-builder, frontend-debugger, document-writer, multimodal-looker
 │   ├── hooks/         # 21 lifecycle hooks - see src/hooks/AGENTS.md
 │   ├── tools/         # LSP, AST-Grep, Grep, Glob, etc. - see src/tools/AGENTS.md
 │   ├── mcp/           # MCP servers: context7, websearch_exa, grep_app
@@ -89,13 +89,23 @@ oh-my-opencode/
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| Sisyphus | anthropic/claude-opus-4-5 | Primary orchestrator |
-| oracle | openai/gpt-5.2 | Strategic advisor, code review |
-| librarian | anthropic/claude-sonnet-4-5 | Multi-repo analysis, docs |
+| Sisyphus | google/claude-opus-4-5-thinking | Primary orchestrator |
+| oracle | zai-coding-plan/glm-4.7 | Strategic advisor, code review |
+| librarian | opencode/kimi-k2 | Multi-repo analysis, docs |
 | explore | opencode/grok-code | Fast codebase exploration |
-| frontend-ui-ux-engineer | minimax/MiniMax-M2.1 | UI generation |
-| document-writer | google/gemini-3-pro-preview | Technical docs |
+| frontend-ui-ux-engineer | minimax/MiniMax-M2.1 | UI orchestrator, leads frontend team |
+| frontend-builder | minimax/MiniMax-M2.1 | Primary UI component builder |
+| frontend-debugger | google/gemini-3-flash | Visual debugging with multimodal |
+| document-writer | google/gemini-3-flash | Technical docs |
 | multimodal-looker | google/gemini-3-flash | PDF/image analysis |
+
+### Frontend Agent Hierarchy
+
+```
+frontend-ui-ux-engineer (MiniMax M2.1) - Orchestrator
+├── frontend-builder (MiniMax M2.1) - Primary component builder
+└── frontend-debugger (Gemini Flash) - Visual debugging loops
+```
 
 ## COMMANDS
 
@@ -142,3 +152,68 @@ bun test --watch                 # Watch mode
 - **Multi-lang docs**: README.md (EN), README.ko.md (KO), README.ja.md (JA), README.zh-cn.md (ZH-CN)
 - **Config**: `~/.config/opencode/oh-my-opencode.json` (user) or `.opencode/oh-my-opencode.json` (project)
 - **Trusted deps**: @ast-grep/cli, @ast-grep/napi, @code-yeongyu/comment-checker
+
+## SKILLS & AGENTS.MD BOOTSTRAP PATTERN
+
+### Project-Level Context
+
+oh-my-opencode automatically loads context from these locations:
+
+**AGENTS.md files** (injected when reading files in that directory):
+- `project/AGENTS.md` - Project-wide context
+- `project/src/AGENTS.md` - Layer-specific context
+- `project/src/components/AGENTS.md` - Component-specific context
+
+**Skills** (loaded via `skill` tool):
+| Location | Scope |
+|----------|-------|
+| `.opencode/skill/<name>/SKILL.md` | OpenCode project |
+| `~/.opencode/skill/<name>/SKILL.md` | OpenCode global |
+| `.claude/skills/<name>/SKILL.md` | Claude Code project |
+| `~/.claude/skills/<name>/SKILL.md` | Claude Code global |
+
+**Custom Agents** (loaded automatically):
+| Location | Scope |
+|----------|-------|
+| `.opencode/agent/<name>.md` | OpenCode project |
+| `~/.opencode/agent/<name>.md` | OpenCode global |
+| `.claude/agents/<name>.md` | Claude Code project |
+| `~/.claude/agents/<name>.md` | Claude Code global |
+
+### SKILL.md Format
+
+```markdown
+---
+name: my-skill
+description: What this skill does
+model: optional/model-override
+---
+
+# Skill Instructions
+
+Detailed instructions for the agent when this skill is loaded.
+Use @path/to/file for file references relative to the skill directory.
+```
+
+### Agent .md Format
+
+```markdown
+---
+name: my-agent
+description: What this agent does
+tools: bash,edit,write
+---
+
+# Agent Instructions
+
+The agent's system prompt goes here.
+```
+
+### Bootstrap Pattern for New Projects
+
+1. Create `.opencode/` directory
+2. Add `AGENTS.md` with project-specific context
+3. Create skills in `.opencode/skill/<name>/SKILL.md`
+4. Create custom agents in `.opencode/agent/<name>.md`
+
+The `directory-agents-injector` hook automatically injects AGENTS.md content when agents read files in that directory tree.

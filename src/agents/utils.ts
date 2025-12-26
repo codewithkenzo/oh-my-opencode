@@ -5,6 +5,8 @@ import { createOracleAgent } from "./oracle"
 import { createLibrarianAgent } from "./librarian"
 import { createExploreAgent } from "./explore"
 import { frontendUiUxEngineerAgent } from "./frontend-ui-ux-engineer"
+import { createFrontendBuilderAgent } from "./frontend-builder"
+import { createFrontendDebuggerAgent } from "./frontend-debugger"
 import { createDocumentWriterAgent } from "./document-writer"
 import { createMultimodalLookerAgent } from "./multimodal-looker"
 import { deepMerge } from "../shared"
@@ -17,6 +19,8 @@ const agentSources: Record<BuiltinAgentName, AgentSource> = {
   librarian: createLibrarianAgent,
   explore: createExploreAgent,
   "frontend-ui-ux-engineer": frontendUiUxEngineerAgent,
+  "frontend-builder": createFrontendBuilderAgent,
+  "frontend-debugger": createFrontendDebuggerAgent,
   "document-writer": createDocumentWriterAgent,
   "multimodal-looker": createMultimodalLookerAgent,
 }
