@@ -123,10 +123,75 @@ Break into phases:
 - [Question needing clarification]
 ```
 
-## Collaboration
+## Integration with Agent Team
 
-After blueprinting:
-1. Save blueprint to `docs/BLUEPRINT.md` or `AGENTS.md`
-2. Create AGENTS.md with project context if missing
-3. Hand off to `ui-designer` skill for visual direction
-4. Spawn builders for implementation phases
+After blueprinting, delegate to:
+- **Shokunin - designer**: For visual direction and component orchestration
+- **Takumi - builder**: For component implementation
+- **Shisho - researcher**: For external docs and best practices
+
+### Handoff Example
+
+```typescript
+// After blueprint is approved, delegate to Shokunin
+background_task({
+  agent: "Shokunin - designer",
+  description: "Design the landing page",
+  prompt: `
+    ## Blueprint Reference
+    See: docs/BLUEPRINT.md
+
+    ## Focus
+    - Landing page hero section
+    - Navigation header
+    - Feature cards
+
+    ## Aesthetic Direction
+    [From blueprint: minimalist/brutalist/etc.]
+
+    ## Constraints
+    - Stack: TanStack Start, Tailwind v4, Animate UI
+    - Must be responsive (mobile-first)
+  `
+})
+```
+
+## Bootstrap Script
+
+For new projects, run this to scaffold structure:
+
+```bash
+# Create project structure from blueprint
+mkdir -p src/{app,components/{ui,features},lib,server,db}
+mkdir -p .opencode/{skill,agent}
+
+# Create AGENTS.md with project context
+cat > AGENTS.md << 'EOF'
+# PROJECT: [Name]
+
+## Stack
+- Runtime: Bun
+- Framework: TanStack Start
+- UI: Animate UI, Tailwind v4
+- Database: SQLite + Drizzle
+
+## Conventions
+- Components in src/components/
+- API routes in src/server/
+- Use Effect-TS for error handling
+
+## Agents Context
+[Add project-specific context here]
+EOF
+
+echo "Project scaffolded. Edit AGENTS.md with project specifics."
+```
+
+## Output Artifacts
+
+| Artifact | Location | Purpose |
+|----------|----------|---------|
+| Blueprint | `docs/BLUEPRINT.md` | Full technical plan |
+| AGENTS.md | `./AGENTS.md` | Project context for agents |
+| Component list | In blueprint | What to build |
+| Phase todos | Via todowrite | Track progress |

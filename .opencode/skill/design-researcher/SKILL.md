@@ -135,15 +135,91 @@ Key icons needed: [list]
 2. [Pattern from reference 2]
 ```
 
-## Collaboration
+## Integration with Agent Team
 
-After research:
-1. Save findings to `docs/DESIGN-RESEARCH.md`
-2. Share with `ui-designer` skill for design language creation
-3. Provide references to `frontend-ui-ux-engineer` for implementation
+After research, hand off to:
+- **Miru - observer**: For deeper image analysis
+- **Shokunin - designer**: To apply findings to design language
+- **Shisho - researcher**: For additional external research
 
-## Important Notes
+### Research Workflow Example
 
-- **webfetch**: Only takes `url` (required) and `timeout` (optional). NO `format` parameter.
-- **look_at**: For analyzing images/PDFs, extracts information based on goal
-- Save screenshots to `/tmp/` for analysis if needed
+```typescript
+// Research in parallel
+background_task({
+  agent: "Shisho - researcher",
+  description: "Find SaaS dashboard examples",
+  prompt: "Search for modern SaaS dashboard design patterns. Focus on data visualization, navigation, and dark mode implementations."
+})
+
+// Analyze gathered screenshots
+look_at({
+  file_path: "tmp/dashboard-ref.png",
+  goal: "Extract: color palette (hex codes), typography, card styles, shadow levels, spacing rhythm"
+})
+```
+
+## Practical Scripts
+
+### Screenshot a Design Site
+
+Using browser-debugger skill:
+
+```bash
+cd ~/.opencode/skill/browser-debugger && npx tsx <<'EOF'
+import { connect, waitForPageLoad } from "@/client.js";
+
+const client = await connect();
+const page = await client.page("research");
+await page.setViewportSize({ width: 1440, height: 900 });
+
+// Navigate to design site
+await page.goto("https://dribbble.com/search/saas-dashboard");
+await waitForPageLoad(page);
+
+// Screenshot for analysis
+await page.screenshot({ path: "tmp/dribbble-research.png", fullPage: false });
+console.log("Screenshot saved to tmp/dribbble-research.png");
+
+await client.disconnect();
+EOF
+```
+
+Then analyze: `look_at({ file_path: "tmp/dribbble-research.png", goal: "..." })`
+
+### Extract Colors from Image
+
+```bash
+# Using ImageMagick to extract dominant colors
+convert tmp/reference.png -resize 100x100 -colors 8 -format '%c' histogram:info:- | sort -rn | head -8
+```
+
+### Download Font Preview
+
+```bash
+# Preview a Google Font
+curl -o tmp/font-preview.html "https://fonts.google.com/specimen/Space+Grotesk"
+```
+
+## Tools Reference
+
+| Tool | Use For | Notes |
+|------|---------|-------|
+| `webfetch` | Fetch design sites | Only `url` + `timeout`, NO format param |
+| `look_at` | Analyze images | Pass file_path and goal |
+| `browser-debugger` skill | Live screenshots | Full browser control |
+
+## Output Artifacts
+
+| Artifact | Location | Purpose |
+|----------|----------|---------|
+| Research doc | `docs/DESIGN-RESEARCH.md` | Findings and references |
+| Screenshots | `tmp/` | Visual references |
+| Extracted palettes | In research doc | Color recommendations |
+
+## Important Reminders
+
+- **webfetch**: Only `url` (required) and `timeout` (optional). NO `format` parameter.
+- **look_at**: For analyzing images/PDFs with multimodal AI
+- **Screenshots**: Save to `tmp/` for analysis
+- **browser-debugger**: Load skill first for live browser control
