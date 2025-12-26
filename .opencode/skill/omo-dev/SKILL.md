@@ -3,69 +3,112 @@ name: omo-dev
 description: oh-my-opencode plugin development. Use when adding hooks, tools, agents, or features to oh-my-opencode. Covers Antigravity auth, Claude Code compatibility, and plugin architecture.
 ---
 
-# oh-my-opencode Development
+# oh-my-opencode Fork Development
 
-## Project Structure
+## Fork Context
 
+This is kenzo's fork of oh-my-opencode at `/home/kenzo/dev/oh-my-opencode-fork`.
+
+### Fork-Specific Enhancements
+- **Memory hooks**: memory-capture (stores) + memory-injector (auto-injects context)
+- **Antigravity tracking**: All `google/*` models tracked, not just Claude
+- **Sisyphus improvements**: Async mastery, skill awareness, direct intervention
+- **Context notifications**: 20/40/60/80% milestones with contextual messages
+- **UX fixes**: Compaction toast says "Send any message to continue"
+
+### Key Files Modified from Upstream
+- `src/hooks/preemptive-compaction/index.ts` - Context tracking, notifications
+- `src/hooks/context-window-monitor.ts` - Antigravity provider support
+- `src/hooks/memory-capture/index.ts` - Semantic memory storage
+- `src/hooks/memory-injector/index.ts` - Auto context injection
+- `src/agents/sisyphus.ts` - Orchestrator enhancements
+- `src/agents/frontend-ui-ux-engineer.ts` - MiniMax M2.1 model
+
+## Git Workflow
+
+### Syncing with Upstream
+```bash
+# Add upstream if not present
+git remote add upstream https://github.com/code-yeongyu/oh-my-opencode.git
+
+# Fetch and rebase (preserve fork patches)
+git fetch upstream
+git rebase upstream/master
+
+# Resolve conflicts, keeping fork-specific changes
+# Key files to preserve: memory hooks, sisyphus enhancements, antigravity tracking
 ```
-src/
-├── agents/        # AI agents (Sisyphus, oracle, librarian, etc.)
-├── hooks/         # Lifecycle hooks (21 hooks)
-├── tools/         # LSP, AST-Grep, Glob, Grep, etc.
-├── mcp/           # MCP servers (context7, websearch_exa, grep_app)
-├── features/      # Claude Code compatibility loaders
-├── auth/antigravity/  # Google OAuth for multi-model access
-├── config/        # Zod schema
-└── shared/        # Utilities
+
+### Before Rebasing
+1. Commit all local changes
+2. Note fork-specific files that may conflict
+3. Review upstream changelog for breaking changes
+
+### After Rebasing
+1. Run `bun run typecheck`
+2. Run `bun test`
+3. Run `bun run build`
+4. Test in OpenCode
+
+## Known Issues & Fixes
+
+### Antigravity Thinking Block Errors
+**Error**: `Expected thinking block at start of message`
+**Cause**: Message reordering not putting thinking blocks first
+**Fix**: `reorderThinkingBlocksFirst` function in antigravity fetch.ts
+
+### Claude Opus Tool/Text Interleaving
+**Error**: `toolUse and text blocks cannot be interleaved`
+**Cause**: Anthropic API strict ordering requirement
+**Fix**: Use `reorderTextAndToolBlocks` before sending
+
+### Memory Hooks Not Running
+**Check**:
+1. Ollama running: `curl localhost:11434/api/tags`
+2. Model installed: `ollama pull mxbai-embed-large`
+3. Hook enabled: Not in `disabled_hooks` array
+4. CLI exists: `~/.config/opencode/lib/memory-cli.ts`
+
+## Adding New Features
+
+### New Hook Pattern
+```typescript
+// src/hooks/my-hook/index.ts
+export function createMyHook() {
+  return {
+    "chat.message": async (input, output) => { /* ... */ },
+    "tool.execute.after": async (input, output) => { /* ... */ },
+    event: async ({ event }) => { /* ... */ },
+  }
+}
 ```
 
-## Adding Components
+### New Agent Pattern
+```typescript
+// src/agents/my-agent.ts
+export function createMyAgent(model: string = DEFAULT_MODEL): AgentConfig {
+  return {
+    description: "...",
+    mode: "subagent",
+    model,
+    tools: { background_task: true },
+    prompt: `...`,
+  }
+}
+```
 
-### Add Hook
-1. Create `src/hooks/<name>/` with `index.ts`, `constants.ts`, `types.ts`
-2. Export from `src/hooks/index.ts`
-3. Instantiate in `src/index.ts` with `isHookEnabled()` check
-4. Add to `HookName` in `src/config/schema.ts`
-
-### Add Tool
-1. Create `src/tools/<name>/` with `index.ts`, `tools.ts`, `types.ts`, `constants.ts`
-2. Export from `src/tools/index.ts`
-3. Add to `builtinTools` array in `src/tools/index.ts`
-
-### Add Agent
-1. Create `src/agents/<name>.ts`
-2. Export from `src/agents/index.ts`
-3. Add to `builtinAgents` in `src/agents/index.ts`
-4. Add type to `src/agents/types.ts`
-
-## Antigravity Auth
-
-Google OAuth plugin for multi-account Claude/Gemini access:
-- `fetch.ts` - Request interceptor, retry logic, endpoint fallback
-- `response.ts` - Response transformation, SSE streaming, signature extraction
-- `thinking.ts` - Extended thinking block handling
-- `message-converter.ts` - OpenAI ↔ Gemini format conversion
-- `project.ts` - GCP project ID resolution, tier detection
-
-Key patterns:
-- Thinking blocks must come FIRST in assistant message parts
-- Signatures wrapped in `providerMetadata.anthropic.signature`
-- 429 errors trigger retry with exponential backoff
-
-## Build Commands
+## Commands
 
 ```bash
-bun run build          # ESM + declarations + schema
-bun run typecheck      # Type check only
-bun test               # Run tests
-bun run build:schema   # Regenerate JSON schema
+bun run typecheck      # Type check
+bun run build          # Full build
+bun test               # All tests
+bun test path/file.test.ts  # Single test
 ```
 
-## Conventions
+## Deployment
 
-- Bun only (never npm/yarn)
-- bun-types (never @types/node)
-- Barrel exports in index.ts
-- kebab-case directories
-- createXXXHook() pattern for hooks
-- BDD comments: #given, #when, #then
+**NEVER** run `bun publish` directly. Use GitHub Actions:
+```bash
+gh workflow run publish -f bump=patch
+```

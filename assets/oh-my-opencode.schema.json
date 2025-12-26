@@ -61,7 +61,8 @@
           "interactive-bash-session",
           "empty-message-sanitizer",
           "thinking-block-validator",
-          "memory-capture"
+          "memory-capture",
+          "memory-injector"
         ]
       }
     },
