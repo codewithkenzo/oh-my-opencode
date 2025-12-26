@@ -68,6 +68,7 @@ export const HookNameSchema = z.enum([
   "thinking-block-validator",
 
   "memory-capture",
+  "memory-injector",
 ])
 
 export const AgentOverrideConfigSchema = z.object({

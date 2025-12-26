@@ -25,6 +25,7 @@ import {
   createEmptyMessageSanitizerHook,
   createThinkingBlockValidatorHook,
   createMemoryCaptureHook,
+  createMemoryInjectorHook,
 } from "./hooks";
 import { createGoogleAntigravityAuthPlugin } from "./auth/antigravity";
 import {
@@ -333,6 +334,9 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
   const memoryCapture = isHookEnabled("memory-capture")
     ? createMemoryCaptureHook()
     : null;
+  const memoryInjector = isHookEnabled("memory-injector")
+    ? createMemoryInjectorHook()
+    : null;
 
   const backgroundManager = new BackgroundManager(ctx);
 
@@ -374,6 +378,13 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await claudeCodeHooks["chat.message"]?.(input, output);
       await keywordDetector?.["chat.message"]?.(input, output);
       await memoryCapture?.["chat.message"]?.(input, output);
+    },
+
+    "prompt.submit": async (
+      input: { sessionID: string },
+      output: { parts: Array<{ type: string; text?: string }> }
+    ) => {
+      await memoryInjector?.["prompt.submit"]?.(input, output);
     },
 
     "experimental.chat.messages.transform": async (
@@ -584,6 +595,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await agentUsageReminder?.event(input);
       await interactiveBashSession?.event(input);
       await memoryCapture?.event(input);
+      await memoryInjector?.event(input);
 
       const { event } = input;
       const props = event.properties as Record<string, unknown> | undefined;
@@ -663,6 +675,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await emptyTaskResponseDetector?.["tool.execute.after"](input, output);
       await agentUsageReminder?.["tool.execute.after"](input, output);
       await interactiveBashSession?.["tool.execute.after"](input, output);
+      await memoryCapture?.["tool.execute.after"]?.(input, output);
     },
   };
 };

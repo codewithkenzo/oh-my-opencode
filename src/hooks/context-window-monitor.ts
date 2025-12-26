@@ -53,8 +53,8 @@ export function createContextWindowMonitorHook(ctx: PluginInput) {
 
       const modelID = (lastAssistant as { modelID?: string }).modelID
 
-      const isSupported = lastAssistant.providerID === "anthropic" ||
-        (lastAssistant.providerID === "google" && (modelID?.toLowerCase().includes("claude") || false))
+      // Support direct Anthropic AND all Google/Antigravity models
+      const isSupported = lastAssistant.providerID === "anthropic" || lastAssistant.providerID === "google"
       if (!isSupported) return
 
       // Use only the last assistant message's input tokens

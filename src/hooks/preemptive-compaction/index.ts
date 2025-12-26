@@ -54,11 +54,12 @@ interface MessageWrapper {
   info: MessageInfo
 }
 
-const CLAUDE_MODEL_PATTERN = /claude-(opus|sonnet|haiku)|google\/claude/i
-const CLAUDE_DEFAULT_CONTEXT_LIMIT = 200_000
+// Match all Antigravity models (google/*) and direct Claude models
+const SUPPORTED_MODEL_PATTERN = /^google\/|claude-(opus|sonnet|haiku)/i
+const DEFAULT_CONTEXT_LIMIT = 200_000
 
 function isSupportedModel(modelID: string): boolean {
-  return CLAUDE_MODEL_PATTERN.test(modelID)
+  return SUPPORTED_MODEL_PATTERN.test(modelID)
 }
 
 function getMessageDir(sessionID: string): string | null {
@@ -112,7 +113,7 @@ export function createPreemptiveCompactionHook(
     usageRatio: number
   ): Promise<void> {
     const thresholds = getNotifiedThresholds(sessionID)
-    const percentages = [25, 50, 75]
+    const percentages = [20, 40, 60, 80]
 
     for (const pct of percentages) {
       const ratio = pct / 100
@@ -121,8 +122,8 @@ export function createPreemptiveCompactionHook(
         await ctx.client.tui.showToast({
           body: {
             title: "Context Window",
-            message: `${pct}% context used (${(usageRatio * 100).toFixed(0)}%)`,
-            variant: pct >= 75 ? "warning" : "info",
+            message: `${pct}% context used - ${pct >= 60 ? 'consider wrapping up current task' : 'proceeding normally'}`,
+            variant: pct >= 80 ? "warning" : "info",
             duration: 2000,
           },
         }).catch(() => {})
@@ -158,7 +159,7 @@ export function createPreemptiveCompactionHook(
     }
 
     const configLimit = getModelLimit?.(providerID, modelID)
-    const contextLimit = configLimit ?? CLAUDE_DEFAULT_CONTEXT_LIMIT
+    const contextLimit = configLimit ?? DEFAULT_CONTEXT_LIMIT
     const totalUsed = tokens.input + tokens.cache.read + tokens.output
 
     if (totalUsed < MIN_TOKENS_FOR_COMPACTION) return
@@ -220,7 +221,7 @@ export function createPreemptiveCompactionHook(
         .showToast({
           body: {
             title: "Compaction Complete",
-            message: "Session compacted successfully. Resuming...",
+            message: "Session compacted. Send any message to continue.",
             variant: "success",
             duration: 2000,
           },

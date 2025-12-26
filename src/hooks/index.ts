@@ -23,5 +23,6 @@ export { createInteractiveBashSessionHook } from "./interactive-bash-session";
 export { createEmptyMessageSanitizerHook } from "./empty-message-sanitizer";
 export { createThinkingBlockValidatorHook } from "./thinking-block-validator";
 export { createMemoryCaptureHook } from "./memory-capture";
+export { createMemoryInjectorHook } from "./memory-injector";
 
 export * from './compaction-state';

@@ -1,12 +1,22 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2025-12-24T17:07:00+09:00
+**Generated:** 2025-12-26T00:00:00+09:00
 **Commit:** 0172241
 **Branch:** dev
 
 ## OVERVIEW
 
-OpenCode plugin implementing Claude Code/AmpCode features. Multi-model agent orchestration (GPT-5.2, Claude, Gemini, Grok), LSP tools (11), AST-Grep search, MCP integrations (context7, websearch_exa, grep_app). "oh-my-zsh" for OpenCode.
+OpenCode plugin implementing Claude Code/AmpCode features. Multi-model agent orchestration (GPT-5.2, Claude, Gemini, Grok, MiniMax), LSP tools (11), AST-Grep search, MCP integrations (context7, websearch_exa, grep_app). "oh-my-zsh" for OpenCode.
+
+## FORK-SPECIFIC CHANGES
+
+This fork includes enhancements beyond upstream:
+
+- **Memory hooks**: memory-capture and memory-injector for persistent context across sessions (requires Ollama with mxbai-embed-large)
+- **Antigravity context tracking**: All google/* models now track Antigravity context for multi-account load balancing
+- **Sisyphus enhancements**: Async/parallel task execution improvements, skill-awareness for detecting and using custom skills
+- **Context notifications**: Notifies at 20/40/60/80% context window usage
+- **UX improvements**: Fixed compaction toast display issues
 
 ## STRUCTURE
 
@@ -83,7 +93,7 @@ oh-my-opencode/
 | oracle | openai/gpt-5.2 | Strategic advisor, code review |
 | librarian | anthropic/claude-sonnet-4-5 | Multi-repo analysis, docs |
 | explore | opencode/grok-code | Fast codebase exploration |
-| frontend-ui-ux-engineer | google/gemini-3-pro-preview | UI generation |
+| frontend-ui-ux-engineer | minimax/MiniMax-M2.1 | UI generation |
 | document-writer | google/gemini-3-pro-preview | Technical docs |
 | multimodal-looker | google/gemini-3-flash | PDF/image analysis |
 
@@ -95,6 +105,14 @@ bun run build          # ESM + declarations + schema
 bun run rebuild        # Clean + Build
 bun run build:schema   # Schema only
 bun test               # Run tests
+```
+
+## TESTING
+
+```bash
+bun test                         # Run all tests
+bun test path/to/file.test.ts   # Run single test file
+bun test --watch                 # Watch mode
 ```
 
 ## DEPLOYMENT
@@ -112,9 +130,14 @@ bun test               # Run tests
 - **ci.yml**: Parallel test/typecheck, build verification, auto-commit schema on master
 - **publish.yml**: Manual workflow_dispatch, version bump, changelog, OIDC npm publish
 
+## KNOWN ISSUES
+
+- Custom provider limits may not be read properly by OpenCode (use native providers)
+- Memory hooks require Ollama running with mxbai-embed-large embedding model
+- Antigravity context tracking requires opencode-antigravity-auth@1.2.6+
+
 ## NOTES
 
-- **Testing**: Bun native test (`bun test`), BDD-style `#given/#when/#then`
 - **OpenCode**: Requires >= 1.0.150
 - **Multi-lang docs**: README.md (EN), README.ko.md (KO), README.ja.md (JA), README.zh-cn.md (ZH-CN)
 - **Config**: `~/.config/opencode/oh-my-opencode.json` (user) or `.opencode/oh-my-opencode.json` (project)
