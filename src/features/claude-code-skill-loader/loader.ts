@@ -1,4 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from "fs"
+import { homedir } from "os"
 import { join } from "path"
 import { parseFrontmatter } from "../../shared/frontmatter"
 import { sanitizeModelField } from "../../shared/model-sanitizer"

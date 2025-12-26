@@ -190,7 +190,21 @@ function convertContentToParts(content: string | OpenAIContentPart[] | undefined
     }
   }
 
-  return parts.length > 0 ? parts : [{ text: "" }]
+  if (parts.length === 0) {
+    return [{ text: "" }]
+  }
+
+  return reorderThinkingBlocksFirst(parts)
+}
+
+/**
+ * Ensures thinking/reasoning blocks appear first in the parts array.
+ * Required by Claude API when extended thinking is enabled.
+ */
+function reorderThinkingBlocksFirst(parts: GeminiPart[]): GeminiPart[] {
+  const thinkingParts = parts.filter(p => p.thought === true)
+  const otherParts = parts.filter(p => p.thought !== true)
+  return [...thinkingParts, ...otherParts]
 }
 
 export function hasOpenAIMessages(body: Record<string, unknown>): boolean {
