@@ -1,137 +1,106 @@
-import { extractPromptText } from "../keyword-detector/detector"
 import { execSync } from "child_process"
 
 const MEMORY_CLI_PATH = `${process.env.HOME}/.config/opencode/lib/memory-cli.ts`
 
-// More specific patterns for user preferences (avoiding "i want" which is too broad)
-const PREFERENCE_PATTERNS = [
-  /\b(i prefer|my preference is|i'd rather)\b/i,
-  /\b(always|never) use\b/i,
-  /\b(don't|do not) ever\b/i,
-  /\b(make sure to|remember that|from now on)\b/i,
-  /\bi (love|hate|can't stand)\b/i,
-]
+// Collections with specific purposes
+type MemoryCollection = "rules" | "tools" | "workflows" | "errors"
 
-// Patterns for technical decisions and project-specific facts
-const TECHNICAL_DECISION_PATTERNS = [
-  /\b(decided to|chose to|going with)\b.*\b(architecture|approach|pattern)\b/i,
-  /\b(using|adopting) (bun|bun only)\b/i,
-  /\b(standard|convention) for (this project|our codebase)\b/i,
-  /\b(project|repo) (uses|requires)\b/i,
-]
+interface ToolMetrics {
+  calls: number
+  successes: number
+  failures: number
+}
 
-// Patterns for solved problems and solutions
-const SOLVED_PROBLEM_PATTERNS = [
-  /\b(fixed|solved|resolved) (the|this) (issue|problem|bug)\b/i,
-  /\b(workaround|solution for)\b/i,
-  /\b(found the (?:cause|root cause))\b/i,
-  /\b(debugged and fixed)\b/i,
-]
+// In-memory tracking (not persisted, just for session analysis)
+const sessionMetrics = new Map<string, {
+  tools: Map<string, ToolMetrics>
+  skills: Set<string>
+  agents: Map<string, number>
+  filesModified: Set<string>
+}>()
 
-// Procedural knowledge patterns
-const PROCEDURAL_PATTERNS = [
-  /\b(how to|the way to|best way to)\b/i,
-  /\byou can (do|achieve)\b.*\b(by|via|using)\b/i,
-  /\brun (this|the) command\b/i,
-  /\bstep-by-step\b/i,
-]
+function getSession(sessionID: string) {
+  if (!sessionMetrics.has(sessionID)) {
+    sessionMetrics.set(sessionID, {
+      tools: new Map(),
+      skills: new Set(),
+      agents: new Map(),
+      filesModified: new Set()
+    })
+  }
+  return sessionMetrics.get(sessionID)!
+}
 
-type MemoryCollection = "semantic" | "episodic" | "procedural" | "emotional" | "reflective"
+function storeMemory(content: string, collection: MemoryCollection): void {
+  if (!content || content.length < 10 || content.length > 300) return
+  try {
+    const sanitized = content.replace(/"/g, '\\"').replace(/\n/g, ' ').trim()
+    execSync(
+      `bun ${MEMORY_CLI_PATH} add "${sanitized}" --collection=${collection}`,
+      { encoding: "utf-8", timeout: 5000, stdio: "pipe" }
+    )
+  } catch {
+    // Silent fail
+  }
+}
 
 function showNotification(title: string, message: string): void {
   if (process.platform !== "linux") return
-
   try {
-    const sanitizedMessage = message.replace(/"/g, '\\"').slice(0, 200)
-    execSync(
-      `notify-send "${title}" "${sanitizedMessage}"`,
-      { encoding: "utf-8", timeout: 1000, stdio: "pipe" }
-    )
-  } catch {
+    const sanitized = message.replace(/"/g, '\\"').slice(0, 100)
+    execSync(`notify-send "${title}" "${sanitized}"`, { timeout: 1000, stdio: "pipe" })
+  } catch {}
+}
+
+// Extract RULES from user messages (explicit instructions)
+function extractRule(content: string): string | null {
+  // Must contain explicit rule indicators
+  const rulePatterns = [
+    /\b(always|never|don'?t ever|must|should always)\s+(.{10,80})/i,
+    /\b(rule|remember|from now on)[:\s]+(.{10,80})/i,
+    /\b(use|prefer)\s+(\w+)\s+(instead of|not|over)\s+(\w+)/i,
+  ]
+
+  for (const pattern of rulePatterns) {
+    const match = content.match(pattern)
+    if (match) {
+      // Return just the rule, not the full message
+      return match[0].slice(0, 150)
+    }
   }
+  return null
 }
-
-function storeMemory(content: string, collection: MemoryCollection = "semantic"): void {
-  if (!content || content.length < 10) return
-  try {
-    const sanitized = content.replace(/"/g, '\\"').replace(/\n/g, ' ').slice(0, 500)
-    execSync(
-      `bun ${MEMORY_CLI_PATH} add "${sanitized}" --collection=${collection}`,
-      { encoding: "utf-8", timeout: 10000, stdio: "pipe" }
-    )
-    showNotification("Memory Captured", sanitized)
-  } catch {
-    // Silently fail - don't interrupt user flow
-  }
-}
-
-function isPreferenceMessage(content: string): boolean {
-  return PREFERENCE_PATTERNS.some((p) => p.test(content))
-}
-
-function isTechnicalDecision(content: string): boolean {
-  return TECHNICAL_DECISION_PATTERNS.some((p) => p.test(content))
-}
-
-function isSolvedProblem(content: string): boolean {
-  return SOLVED_PROBLEM_PATTERNS.some((p) => p.test(content))
-}
-
-function isProceduralMessage(content: string): boolean {
-  return PROCEDURAL_PATTERNS.some((p) => p.test(content))
-}
-
-// Track session for summaries
-const sessionData = new Map<string, {
-  toolCalls: string[]
-  errors: number
-  filesModified: Set<string>
-}>()
 
 export function createMemoryCaptureHook() {
   return {
     "chat.message": async (
-      input: {
-        sessionID: string
-        agent?: string
-        model?: { providerID: string; modelID: string }
-        messageID?: string
-      },
+      _input: { sessionID: string },
       output: {
         message: Record<string, unknown>
-        parts: Array<{ type: string; text?: string; [key: string]: unknown }>
+        parts: Array<{ type: string; text?: string }>
       }
     ): Promise<void> => {
-      const content = extractPromptText(output.parts)
       const role = (output.message as any)?.role
+      if (role !== "user") return // Only capture from user messages
 
-      // Initialize session tracking
-      if (!sessionData.has(input.sessionID)) {
-        sessionData.set(input.sessionID, {
-          toolCalls: [],
-          errors: 0,
-          filesModified: new Set()
-        })
-      }
+      const content = output.parts
+        .filter(p => p.type === "text" && p.text)
+        .map(p => p.text!)
+        .join(" ")
 
-      // Capture user preferences
-      if (role === "user" && isPreferenceMessage(content)) {
-        storeMemory(content, "semantic")
-      }
+      if (!content || content.length < 20) return
 
-      // Capture technical decisions from user
-      if (role === "user" && isTechnicalDecision(content)) {
-        storeMemory(content, "semantic")
-      }
+      // Skip continuation prompts and system injections
+      if (content.includes("Continuation Prompt") ||
+          content.includes("<recalled_memories>") ||
+          content.includes("[COMPACTION") ||
+          content.includes("[SYSTEM")) return
 
-      // Capture solved problems from assistant
-      if (role === "assistant" && isSolvedProblem(content)) {
-        storeMemory(content, "semantic")
-      }
-
-      // Capture procedural knowledge from assistant
-      if (role === "assistant" && isProceduralMessage(content)) {
-        storeMemory(content, "procedural")
+      // Extract explicit rules only
+      const rule = extractRule(content)
+      if (rule) {
+        storeMemory(`RULE: ${rule}`, "rules")
+        showNotification("Rule Captured", rule)
       }
     },
 
@@ -139,53 +108,60 @@ export function createMemoryCaptureHook() {
       input: {
         sessionID: string
         tool: string
-        callID: string
         args?: Record<string, unknown>
       },
       output: {
-        title: string
         output: string
-        metadata: unknown
+        metadata?: unknown
       }
     ): Promise<void> => {
-      const session = sessionData.get(input.sessionID)
-      if (session) {
-        session.toolCalls.push(input.tool)
+      const session = getSession(input.sessionID)
+      const toolName = input.tool
 
-        // Track file modifications from edit/write results
-        if (["edit", "write"].includes(input.tool)) {
-          try {
-            const resultData = JSON.parse(output.output) as Record<string, unknown>
-            const filePath = resultData.path as string | undefined
-            if (filePath) {
-              session.filesModified.add(filePath)
-              storeMemory(`Modified: ${filePath}`, "semantic")
-            }
-          } catch {
-          }
+      // Track tool usage
+      if (!session.tools.has(toolName)) {
+        session.tools.set(toolName, { calls: 0, successes: 0, failures: 0 })
+      }
+      const metrics = session.tools.get(toolName)!
+      metrics.calls++
+
+      const isError = output.output?.includes("Error") ||
+                      output.output?.includes("error:") ||
+                      output.output?.includes("failed")
+
+      if (isError) {
+        metrics.failures++
+
+        // Only store meaningful, actionable errors (not stack traces)
+        if (output.output.length < 200) {
+          const errorSummary = `${toolName} error: ${output.output.slice(0, 100)}`
+          storeMemory(errorSummary, "errors")
         }
+      } else {
+        metrics.successes++
+      }
 
-        // Capture meaningful bash commands (non-trivial, successful)
-        if (input.tool === "bash" && output.output) {
-          const args = input.args as Record<string, unknown> | undefined
-          const command = args?.command as string | undefined
+      // Track skill loads
+      if (toolName === "skill") {
+        const skillName = (input.args as any)?.name
+        if (skillName) {
+          session.skills.add(skillName)
+        }
+      }
 
-          // Only capture non-trivial commands that succeeded
-          if (
-            command &&
-            command.length > 10 &&
-            !command.startsWith("ls ") &&
-            !command.startsWith("cd ") &&
-            !command.startsWith("echo ") &&
-            !command.startsWith("cat ") &&
-            !output.output.includes("Error") &&
-            !output.output.includes("error")
-          ) {
-            const summary = output.output.slice(0, 100)
-            if (summary.length > 20) {
-              storeMemory(`bash: ${command.slice(0, 50)} → ${summary}`, "procedural")
-            }
-          }
+      // Track agent spawns
+      if (toolName === "background_task" || toolName === "call_omo_agent") {
+        const agent = (input.args as any)?.agent || (input.args as any)?.subagent_type
+        if (agent) {
+          session.agents.set(agent, (session.agents.get(agent) || 0) + 1)
+        }
+      }
+
+      // Track file modifications
+      if (toolName === "edit" || toolName === "write") {
+        const filePath = (input.args as any)?.filePath
+        if (filePath) {
+          session.filesModified.add(filePath)
         }
       }
     },
@@ -193,27 +169,28 @@ export function createMemoryCaptureHook() {
     event: async ({ event }: { event: { type: string; properties?: unknown } }): Promise<void> => {
       const props = event.properties as Record<string, unknown> | undefined
 
-      // Capture errors
-      if (event.type === "error") {
-        const message = props?.message as string
-        if (message && message.length < 300) { // Only capture error messages that aren't too long
-          storeMemory(`Error encountered: ${message}`, "emotional")
-          const sessionID = props?.sessionID as string
-          const session = sessionData.get(sessionID)
-          if (session) session.errors++
-        }
-      }
-
-      // Session end - store summary
+      // On session end, store workflow summary (compact format)
       if (event.type === "session.end") {
         const sessionID = props?.sessionID as string
-        const session = sessionData.get(sessionID)
-        if (session && session.toolCalls.length > 0) {
-          const uniqueTools = [...new Set(session.toolCalls)]
-          const fileCount = session.filesModified.size
-          const summary = `Session: ${uniqueTools.length} tools used, ${fileCount} files modified, ${session.errors} errors`
-          storeMemory(summary, "episodic")
-          sessionData.delete(sessionID)
+        const session = sessionMetrics.get(sessionID)
+
+        if (session && session.tools.size > 0) {
+          // Create compact workflow summary
+          const topTools = [...session.tools.entries()]
+            .sort((a, b) => b[1].calls - a[1].calls)
+            .slice(0, 5)
+            .map(([name, m]) => `${name}:${m.calls}`)
+            .join(",")
+
+          const skills = [...session.skills].join(",") || "none"
+          const agents = [...session.agents.keys()].join(",") || "none"
+          const files = session.filesModified.size
+
+          // Compact format: "tools:X|skills:Y|agents:Z|files:N"
+          const summary = `tools:${topTools}|skills:${skills}|agents:${agents}|files:${files}`
+          storeMemory(summary, "workflows")
+
+          sessionMetrics.delete(sessionID)
         }
       }
     },
