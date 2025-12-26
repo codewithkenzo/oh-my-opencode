@@ -2,60 +2,90 @@ import { execSync } from "child_process"
 
 const MEMORY_CLI_PATH = `${process.env.HOME}/.config/opencode/lib/memory-cli.ts`
 
-function queryMemories(prompt: string, limit: number = 3): string[] {
-  if (!prompt || prompt.length < 10) return []
+interface Memory {
+  content: string
+  collection: string
+}
+
+function queryMemories(prompt: string, limit: number = 3): Memory[] {
+  if (!prompt || prompt.length < 15) return []
   try {
-    const sanitized = prompt.replace(/"/g, '\\"').slice(0, 200)
+    const sanitized = prompt.replace(/"/g, '\\"').slice(0, 150)
     const result = execSync(
       `bun ${MEMORY_CLI_PATH} query "${sanitized}" --limit=${limit}`,
-      { encoding: "utf-8", timeout: 10000, stdio: "pipe" }
+      { encoding: "utf-8", timeout: 5000, stdio: "pipe" }
     )
     const data = JSON.parse(result)
     if (data.error || !data.memories) return []
-    return data.memories.map((m: any) => m.content)
+    return data.memories.map((m: any) => ({
+      content: m.content,
+      collection: m.collection || "default"
+    }))
   } catch {
     return []
   }
 }
 
+function formatCompact(memories: Memory[]): string {
+  const rules = memories.filter(m => m.collection === "rules")
+  const workflows = memories.filter(m => m.collection === "workflows")
+  const errors = memories.filter(m => m.collection === "errors")
+  const other = memories.filter(m => !["rules", "workflows", "errors"].includes(m.collection))
+  
+  const lines: string[] = []
+  
+  if (rules.length > 0) {
+    lines.push(`[RULES] ${rules.map(r => r.content.replace("RULE: ", "")).join(" | ")}`)
+  }
+  if (errors.length > 0) {
+    lines.push(`[ERRORS] ${errors.map(e => e.content).join(" | ")}`)
+  }
+  if (workflows.length > 0) {
+    lines.push(`[WORKFLOWS] ${workflows.map(w => w.content).join(" | ")}`)
+  }
+  if (other.length > 0) {
+    lines.push(`[CONTEXT] ${other.map(o => o.content.slice(0, 80)).join(" | ")}`)
+  }
+  
+  return lines.join("\n")
+}
+
 export function createMemoryInjectorHook() {
-  const injectedPrompts = new Map<string, Set<string>>()
+  const injectedSessions = new Set<string>()
 
   return {
     "prompt.submit": async (
       input: { sessionID: string },
       output: { parts: Array<{ type: string; text?: string }> }
     ) => {
+      if (injectedSessions.has(input.sessionID)) return
+
       const promptText = output.parts
         .filter(p => p.type === "text" && p.text)
         .map(p => p.text!)
         .join(" ")
 
-      if (!promptText || promptText.length < 15) return
+      if (!promptText || promptText.length < 20) return
 
-      const sessionPrompts = injectedPrompts.get(input.sessionID) ?? new Set()
-      const promptKey = promptText.slice(0, 100)
-      if (sessionPrompts.has(promptKey)) return
-      sessionPrompts.add(promptKey)
-      injectedPrompts.set(input.sessionID, sessionPrompts)
+      if (promptText.includes("[COMPACTION") || promptText.includes("[SYSTEM")) return
 
-      const memories = queryMemories(promptText, 3)
+      const memories = queryMemories(promptText, 5)
       if (memories.length === 0) return
+      
+      injectedSessions.add(input.sessionID)
 
-      const memoryContext = `<recalled_memories>
-The following memories from previous sessions may be relevant:
-${memories.map((m, i) => `${i + 1}. ${m}`).join("\n")}
-</recalled_memories>`
+      const compact = formatCompact(memories)
+      if (!compact) return
 
       output.parts.unshift({
         type: "text",
-        text: memoryContext
+        text: `<memory>${compact}</memory>`
       })
 
       return {
         notifications: [{
           type: "info" as const,
-          message: `Recalled ${memories.length} memories from previous sessions`
+          message: `Recalled ${memories.length} memories`
         }]
       }
     },
@@ -64,7 +94,7 @@ ${memories.map((m, i) => `${i + 1}. ${m}`).join("\n")}
       if (event.type === "session.deleted" || event.type === "session.end") {
         const props = event.properties as Record<string, unknown> | undefined
         const sessionID = props?.sessionID as string
-        if (sessionID) injectedPrompts.delete(sessionID)
+        if (sessionID) injectedSessions.delete(sessionID)
       }
     }
   }
