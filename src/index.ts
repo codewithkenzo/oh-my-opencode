@@ -24,6 +24,7 @@ import {
   createInteractiveBashSessionHook,
   createEmptyMessageSanitizerHook,
   createThinkingBlockValidatorHook,
+  createMemoryCaptureHook,
 } from "./hooks";
 import { createGoogleAntigravityAuthPlugin } from "./auth/antigravity";
 import {
@@ -323,6 +324,9 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
   const thinkingBlockValidator = isHookEnabled("thinking-block-validator")
     ? createThinkingBlockValidatorHook()
     : null;
+  const memoryCapture = isHookEnabled("memory-capture")
+    ? createMemoryCaptureHook()
+    : null;
 
   const backgroundManager = new BackgroundManager(ctx);
 
@@ -363,6 +367,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     "chat.message": async (input, output) => {
       await claudeCodeHooks["chat.message"]?.(input, output);
       await keywordDetector?.["chat.message"]?.(input, output);
+      await memoryCapture?.["chat.message"]?.(input, output);
     },
 
     "experimental.chat.messages.transform": async (
@@ -557,6 +562,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await preemptiveCompaction?.event(input);
       await agentUsageReminder?.event(input);
       await interactiveBashSession?.event(input);
+      await memoryCapture?.event(input);
 
       const { event } = input;
       const props = event.properties as Record<string, unknown> | undefined;
