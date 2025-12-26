@@ -34,6 +34,8 @@ import { context7_resolve_library_id, context7_get_library_docs } from './contex
 
 import { grep_app_searchGitHub } from './grep-app'
 
+import { websearch_exa_web_search_exa } from './exa'
+
 export { interactive_bash, startBackgroundCheck as startTmuxCheck } from "./interactive-bash"
 export { getTmuxPath } from "./interactive-bash/utils"
 
@@ -85,4 +87,5 @@ export const builtinTools = {
   context7_resolve_library_id,
   context7_get_library_docs,
   grep_app_searchGitHub,
+  websearch_exa_web_search_exa,
 }
