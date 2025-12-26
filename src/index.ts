@@ -65,20 +65,24 @@ import * as path from "path";
 // Migration map: old keys → new keys (for backward compatibility)
 const AGENT_NAME_MAP: Record<string, string> = {
   // Legacy names (backward compatibility)
-  omo: "Sisyphus",
-  "OmO": "Sisyphus",
-  "OmO-Plan": "Planner-Sisyphus",
-  "omo-plan": "Planner-Sisyphus",
-  // Current names
-  sisyphus: "Sisyphus",
-  "planner-sisyphus": "Planner-Sisyphus",
+  omo: "Musashi",
+  "OmO": "Musashi",
+  "OmO-Plan": "Planner-Musashi",
+  "omo-plan": "Planner-Musashi",
+  // English names (backward compatibility)
+  musashi: "Musashi",
+  "planner-musashi": "Planner-Musashi",
+  sisyphus: "Musashi",
+  "planner-sisyphus": "Planner-Musashi",
   build: "build",
-  oracle: "oracle",
-  librarian: "librarian",
-  explore: "explore",
-  "frontend-ui-ux-engineer": "frontend-ui-ux-engineer",
-  "document-writer": "document-writer",
-  "multimodal-looker": "multimodal-looker",
+  oracle: "Kenja - advisor",
+  librarian: "Shisho - researcher",
+  explore: "Ninja - explorer",
+  "frontend-ui-ux-engineer": "Shokunin - designer",
+  "frontend-builder": "Takumi - builder",
+  "frontend-debugger": "Tantei - debugger",
+  "document-writer": "Sakka - writer",
+  "multimodal-looker": "Miru - observer",
 };
 
 function migrateAgentNames(agents: Record<string, unknown>): { migrated: Record<string, unknown>; changed: boolean } {
@@ -116,7 +120,7 @@ function migrateConfigFile(configPath: string, rawConfig: Record<string, unknown
   if (needsWrite) {
     try {
       fs.writeFileSync(configPath, JSON.stringify(rawConfig, null, 2) + "\n", "utf-8");
-      log(`Migrated config file: ${configPath} (OmO → Sisyphus)`);
+      log(`Migrated config file: ${configPath} (OmO → Musashi)`);
     } catch (err) {
       log(`Failed to write migrated config to ${configPath}:`, err);
     }
@@ -309,7 +313,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
   const autoUpdateChecker = isHookEnabled("auto-update-checker")
     ? createAutoUpdateCheckerHook(ctx, {
         showStartupToast: isHookEnabled("startup-toast"),
-        isSisyphusEnabled: pluginConfig.sisyphus_agent?.disabled !== true,
+        isMusashiEnabled: pluginConfig.musashi_agent?.disabled !== true,
         autoUpdate: pluginConfig.auto_update ?? true,
       })
     : null;
@@ -435,18 +439,18 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       const openCodeGlobalAgents = loadOpenCodeGlobalAgents();
       const openCodeProjectAgents = loadOpenCodeProjectAgents();
 
-      const isSisyphusEnabled = pluginConfig.sisyphus_agent?.disabled !== true;
-      const builderEnabled = pluginConfig.sisyphus_agent?.default_builder_enabled ?? false;
-      const plannerEnabled = pluginConfig.sisyphus_agent?.planner_enabled ?? true;
-      const replacePlan = pluginConfig.sisyphus_agent?.replace_plan ?? true;
+      const isMusashiEnabled = pluginConfig.musashi_agent?.disabled !== true;
+      const builderEnabled = pluginConfig.musashi_agent?.default_builder_enabled ?? false;
+      const plannerEnabled = pluginConfig.musashi_agent?.planner_enabled ?? true;
+      const replacePlan = pluginConfig.musashi_agent?.replace_plan ?? true;
 
-      if (isSisyphusEnabled && builtinAgents.Sisyphus) {
+      if (isMusashiEnabled && builtinAgents["Musashi"]) {
         // TODO: When OpenCode releases `default_agent` config option (PR #5313),
-        // use `config.default_agent = "Sisyphus"` instead of demoting build/plan.
+        // use `config.default_agent = "Musashi"` instead of demoting build/plan.
         // Tracking: https://github.com/sst/opencode/pull/5313
 
         const agentConfig: Record<string, unknown> = {
-          Sisyphus: builtinAgents.Sisyphus,
+          Musashi: builtinAgents["Musashi"],
         };
 
         if (builderEnabled) {
@@ -464,8 +468,8 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
 
         if (plannerEnabled) {
           const { name: _planName, ...planConfigWithoutName } = config.agent?.plan ?? {};
-          const plannerSisyphusOverride = pluginConfig.agents?.["Planner-Sisyphus"];
-          const plannerSisyphusBase = {
+          const plannerMusashiOverride = pluginConfig.agents?.["Planner-Musashi"];
+          const plannerMusashiBase = {
             ...planConfigWithoutName,
             prompt: PLAN_SYSTEM_PROMPT,
             permission: PLAN_PERMISSION,
@@ -473,9 +477,9 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
             color: config.agent?.plan?.color ?? "#6495ED",
           };
 
-          agentConfig["Planner-Sisyphus"] = plannerSisyphusOverride
-            ? { ...plannerSisyphusBase, ...plannerSisyphusOverride }
-            : plannerSisyphusBase;
+          agentConfig["Planner-Musashi"] = plannerMusashiOverride
+            ? { ...plannerMusashiBase, ...plannerMusashiOverride }
+            : plannerMusashiBase;
         }
 
         // Filter out build/plan from config.agent - they'll be re-added as subagents if replaced
@@ -490,7 +494,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
 
         config.agent = {
           ...agentConfig,
-          ...Object.fromEntries(Object.entries(builtinAgents).filter(([k]) => k !== "Sisyphus")),
+          ...Object.fromEntries(Object.entries(builtinAgents).filter(([k]) => k !== "Musashi")),
           ...openCodeGlobalAgents,
           ...userAgents,
           ...openCodeProjectAgents,

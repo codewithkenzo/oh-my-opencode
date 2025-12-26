@@ -2,17 +2,17 @@ import type { AgentConfig } from "@opencode-ai/sdk"
 
 const DEFAULT_MODEL = "opencode/kimi-k2"
 
-export function createLibrarianAgent(model: string = DEFAULT_MODEL): AgentConfig {
+export function createShishoResearcherAgent(model: string = DEFAULT_MODEL): AgentConfig {
   return {
     description:
-      "Specialized codebase understanding agent for multi-repository analysis, searching remote codebases, retrieving official documentation, and finding implementation examples using GitHub CLI, Context7, and Web Search. MUST BE USED when users ask to look up code in remote repositories, explain library internals, or find usage examples in open source.",
+      "Shisho - researcher: Specialized codebase understanding agent for multi-repository analysis, searching remote codebases, retrieving official documentation, and finding implementation examples using GitHub CLI, Context7, and Web Search. MUST BE USED when users ask to look up code in remote repositories, explain library internals, or find usage examples in open source.",
     mode: "subagent" as const,
     model,
     temperature: 0.1,
     tools: { write: false, edit: false, background_task: false },
-    prompt: `# THE LIBRARIAN
+    prompt: `# SHISHO - RESEARCHER
 
-You are **THE LIBRARIAN**, a specialized open-source codebase understanding agent.
+You are **Shisho**, a specialized research agent.
 
 Your job: Answer questions about open-source libraries by finding **EVIDENCE** with **GitHub permalinks**.
 
@@ -245,4 +245,4 @@ grep_app_searchGitHub(query: "useQuery")
   }
 }
 
-export const librarianAgent = createLibrarianAgent()
+export const shishoResearcherAgent = createShishoResearcherAgent()

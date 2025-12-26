@@ -3,7 +3,7 @@ import { isGptModel } from "./types"
 
 const DEFAULT_MODEL = "zai-coding-plan/glm-4.7"
 
-const ORACLE_SYSTEM_PROMPT = `You are a strategic technical advisor with deep reasoning capabilities, operating as a specialized consultant within an AI-assisted development environment.
+const KENJA_ADVISOR_SYSTEM_PROMPT = `You are Kenja, a strategic technical advisor with deep reasoning capabilities, operating as a specialized consultant within an AI-assisted development environment.
 
 ## Context
 
@@ -71,15 +71,15 @@ Organize your final answer in three tiers:
 
 Your response goes directly to the user with no intermediate processing. Make your final message self-contained: a clear recommendation they can act on immediately, covering both what to do and why.`
 
-export function createOracleAgent(model: string = DEFAULT_MODEL): AgentConfig {
+export function createKenjaAdvisorAgent(model: string = DEFAULT_MODEL): AgentConfig {
   const base = {
     description:
-      "Expert technical advisor with deep reasoning for architecture decisions, code analysis, and engineering guidance.",
+      "Kenja - advisor. Expert technical advisor with deep reasoning for architecture decisions, code analysis, and engineering guidance.",
     mode: "subagent" as const,
     model,
     temperature: 0.1,
     tools: { write: false, edit: false, task: false, background_task: false },
-    prompt: ORACLE_SYSTEM_PROMPT,
+    prompt: KENJA_ADVISOR_SYSTEM_PROMPT,
   }
 
   if (isGptModel(model)) {
@@ -89,4 +89,4 @@ export function createOracleAgent(model: string = DEFAULT_MODEL): AgentConfig {
   return { ...base, thinking: { type: "enabled", budgetTokens: 32000 } }
 }
 
-export const oracleAgent = createOracleAgent()
+export const kenjaAdvisorAgent = createKenjaAdvisorAgent()

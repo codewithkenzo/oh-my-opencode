@@ -1,28 +1,28 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { BuiltinAgentName, AgentOverrideConfig, AgentOverrides, AgentFactory } from "./types"
-import { createSisyphusAgent } from "./sisyphus"
-import { createOracleAgent } from "./oracle"
-import { createLibrarianAgent } from "./librarian"
-import { createExploreAgent } from "./explore"
-import { frontendUiUxEngineerAgent } from "./frontend-ui-ux-engineer"
-import { createFrontendBuilderAgent } from "./frontend-builder"
-import { createFrontendDebuggerAgent } from "./frontend-debugger"
-import { createDocumentWriterAgent } from "./document-writer"
-import { createMultimodalLookerAgent } from "./multimodal-looker"
+import { createMusashiAgent } from "./musashi"
+import { createKenjaAdvisorAgent } from "./kenja-advisor"
+import { createShishoResearcherAgent } from "./shisho-researcher"
+import { createNinjaExplorerAgent } from "./ninja-explorer"
+import { createShokuninDesignerAgent } from "./shokunin-designer"
+import { createTakumiBuilderAgent } from "./takumi-builder"
+import { createTanteiDebuggerAgent } from "./tantei-debugger"
+import { createSakkaWriterAgent } from "./sakka-writer"
+import { createMiruObserverAgent } from "./miru-observer"
 import { deepMerge } from "../shared"
 
 type AgentSource = AgentFactory | AgentConfig
 
 const agentSources: Record<BuiltinAgentName, AgentSource> = {
-  Sisyphus: createSisyphusAgent,
-  oracle: createOracleAgent,
-  librarian: createLibrarianAgent,
-  explore: createExploreAgent,
-  "frontend-ui-ux-engineer": frontendUiUxEngineerAgent,
-  "frontend-builder": createFrontendBuilderAgent,
-  "frontend-debugger": createFrontendDebuggerAgent,
-  "document-writer": createDocumentWriterAgent,
-  "multimodal-looker": createMultimodalLookerAgent,
+  Musashi: createMusashiAgent,
+  "Kenja - advisor": createKenjaAdvisorAgent,
+  "Shisho - researcher": createShishoResearcherAgent,
+  "Ninja - explorer": createNinjaExplorerAgent,
+  "Shokunin - designer": createShokuninDesignerAgent,
+  "Takumi - builder": createTakumiBuilderAgent,
+  "Tantei - debugger": createTanteiDebuggerAgent,
+  "Sakka - writer": createSakkaWriterAgent,
+  "Miru - observer": createMiruObserverAgent,
 }
 
 function isFactory(source: AgentSource): source is AgentFactory {
@@ -96,11 +96,11 @@ export function createBuiltinAgents(
     }
 
     const override = agentOverrides[agentName]
-    const model = override?.model ?? (agentName === "Sisyphus" ? systemDefaultModel : undefined)
+    const model = override?.model ?? (agentName === "Musashi" ? systemDefaultModel : undefined)
 
     let config = buildAgent(source, model)
 
-    if ((agentName === "Sisyphus" || agentName === "librarian") && directory && config.prompt) {
+    if ((agentName === "Musashi" || agentName === "Shisho - researcher") && directory && config.prompt) {
       const envContext = createEnvContext(directory)
       config = { ...config, prompt: config.prompt + envContext }
     }

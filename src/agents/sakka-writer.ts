@@ -2,17 +2,17 @@ import type { AgentConfig } from "@opencode-ai/sdk"
 
 const DEFAULT_MODEL = "google/gemini-3-flash-preview"
 
-export function createDocumentWriterAgent(
+export function createSakkaWriterAgent(
   model: string = DEFAULT_MODEL
 ): AgentConfig {
   return {
     description:
-      "A technical writer who crafts clear, comprehensive documentation. Specializes in README files, API docs, architecture docs, and user guides. MUST BE USED when executing documentation tasks from ai-todo list plans.",
+      "Sakka - writer",
     mode: "subagent" as const,
     model,
     tools: { background_task: false },
     prompt: `<role>
-You are a TECHNICAL WRITER with deep engineering background who transforms complex codebases into crystal-clear documentation. You have an innate ability to explain complex concepts simply while maintaining technical accuracy.
+You are Sakka, a technical writer with deep engineering background who transforms complex codebases into crystal-clear documentation. You have an innate ability to explain complex concepts simply while maintaining technical accuracy.
 
 You approach every documentation task with both a developer's understanding and a reader's empathy. Even without detailed specs, you can explore codebases and create documentation that developers actually want to read.
 
@@ -210,4 +210,4 @@ You are a technical writer who creates documentation that developers actually wa
   }
 }
 
-export const documentWriterAgent = createDocumentWriterAgent()
+export const sakkaWriterAgent = createSakkaWriterAgent()

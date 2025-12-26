@@ -17,27 +17,31 @@ const AgentPermissionSchema = z.object({
 })
 
 export const BuiltinAgentNameSchema = z.enum([
-  "Sisyphus",
-  "oracle",
-  "librarian",
-  "explore",
-  "frontend-ui-ux-engineer",
-  "document-writer",
-  "multimodal-looker",
+  "Musashi",
+  "Kenja - advisor",
+  "Shisho - researcher",
+  "Ninja - explorer",
+  "Shokunin - designer",
+  "Takumi - builder",
+  "Tantei - debugger",
+  "Sakka - writer",
+  "Miru - observer",
 ])
 
 export const OverridableAgentNameSchema = z.enum([
   "build",
   "plan",
-  "Sisyphus",
+  "Musashi",
   "OpenCode-Builder",
-  "Planner-Sisyphus",
-  "oracle",
-  "librarian",
-  "explore",
-  "frontend-ui-ux-engineer",
-  "document-writer",
-  "multimodal-looker",
+  "Planner-Musashi",
+  "Kenja - advisor",
+  "Shisho - researcher",
+  "Ninja - explorer",
+  "Shokunin - designer",
+  "Takumi - builder",
+  "Tantei - debugger",
+  "Sakka - writer",
+  "Miru - observer",
 ])
 
 export const AgentNameSchema = BuiltinAgentNameSchema
@@ -91,15 +95,17 @@ export const AgentOverrideConfigSchema = z.object({
 export const AgentOverridesSchema = z.object({
   build: AgentOverrideConfigSchema.optional(),
   plan: AgentOverrideConfigSchema.optional(),
-  Sisyphus: AgentOverrideConfigSchema.optional(),
+  Musashi: AgentOverrideConfigSchema.optional(),
   "OpenCode-Builder": AgentOverrideConfigSchema.optional(),
-  "Planner-Sisyphus": AgentOverrideConfigSchema.optional(),
-  oracle: AgentOverrideConfigSchema.optional(),
-  librarian: AgentOverrideConfigSchema.optional(),
-  explore: AgentOverrideConfigSchema.optional(),
-  "frontend-ui-ux-engineer": AgentOverrideConfigSchema.optional(),
-  "document-writer": AgentOverrideConfigSchema.optional(),
-  "multimodal-looker": AgentOverrideConfigSchema.optional(),
+  "Planner-Musashi": AgentOverrideConfigSchema.optional(),
+  "Kenja - advisor": AgentOverrideConfigSchema.optional(),
+  "Shisho - researcher": AgentOverrideConfigSchema.optional(),
+  "Ninja - explorer": AgentOverrideConfigSchema.optional(),
+  "Shokunin - designer": AgentOverrideConfigSchema.optional(),
+  "Takumi - builder": AgentOverrideConfigSchema.optional(),
+  "Tantei - debugger": AgentOverrideConfigSchema.optional(),
+  "Sakka - writer": AgentOverrideConfigSchema.optional(),
+  "Miru - observer": AgentOverrideConfigSchema.optional(),
 })
 
 export const ClaudeCodeConfigSchema = z.object({
@@ -110,7 +116,7 @@ export const ClaudeCodeConfigSchema = z.object({
   hooks: z.boolean().optional(),
 })
 
-export const SisyphusAgentConfigSchema = z.object({
+export const MusashiAgentConfigSchema = z.object({
   disabled: z.boolean().optional(),
   default_builder_enabled: z.boolean().optional(),
   planner_enabled: z.boolean().optional(),
@@ -136,7 +142,7 @@ export const OhMyOpenCodeConfigSchema = z.object({
   agents: AgentOverridesSchema.optional(),
   claude_code: ClaudeCodeConfigSchema.optional(),
   google_auth: z.boolean().optional(),
-  sisyphus_agent: SisyphusAgentConfigSchema.optional(),
+  musashi_agent: MusashiAgentConfigSchema.optional(),
   experimental: ExperimentalConfigSchema.optional(),
   auto_update: z.boolean().optional(),
 })
@@ -146,7 +152,7 @@ export type AgentOverrideConfig = z.infer<typeof AgentOverrideConfigSchema>
 export type AgentOverrides = z.infer<typeof AgentOverridesSchema>
 export type AgentName = z.infer<typeof AgentNameSchema>
 export type HookName = z.infer<typeof HookNameSchema>
-export type SisyphusAgentConfig = z.infer<typeof SisyphusAgentConfigSchema>
+export type MusashiAgentConfig = z.infer<typeof MusashiAgentConfigSchema>
 export type ExperimentalConfig = z.infer<typeof ExperimentalConfigSchema>
 
 export { McpNameSchema, type McpName } from "../mcp/types"
