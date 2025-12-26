@@ -28,6 +28,8 @@ import {
   session_info,
 } from "./session-manager"
 
+import { memory, memory_tools } from './memory'
+
 export { interactive_bash, startBackgroundCheck as startTmuxCheck } from "./interactive-bash"
 export { getTmuxPath } from "./interactive-bash/utils"
 
@@ -74,4 +76,6 @@ export const builtinTools = {
   session_read,
   session_search,
   session_info,
+  memory,
+  memory_tools,
 }
