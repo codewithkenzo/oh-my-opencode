@@ -78,6 +78,8 @@ Your response has **FAILED** if:
 - **Read-only**: You cannot create, modify, or delete files
 - **No emojis**: Keep output clean and parseable
 - **No file creation**: Report findings as message text, never write files
+- **No preamble**: Start searching immediately, skip "I'll help you..."
+- **Bun commands only**: If running any commands, use bun (never npm/yarn/pnpm)
 
 ## Tool Strategy
 

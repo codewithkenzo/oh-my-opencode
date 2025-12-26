@@ -36,10 +36,14 @@ import {
 import {
   loadUserSkillsAsCommands,
   loadProjectSkillsAsCommands,
+  loadOpenCodeGlobalSkillsAsCommands,
+  loadOpenCodeProjectSkillsAsCommands,
 } from "./features/claude-code-skill-loader";
 import {
   loadUserAgents,
   loadProjectAgents,
+  loadOpenCodeGlobalAgents,
+  loadOpenCodeProjectAgents,
 } from "./features/claude-code-agent-loader";
 import { loadMcpConfigs } from "./features/claude-code-mcp-loader";
 import {
@@ -52,6 +56,8 @@ import { createBuiltinMcps } from "./mcp";
 import { OhMyOpenCodeConfigSchema, type OhMyOpenCodeConfig, type HookName } from "./config";
 import { log, deepMerge, getUserConfigDir, addConfigLoadError } from "./shared";
 import { PLAN_SYSTEM_PROMPT, PLAN_PERMISSION } from "./agents/plan-prompt";
+import { BUILDER_PROMPT } from "./agents/builder";
+import { BUILD_PERMISSION } from "./agents/build-prompt";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -415,6 +421,8 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
 
       const userAgents = (pluginConfig.claude_code?.agents ?? true) ? loadUserAgents() : {};
       const projectAgents = (pluginConfig.claude_code?.agents ?? true) ? loadProjectAgents() : {};
+      const openCodeGlobalAgents = loadOpenCodeGlobalAgents();
+      const openCodeProjectAgents = loadOpenCodeProjectAgents();
 
       const isSisyphusEnabled = pluginConfig.sisyphus_agent?.disabled !== true;
       const builderEnabled = pluginConfig.sisyphus_agent?.default_builder_enabled ?? false;
@@ -472,17 +480,26 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
         config.agent = {
           ...agentConfig,
           ...Object.fromEntries(Object.entries(builtinAgents).filter(([k]) => k !== "Sisyphus")),
+          ...openCodeGlobalAgents,
           ...userAgents,
+          ...openCodeProjectAgents,
           ...projectAgents,
-          ...filteredConfigAgents,  // Filtered config agents (excludes build/plan if replaced)
-          // Demote build/plan to subagent mode when replaced
-          build: { ...config.agent?.build, mode: "subagent" },
+          ...filteredConfigAgents,
+          build: { 
+            ...config.agent?.build, 
+            model: "zai-coding-plan/glm-4.7",
+            mode: "subagent",
+            prompt: BUILDER_PROMPT,
+            permission: BUILD_PERMISSION,
+          },
           ...(replacePlan ? { plan: { ...config.agent?.plan, mode: "subagent" } } : {}),
         };
       } else {
         config.agent = {
           ...builtinAgents,
+          ...openCodeGlobalAgents,
           ...userAgents,
+          ...openCodeProjectAgents,
           ...projectAgents,
           ...config.agent,
         };
@@ -535,12 +552,16 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       const opencodeProjectCommands = loadOpencodeProjectCommands();
       const userSkills = (pluginConfig.claude_code?.skills ?? true) ? loadUserSkillsAsCommands() : {};
       const projectSkills = (pluginConfig.claude_code?.skills ?? true) ? loadProjectSkillsAsCommands() : {};
+      const openCodeGlobalSkills = loadOpenCodeGlobalSkillsAsCommands();
+      const openCodeProjectSkills = loadOpenCodeProjectSkillsAsCommands();
 
       config.command = {
+        ...openCodeGlobalSkills,
         ...userCommands,
         ...userSkills,
         ...opencodeGlobalCommands,
         ...systemCommands,
+        ...openCodeProjectSkills,
         ...projectCommands,
         ...projectSkills,
         ...opencodeProjectCommands,

@@ -238,6 +238,8 @@ grep_app_searchGitHub(query: "useQuery")
 3. **ALWAYS CITE**: Every code claim needs a permalink
 4. **USE MARKDOWN**: Code blocks with language identifiers
 5. **BE CONCISE**: Facts > opinions, evidence > speculation
+6. **NO EMOJIS**: Keep output clean and professional
+7. **BUN ONLY**: If running commands, use bun (never npm/yarn/pnpm)
 
 `,
   }

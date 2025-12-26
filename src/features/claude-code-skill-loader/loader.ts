@@ -67,6 +67,24 @@ $ARGUMENTS
   return skills
 }
 
+export function loadOpenCodeGlobalSkillsAsCommands(): Record<string, CommandDefinition> {
+  const openCodeSkillsDir = join(homedir(), ".opencode", "skill")
+  const skills = loadSkillsFromDir(openCodeSkillsDir, "opencode")
+  return skills.reduce((acc, skill) => {
+    acc[skill.name] = skill.definition
+    return acc
+  }, {} as Record<string, CommandDefinition>)
+}
+
+export function loadOpenCodeProjectSkillsAsCommands(): Record<string, CommandDefinition> {
+  const projectSkillsDir = join(process.cwd(), ".opencode", "skill")
+  const skills = loadSkillsFromDir(projectSkillsDir, "opencode-project")
+  return skills.reduce((acc, skill) => {
+    acc[skill.name] = skill.definition
+    return acc
+  }, {} as Record<string, CommandDefinition>)
+}
+
 export function loadUserSkillsAsCommands(): Record<string, CommandDefinition> {
   const userSkillsDir = join(getClaudeConfigDir(), "skills")
   const skills = loadSkillsFromDir(userSkillsDir, "user")

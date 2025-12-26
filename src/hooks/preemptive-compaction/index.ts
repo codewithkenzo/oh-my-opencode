@@ -13,6 +13,13 @@ import {
   MESSAGE_STORAGE,
 } from "../../features/hook-message-injector"
 import { log } from "../../shared/logger"
+import {
+  isCompactionAllowed,
+  markCompactionStart,
+  markCompactionEnd,
+  markPendingContinue,
+  cleanupSession
+} from '../compaction-state'
 
 export interface SummarizeContext {
   sessionID: string
@@ -100,6 +107,11 @@ export function createPreemptiveCompactionHook(
     const lastCompaction = state.lastCompactionTime.get(sessionID) ?? 0
     if (Date.now() - lastCompaction < COMPACTION_COOLDOWN_MS) return
 
+    if (!isCompactionAllowed(sessionID)) {
+      log("[preemptive-compaction] skipping - recent compaction in progress or cooling down", { sessionID })
+      return
+    }
+
     if (lastAssistant.summary === true) return
 
     const tokens = lastAssistant.tokens
@@ -133,6 +145,7 @@ export function createPreemptiveCompactionHook(
 
     state.compactionInProgress.add(sessionID)
     state.lastCompactionTime.set(sessionID, Date.now())
+    markCompactionStart(sessionID, 'preemptive', usageRatio)
 
     if (!providerID || !modelID) {
       state.compactionInProgress.delete(sessionID)
@@ -180,23 +193,12 @@ export function createPreemptiveCompactionHook(
         })
         .catch(() => {})
 
+      markCompactionEnd(sessionID)
       state.compactionInProgress.delete(sessionID)
 
-      setTimeout(async () => {
-        try {
-          const messageDir = getMessageDir(sessionID)
-          const storedMessage = messageDir ? findNearestMessageWithFields(messageDir) : null
-
-          await ctx.client.session.promptAsync({
-            path: { id: sessionID },
-            body: {
-              agent: storedMessage?.agent,
-              parts: [{ type: "text", text: "Continue" }],
-            },
-            query: { directory: ctx.directory },
-          })
-        } catch {}
-      }, 500)
+      // Don't auto-continue - this was causing double compaction cascade
+      // Let user send any message to continue
+      markPendingContinue(sessionID)
       return
     } catch (err) {
       log("[preemptive-compaction] compaction failed", { sessionID, error: err })
@@ -213,6 +215,7 @@ export function createPreemptiveCompactionHook(
       if (sessionInfo?.id) {
         state.lastCompactionTime.delete(sessionInfo.id)
         state.compactionInProgress.delete(sessionInfo.id)
+        cleanupSession(sessionInfo.id)
       }
       return
     }

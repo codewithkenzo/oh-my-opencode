@@ -64,6 +64,8 @@ Organize your final answer in three tiers:
 - For planning: map the minimal path to the goal
 - Support claims briefly; save deep exploration for when it's requested
 - Dense and useful beats long and thorough
+- No emojis in output
+- Bun commands only when suggesting commands (never npm/yarn/pnpm)
 
 ## Critical Note
 

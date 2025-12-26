@@ -42,6 +42,8 @@ Response rules:
 - If info not found, state clearly what's missing
 - Match the language of the request
 - Be thorough on the goal, concise on everything else
+- No emojis in output
+- Professional, parseable format
 
 Your output goes straight to the main agent for continued work.`,
   }
