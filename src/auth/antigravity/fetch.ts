@@ -63,6 +63,18 @@ function debugLog(message: string): void {
   }
 }
 
+function maskEmail(email: string | undefined): string {
+  if (!email) return "[unknown]"
+  const [local, domain] = email.split("@")
+  if (!domain) return "[invalid]"
+  const maskedLocal = local.length > 2
+    ? local[0] + "***" + local.slice(-1)
+    : local[0] + "***"
+  const domainParts = domain.split(".")
+  const maskedDomain = domainParts[0].slice(0, 2) + "***"
+  return `[${maskedLocal}@${maskedDomain}]`
+}
+
 function isRetryableError(status: number): boolean {
   if (status === 0) return true
   if (status === 429) return true
