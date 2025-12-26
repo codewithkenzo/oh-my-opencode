@@ -4,7 +4,7 @@ import { createSisyphusAgent } from "./sisyphus"
 import { createOracleAgent } from "./oracle"
 import { createLibrarianAgent } from "./librarian"
 import { createExploreAgent } from "./explore"
-import { createFrontendUiUxEngineerAgent } from "./frontend-ui-ux-engineer"
+import { frontendUiUxEngineerAgent } from "./frontend-ui-ux-engineer"
 import { createDocumentWriterAgent } from "./document-writer"
 import { createMultimodalLookerAgent } from "./multimodal-looker"
 import { deepMerge } from "../shared"
@@ -16,7 +16,7 @@ const agentSources: Record<BuiltinAgentName, AgentSource> = {
   oracle: createOracleAgent,
   librarian: createLibrarianAgent,
   explore: createExploreAgent,
-  "frontend-ui-ux-engineer": createFrontendUiUxEngineerAgent,
+  "frontend-ui-ux-engineer": frontendUiUxEngineerAgent,
   "document-writer": createDocumentWriterAgent,
   "multimodal-looker": createMultimodalLookerAgent,
 }

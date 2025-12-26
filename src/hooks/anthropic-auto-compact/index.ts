@@ -4,6 +4,12 @@ import type { ExperimentalConfig } from "../../config"
 import { parseAnthropicTokenLimitError } from "./parser"
 import { executeCompact, getLastAssistant } from "./executor"
 import { log } from "../../shared/logger"
+import {
+  isCompactionAllowed,
+  markCompactionStart,
+  markCompactionEnd,
+  cleanupSession
+} from '../compaction-state'
 
 export interface AnthropicAutoCompactOptions {
   experimental?: ExperimentalConfig
@@ -38,6 +44,7 @@ export function createAnthropicAutoCompactHook(ctx: PluginInput, options?: Anthr
         autoCompactState.truncateStateBySession.delete(sessionInfo.id)
         autoCompactState.emptyContentAttemptBySession.delete(sessionInfo.id)
         autoCompactState.compactionInProgress.delete(sessionInfo.id)
+        cleanupSession(sessionInfo.id)
       }
       return
     }
@@ -57,6 +64,11 @@ export function createAnthropicAutoCompactHook(ctx: PluginInput, options?: Anthr
           return
         }
 
+        if (!isCompactionAllowed(sessionID)) {
+          log("[auto-compact] skipping - recent compaction in progress or cooling down", { sessionID })
+          return
+        }
+
         const lastAssistant = await getLastAssistant(sessionID, ctx.client, ctx.directory)
         const providerID = parsed.providerID ?? (lastAssistant?.providerID as string | undefined)
         const modelID = parsed.modelID ?? (lastAssistant?.modelID as string | undefined)
@@ -73,6 +85,7 @@ export function createAnthropicAutoCompactHook(ctx: PluginInput, options?: Anthr
           .catch(() => {})
 
         setTimeout(() => {
+          markCompactionStart(sessionID, 'anthropic-auto')
           executeCompact(
             sessionID,
             { providerID, modelID },
@@ -80,7 +93,9 @@ export function createAnthropicAutoCompactHook(ctx: PluginInput, options?: Anthr
             ctx.client,
             ctx.directory,
             experimental
-          )
+          ).finally(() => {
+            markCompactionEnd(sessionID)
+          })
         }, 300)
       }
       return
@@ -130,8 +145,9 @@ export function createAnthropicAutoCompactHook(ctx: PluginInput, options?: Anthr
             duration: 3000,
           },
         })
-        .catch(() => {})
+          .catch(() => {})
 
+      markCompactionStart(sessionID, 'anthropic-auto')
       await executeCompact(
         sessionID,
         { providerID, modelID },
@@ -139,7 +155,9 @@ export function createAnthropicAutoCompactHook(ctx: PluginInput, options?: Anthr
         ctx.client,
         ctx.directory,
         experimental
-      )
+      ).finally(() => {
+        markCompactionEnd(sessionID)
+      })
     }
   }
 
