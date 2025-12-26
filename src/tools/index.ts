@@ -30,6 +30,10 @@ import {
 
 import { memory, memory_tools } from './memory'
 
+import { context7_resolve_library_id, context7_get_library_docs } from './context7'
+
+import { grep_app_searchGitHub } from './grep-app'
+
 export { interactive_bash, startBackgroundCheck as startTmuxCheck } from "./interactive-bash"
 export { getTmuxPath } from "./interactive-bash/utils"
 
@@ -78,4 +82,7 @@ export const builtinTools = {
   session_info,
   memory,
   memory_tools,
+  context7_resolve_library_id,
+  context7_get_library_docs,
+  grep_app_searchGitHub,
 }

@@ -12,12 +12,27 @@ const PREFERENCE_PATTERNS = [
   /make sure to/i,
   /remember that/i,
   /from now on/i,
+  /i like/i,
+  /i hate/i,
+  /i want/i,
 ]
 
-function storeMemory(content: string, collection = "semantic"): void {
+// Patterns for procedural knowledge (commands, workflows)
+const PROCEDURAL_PATTERNS = [
+  /how to/i,
+  /the way to/i,
+  /you can.*by/i,
+  /run.*command/i,
+]
+
+type MemoryCollection = "semantic" | "episodic" | "procedural" | "emotional" | "reflective"
+
+function storeMemory(content: string, collection: MemoryCollection = "semantic"): void {
+  if (!content || content.length < 10) return
   try {
+    const sanitized = content.replace(/"/g, '\\"').replace(/\n/g, ' ').slice(0, 500)
     execSync(
-      `bun ${MEMORY_CLI_PATH} add "${content.replace(/"/g, '\\"').slice(0, 500)}" --collection=${collection}`,
+      `bun ${MEMORY_CLI_PATH} add "${sanitized}" --collection=${collection}`,
       { encoding: "utf-8", timeout: 10000, stdio: "pipe" }
     )
   } catch {
@@ -28,6 +43,17 @@ function storeMemory(content: string, collection = "semantic"): void {
 function isPreferenceMessage(content: string): boolean {
   return PREFERENCE_PATTERNS.some((p) => p.test(content))
 }
+
+function isProceduralMessage(content: string): boolean {
+  return PROCEDURAL_PATTERNS.some((p) => p.test(content))
+}
+
+// Track session for summaries
+const sessionData = new Map<string, {
+  toolCalls: string[]
+  errors: number
+  filesModified: Set<string>
+}>()
 
 export function createMemoryCaptureHook() {
   return {
@@ -44,20 +70,74 @@ export function createMemoryCaptureHook() {
       }
     ): Promise<void> => {
       const content = extractPromptText(output.parts)
-      if (isPreferenceMessage(content)) {
+      const role = (output.message as any)?.role
+      
+      // Initialize session tracking
+      if (!sessionData.has(input.sessionID)) {
+        sessionData.set(input.sessionID, {
+          toolCalls: [],
+          errors: 0,
+          filesModified: new Set()
+        })
+      }
+      
+      // Capture user preferences
+      if (role === "user" && isPreferenceMessage(content)) {
         storeMemory(content, "semantic")
+      }
+      
+      // Capture procedural knowledge from assistant
+      if (role === "assistant" && isProceduralMessage(content)) {
+        storeMemory(content, "procedural")
+      }
+    },
+
+    "tool.result": async (
+      input: { sessionID: string; tool: string },
+      output: { result: string }
+    ): Promise<void> => {
+      const session = sessionData.get(input.sessionID)
+      if (session) {
+        session.toolCalls.push(input.tool)
+        
+        // Track file modifications
+        if (["edit", "write"].includes(input.tool)) {
+          // Could extract file path from result
+        }
+      }
+      
+      // Capture successful bash commands as procedural memory
+      if (input.tool === "bash" && output.result && !output.result.includes("Error")) {
+        const summary = output.result.slice(0, 200)
+        if (summary.length > 20) {
+          storeMemory(`bash: ${summary}`, "procedural")
+        }
       }
     },
 
     event: async ({ event }: { event: { type: string; properties?: unknown } }): Promise<void> => {
-      if (event.type === "message.updated") {
-        const props = event.properties as Record<string, unknown> | undefined
-        const info = props?.info as Record<string, unknown> | undefined
-        const role = info?.role as string | undefined
-
-        if (role === "assistant") {
-          // Could capture important assistant learnings here
-          // For now, just pass
+      const props = event.properties as Record<string, unknown> | undefined
+      
+      // Capture errors
+      if (event.type === "error") {
+        const message = props?.message as string
+        if (message) {
+          storeMemory(`Error encountered: ${message}`, "emotional")
+          const sessionID = props?.sessionID as string
+          const session = sessionData.get(sessionID)
+          if (session) session.errors++
+        }
+      }
+      
+      // Session end - store summary
+      if (event.type === "session.end") {
+        const sessionID = props?.sessionID as string
+        const session = sessionData.get(sessionID)
+        if (session && session.toolCalls.length > 0) {
+          const uniqueTools = [...new Set(session.toolCalls)]
+          const summary = `Session used ${uniqueTools.length} tools: ${uniqueTools.slice(0, 5).join(", ")}`
+          storeMemory(summary, "episodic")
+          sessionData.delete(sessionID)
         }
       }
     },
