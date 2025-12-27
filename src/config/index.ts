@@ -18,4 +18,5 @@ export type {
   HookName,
   MusashiAgentConfig,
   ExperimentalConfig,
+  DynamicContextPruningConfig,
 } from "./schema"
