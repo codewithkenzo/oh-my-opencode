@@ -5,6 +5,7 @@ import { shishoResearcherAgent } from "./shisho-researcher"
 import { ninjaExplorerAgent } from "./ninja-explorer"
 import { shokuninDesignerAgent } from "./shokunin-designer"
 import { takumiBuilderAgent } from "./takumi-builder"
+import { daikuBuilderAgent } from "./builder"
 import { hayaiBuilderAgent } from "./hayai-builder"
 import { tanteiDebuggerAgent } from "./tantei-debugger"
 import { sakkaWriterAgent } from "./sakka-writer"
@@ -17,6 +18,7 @@ export const builtinAgents: Record<string, AgentConfig> = {
   "Ninja - explorer": ninjaExplorerAgent,
   "Shokunin - designer": shokuninDesignerAgent,
   "Takumi - builder": takumiBuilderAgent,
+  "Daiku - builder": daikuBuilderAgent,
   "Hayai - builder": hayaiBuilderAgent,
   "Tantei - debugger": tanteiDebuggerAgent,
   "Sakka - writer": sakkaWriterAgent,

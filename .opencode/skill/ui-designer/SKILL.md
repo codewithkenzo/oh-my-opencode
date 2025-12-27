@@ -160,31 +160,79 @@ For each component, define:
 
 ## Integration with Agent Team
 
-After design phase, hand off to:
-- **Shokunin - designer**: Orchestrates frontend implementation
-- **Takumi - builder**: Builds components per design specs
-- **Tantei - debugger**: Visual debugging with screenshots
+Design flows to implementation:
+1. **Shokunin - designer**: Creates Design Starter Pack (this skill helps)
+2. **Takumi - builder**: Implements components using the Design Starter Pack
+3. **Tantei - debugger**: Visual debugging with screenshots
 
-### Handoff Example
+### Design Starter Pack Format
+
+Shokunin outputs this structured brief for Takumi:
+
+```yaml
+# Design Starter Pack
+
+aesthetic: "Name it - e.g. 'Midnight Editorial', 'Neo-Brutalist'"
+vibe: "One sentence capturing the feeling"
+
+palette:
+  surface:
+    primary: "#0a0a0b"
+    elevated: "#141416"
+  accent:
+    brand: "#3b82f6"
+    highlight: "#fbbf24"
+  text:
+    primary: "#fafafa"
+    muted: "#71717a"
+
+typography:
+  display: "Space Grotesk, system-ui"
+  body: "Inter, system-ui"
+  scale: [12, 14, 16, 20, 24, 32, 48, 64]
+
+spacing:
+  rhythm: "generous"
+  scale: [4, 8, 12, 16, 24, 32, 48, 64, 96]
+
+motion:
+  ease: [0.25, 0.46, 0.45, 0.94]
+  duration: { fast: 0.15, normal: 0.3, slow: 0.5 }
+  entry: "fade up 12px"
+
+details:
+  - "noise texture at 3%"
+  - "1px accent borders"
+```
+
+### Handoff to Takumi
 
 ```typescript
-// After design language is defined, delegate to Shokunin
-background_task({
-  agent: "Shokunin - designer",
-  description: "Implement landing page",
+// After Design Starter Pack is created, hand off to Takumi
+call_omo_agent({
+  subagent_type: "Takumi - builder",
+  run_in_background: true,
+  description: "Build landing page components",
   prompt: `
-    ## Design Language
-    See: docs/DESIGN.md
+    ## Design Starter Pack
+    aesthetic: "Midnight Editorial"
+    vibe: "Sophisticated, spacious, typography-forward"
+    
+    palette:
+      surface: { primary: "#0a0a0a", elevated: "#141414" }
+      accent: { brand: "#3b82f6" }
+      text: { primary: "#fafafa", muted: "#71717a" }
+    
+    typography:
+      display: "Space Grotesk"
+      body: "Inter"
     
     ## Components to Build
-    1. Hero section - minimalist, bold typography
-    2. Feature cards - glassmorphism, subtle shadows
-    3. CTA button - accent color, hover scale
+    1. Hero section with bold headline
+    2. Feature cards with hover lift
+    3. CTA button with scale animation
     
-    ## Tokens (from design language)
-    --color-bg: #0a0a0a
-    --color-accent: #3b82f6
-    --font-display: 'Space Grotesk'
+    Bundle all components in one session.
   `
 })
 ```

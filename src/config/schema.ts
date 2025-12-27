@@ -73,6 +73,7 @@ export const HookNameSchema = z.enum([
 
   "memory-capture",
   "memory-injector",
+  "browser-relay",
 ])
 
 export const AgentOverrideConfigSchema = z.object({

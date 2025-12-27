@@ -64,7 +64,8 @@
           "empty-message-sanitizer",
           "thinking-block-validator",
           "memory-capture",
-          "memory-injector"
+          "memory-injector",
+          "browser-relay"
         ]
       }
     },

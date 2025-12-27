@@ -26,6 +26,7 @@ import {
   createThinkingBlockValidatorHook,
   createMemoryCaptureHook,
   createMemoryInjectorHook,
+  createBrowserRelayHook,
 } from "./hooks";
 import { createGoogleAntigravityAuthPlugin } from "./auth/antigravity";
 import {
@@ -57,7 +58,7 @@ import { createBuiltinMcps } from "./mcp";
 import { OhMyOpenCodeConfigSchema, type OhMyOpenCodeConfig, type HookName } from "./config";
 import { log, deepMerge, getUserConfigDir, addConfigLoadError } from "./shared";
 import { PLAN_SYSTEM_PROMPT, PLAN_PERMISSION } from "./agents/plan-prompt";
-import { BUILDER_PROMPT } from "./agents/builder";
+import { DAIKU_PROMPT } from "./agents/builder";
 import { BUILD_PERMISSION } from "./agents/build-prompt";
 import * as fs from "fs";
 import * as path from "path";
@@ -341,6 +342,9 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
   const memoryInjector = isHookEnabled("memory-injector")
     ? createMemoryInjectorHook()
     : null;
+  const browserRelay = isHookEnabled("browser-relay")
+    ? createBrowserRelayHook()
+    : null;
 
   const backgroundManager = new BackgroundManager(ctx);
 
@@ -504,7 +508,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
             ...config.agent?.build, 
             model: "zai-coding-plan/glm-4.7",
             mode: "subagent",
-            prompt: BUILDER_PROMPT,
+            prompt: DAIKU_PROMPT,
             permission: BUILD_PERMISSION,
           },
           ...(replacePlan ? { plan: { ...config.agent?.plan, mode: "subagent" } } : {}),
@@ -524,21 +528,21 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
         ...config.tools,
       };
 
-      if (config.agent.explore) {
-        config.agent.explore.tools = {
-          ...config.agent.explore.tools,
+      if (config.agent["Ninja - explorer"]) {
+        config.agent["Ninja - explorer"].tools = {
+          ...config.agent["Ninja - explorer"].tools,
           call_omo_agent: false,
         };
       }
-      if (config.agent.librarian) {
-        config.agent.librarian.tools = {
-          ...config.agent.librarian.tools,
+      if (config.agent["Shisho - researcher"]) {
+        config.agent["Shisho - researcher"].tools = {
+          ...config.agent["Shisho - researcher"].tools,
           call_omo_agent: false,
         };
       }
-      if (config.agent["multimodal-looker"]) {
-        config.agent["multimodal-looker"].tools = {
-          ...config.agent["multimodal-looker"].tools,
+      if (config.agent["Miru - observer"]) {
+        config.agent["Miru - observer"].tools = {
+          ...config.agent["Miru - observer"].tools,
           task: false,
           call_omo_agent: false,
           look_at: false,
@@ -600,6 +604,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await interactiveBashSession?.event(input);
       await memoryCapture?.event(input);
       await memoryInjector?.event(input);
+      await browserRelay?.event(input);
 
       const { event } = input;
       const props = event.properties as Record<string, unknown> | undefined;
@@ -658,7 +663,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       if (input.tool === "task") {
         const args = output.args as Record<string, unknown>;
         const subagentType = args.subagent_type as string;
-        const isExploreOrLibrarian = ["explore", "librarian"].includes(subagentType);
+        const isExploreOrLibrarian = ["Ninja - explorer", "Shisho - researcher"].includes(subagentType);
 
         args.tools = {
           ...(args.tools as Record<string, boolean> | undefined),

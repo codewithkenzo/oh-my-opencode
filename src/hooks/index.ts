@@ -24,5 +24,6 @@ export { createEmptyMessageSanitizerHook } from "./empty-message-sanitizer";
 export { createThinkingBlockValidatorHook } from "./thinking-block-validator";
 export { createMemoryCaptureHook } from "./memory-capture";
 export { createMemoryInjectorHook } from "./memory-injector";
+export { createBrowserRelayHook } from "./browser-relay";
 
 export * from './compaction-state';
