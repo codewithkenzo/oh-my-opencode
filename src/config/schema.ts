@@ -23,7 +23,10 @@ export const BuiltinAgentNameSchema = z.enum([
   "Ninja - explorer",
   "Shokunin - designer",
   "Takumi - builder",
+  "Daiku - builder",
+  "Hayai - builder",
   "Tantei - debugger",
+  "Koji - debugger",
   "Sakka - writer",
   "Miru - observer",
 ])
@@ -39,7 +42,10 @@ export const OverridableAgentNameSchema = z.enum([
   "Ninja - explorer",
   "Shokunin - designer",
   "Takumi - builder",
+  "Daiku - builder",
+  "Hayai - builder",
   "Tantei - debugger",
+  "Koji - debugger",
   "Sakka - writer",
   "Miru - observer",
 ])
@@ -106,7 +112,10 @@ export const AgentOverridesSchema = z.object({
   "Ninja - explorer": AgentOverrideConfigSchema.optional(),
   "Shokunin - designer": AgentOverrideConfigSchema.optional(),
   "Takumi - builder": AgentOverrideConfigSchema.optional(),
+  "Daiku - builder": AgentOverrideConfigSchema.optional(),
+  "Hayai - builder": AgentOverrideConfigSchema.optional(),
   "Tantei - debugger": AgentOverrideConfigSchema.optional(),
+  "Koji - debugger": AgentOverrideConfigSchema.optional(),
   "Sakka - writer": AgentOverrideConfigSchema.optional(),
   "Miru - observer": AgentOverrideConfigSchema.optional(),
 })

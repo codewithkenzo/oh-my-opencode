@@ -9,6 +9,7 @@ import { createDaikuBuilderAgent } from "./builder"
 import { createTakumiBuilderAgent } from "./takumi-builder"
 import { createHayaiBuilderAgent } from "./hayai-builder"
 import { createTanteiDebuggerAgent } from "./tantei-debugger"
+import { createKojiDebuggerAgent } from "./koji-debugger"
 import { createSakkaWriterAgent } from "./sakka-writer"
 import { createMiruObserverAgent } from "./miru-observer"
 import { deepMerge } from "../shared"
@@ -25,6 +26,7 @@ const agentSources: Record<BuiltinAgentName, AgentSource> = {
   "Takumi - builder": createTakumiBuilderAgent,
   "Hayai - builder": createHayaiBuilderAgent,
   "Tantei - debugger": createTanteiDebuggerAgent,
+  "Koji - debugger": createKojiDebuggerAgent,
   "Sakka - writer": createSakkaWriterAgent,
   "Miru - observer": createMiruObserverAgent,
 }

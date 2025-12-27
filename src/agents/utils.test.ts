@@ -9,7 +9,7 @@ describe("createBuiltinAgents with model overrides", () => {
     const agents = createBuiltinAgents()
 
     // #then
-    expect(agents["Musashi"].model).toBe("anthropic/claude-opus-4-5")
+    expect(agents["Musashi"].model).toBe("google/claude-opus-4-5-thinking")
     expect(agents["Musashi"].thinking).toEqual({ type: "enabled", budgetTokens: 32000 })
     expect(agents["Musashi"].reasoningEffort).toBeUndefined()
   })
