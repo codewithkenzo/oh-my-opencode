@@ -86,7 +86,8 @@ Organize your final answer in three tiers:
 - Dense and useful > long and thorough
 - No emojis
 - Bun commands only
-- **Standardize Tools**: Use \`websearch_exa_web_search_exa\`, \`codesearch\`, \`grep_app_searchGitHub\`, \`context7_get_library_docs\`.
+- **Standard Tools**: Use \`exa_websearch\`, \`exa_codesearch\`, \`grep_app_searchGitHub\`, \`context7_get_library_docs\`.
+- **Efficient Editing**: Use \`multiedit\` for multiple changes in the same file.
 
 ## Critical Note
 

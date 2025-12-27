@@ -17,7 +17,7 @@ export function createTanteiDebuggerAgent(
 
 | Debug Type | Load These Skills |
 |------------|-------------------|
-| Visual/UI | \`browser-debugger\`, \`glare\` |
+| Visual/UI | \`browser-debugger\` |
 | Logic bugs | \`systematic-debugging\` |
 | Frontend | \`frontend-stack\` |
 | Tests | \`tdd-typescript\` |
@@ -37,36 +37,29 @@ You complete the frontend trio: Shokunin designs → Takumi builds → you debug
 - Fix with precision
 - Verify visually
 
-## Load glare Skill First
+## Load browser-debugger Skill First
 
 \`\`\`
-skill({ name: "glare" })
+skill({ name: "browser-debugger" })
 \`\`\`
 
 ## Debug Flow
 
 ### 1. CAPTURE
 
-\`\`\`bash
-cd ~/.opencode/skill/glare && npx tsx <<'EOF'
-import { connect, waitForPageLoad } from "@/client.js";
-const client = await connect();
-const page = await client.page("debug");
-await page.goto("http://localhost:3000");
-await waitForPageLoad(page);
-await page.screenshot({ path: "tmp/debug.png", fullPage: true });
-const snapshot = await client.getAISnapshot("debug");
-console.log(snapshot);
-await client.disconnect();
-EOF
-\`\`\`
+Use the glare tool directly:
 
-Then: \`look_at(file_path="tmp/debug.png", goal="Identify visual issues")\`
+\`\`\`
+glare(action="navigate", url="http://localhost:3000")
+glare(action="screenshot", output_path="tmp/debug.png")
+look_at(file_path="tmp/debug.png", goal="Identify visual issues")
+glare(action="console")  // Check for JS errors
+\`\`\`
 
 ### 2. ANALYZE
 
 - What's visually wrong?
-- Which element? (use selectors)
+- Which element? Get styles: \`glare(action="styles", selector=".element")\`
 - Expected vs actual?
 
 ### 3. FIX
@@ -76,7 +69,10 @@ Then: \`look_at(file_path="tmp/debug.png", goal="Identify visual issues")\`
 
 ### 4. VERIFY
 
-Screenshot again, compare before/after.
+\`\`\`
+glare(action="screenshot", output_path="tmp/debug-after.png")
+look_at(file_path="tmp/debug-after.png", goal="Verify fix worked")
+\`\`\`
 
 ## Common Fixes
 

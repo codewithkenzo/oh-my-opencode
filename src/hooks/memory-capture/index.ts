@@ -4,231 +4,187 @@ import { showToast } from "../../shared"
 
 const MEMORY_CLI_PATH = `${process.env.HOME}/.config/opencode/lib/memory-cli.ts`
 
-type MemoryCollection = "rules" | "tools" | "workflows" | "errors" | "context"
+type MemoryCollection = "rules" | "solutions" | "preferences" | "errors"
 
-interface ToolMetrics {
-  calls: number
-  successes: number
-  failures: number
+interface SessionContext {
+  filesModified: Set<string>
+  errorsEncountered: Map<string, number>
+  successfulFixes: Array<{ error: string; fix: string }>
+  projectPath: string | null
 }
 
-const sessionMetrics = new Map<string, {
-  tools: Map<string, ToolMetrics>
-  skills: Set<string>
-  agents: Map<string, number>
-  filesModified: Set<string>
-  workingDirectory: string | null
-  projectContext: Set<string>
-  toolSequence: Array<{ tool: string; timestamp: number }>
-  decisionsCaptured: boolean
-}>()
+const sessionContexts = new Map<string, SessionContext>()
 
-function getSession(sessionID: string) {
-  if (!sessionMetrics.has(sessionID)) {
-    sessionMetrics.set(sessionID, {
-      tools: new Map(),
-      skills: new Set(),
-      agents: new Map(),
+function getSession(sessionID: string): SessionContext {
+  if (!sessionContexts.has(sessionID)) {
+    sessionContexts.set(sessionID, {
       filesModified: new Set(),
-      workingDirectory: null,
-      projectContext: new Set(),
-      toolSequence: [],
-      decisionsCaptured: false
+      errorsEncountered: new Map(),
+      successfulFixes: [],
+      projectPath: null
     })
   }
-  return sessionMetrics.get(sessionID)!
+  return sessionContexts.get(sessionID)!
 }
 
 function storeMemory(content: string, collection: MemoryCollection, ctx?: PluginInput): void {
-  if (!content || content.length < 10 || content.length > 300) return
+  if (!content || content.length < 20 || content.length > 250) return
+  
   try {
-    const sanitized = content.replace(/"/g, '\\"').replace(/\n/g, ' ').trim()
+    const sanitized = content
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+    
     execSync(
       `bun ${MEMORY_CLI_PATH} add "${sanitized}" --collection=${collection}`,
       { encoding: "utf-8", timeout: 5000, stdio: "pipe" }
     )
+    
     if (ctx) {
-      const msg = collection === "errors"
-        ? `Stored error: ${sanitized.slice(0, 50)}`
-        : `Stored ${collection}: ${sanitized.slice(0, 50)}`
-      showToast(ctx, { title: "Memory Stored", message: msg, variant: "info" })
+      showToast(ctx, { 
+        title: "Memory Stored", 
+        message: `${collection}: ${sanitized.slice(0, 40)}...`,
+        variant: "info" 
+      })
     }
   } catch {}
 }
 
-function extractRule(content: string): string | null {
-  const rulePatterns = [
-    /\b(always|never|don'?t ever|must|should always)\s+(.{10,80})/i,
-    /\b(rule|remember|from now on)[:\s]+(.{10,80})/i,
-    /\b(use|prefer)\s+(\w+)\s+(instead of|not|over)\s+(\w+)/i,
+function extractExplicitRule(content: string): string | null {
+  const lowerContent = content.toLowerCase()
+  
+  const explicitPatterns = [
+    /(?:^|\.\s+)(always\s+(?:use|prefer|do|check|run|verify)\s+[^.]{15,80})/i,
+    /(?:^|\.\s+)(never\s+(?:use|do|run|call|commit)\s+[^.]{15,80})/i,
+    /(?:^|\.\s+)(from now on[,:]?\s+[^.]{15,80})/i,
+    /(?:^|\.\s+)(remember[:]?\s+[^.]{15,80})/i,
+    /(?:^|\.\s+)(prefer\s+\w+\s+(?:over|instead of)\s+\w+[^.]{0,50})/i,
   ]
-
-  for (const pattern of rulePatterns) {
+  
+  if (!lowerContent.includes("always") && 
+      !lowerContent.includes("never") && 
+      !lowerContent.includes("from now on") &&
+      !lowerContent.includes("remember") &&
+      !lowerContent.includes("prefer")) {
+    return null
+  }
+  
+  for (const pattern of explicitPatterns) {
     const match = content.match(pattern)
-    if (match) {
-      return match[0].slice(0, 150)
+    if (match && match[1]) {
+      const rule = match[1].trim()
+      if (rule.length >= 20 && rule.length <= 150) {
+        return rule
+      }
+    }
+  }
+  return null
+}
+
+function extractPreference(content: string): string | null {
+  const preferencePatterns = [
+    /i (?:like|prefer|want)\s+(?:to use|using)?\s*([^.]{15,60})/i,
+    /(?:use|call it|name it)\s+["']([^"']{3,30})["']/i,
+  ]
+  
+  for (const pattern of preferencePatterns) {
+    const match = content.match(pattern)
+    if (match && match[1]) {
+      return `User prefers: ${match[1].trim()}`
     }
   }
   return null
 }
 
 export function createMemoryCaptureHook(input: PluginInput) {
+  const recentErrors = new Map<string, number>()
+  
   return {
     "chat.message": async (
-      _input: any,
-      output: any
+      _input: { sessionID: string },
+      output: { message?: { role?: string }; parts: Array<{ type: string; text?: string }> }
     ): Promise<void> => {
-      const sessionID = _input.sessionID as string
-      const role = (output.message as any)?.role
+      const role = output.message?.role
       if (role !== "user") return
 
       const content = output.parts
-        .filter((p: any) => p.type === "text" && p.text)
-        .map((p: any) => p.text)
+        .filter(p => p.type === "text" && p.text)
+        .map(p => p.text!)
         .join(" ")
 
-      if (!content || content.length < 20) return
+      if (!content || content.length < 25) return
+      if (content.includes("[COMPACTION") || content.includes("[SYSTEM")) return
 
-      if (content.includes("Continuation Prompt") ||
-          content.includes("<recalled_memories>") ||
-          content.includes("[COMPACTION") ||
-          content.includes("[SYSTEM")) return
-
-      const rule = extractRule(content)
+      const rule = extractExplicitRule(content)
       if (rule) {
-        storeMemory(`RULE: ${rule}`, "rules", input)
-        showToast(input, { title: "Rule Captured", message: rule.slice(0, 50) })
+        storeMemory(rule, "rules", input)
+      }
+
+      const preference = extractPreference(content)
+      if (preference) {
+        storeMemory(preference, "preferences", input)
       }
     },
 
     "tool.execute.after": async (
-      _input: any,
-      output: any
+      _input: { sessionID: string; tool: string; args?: Record<string, unknown> },
+      output: { output?: string }
     ): Promise<void> => {
-      const sessionID = _input.sessionID as string
-      const toolName = _input.tool as string
-      const session = getSession(sessionID)
+      const session = getSession(_input.sessionID)
+      const toolName = _input.tool
+      const toolOutput = output.output || ""
 
-      if (!session.tools.has(toolName)) {
-        session.tools.set(toolName, { calls: 0, successes: 0, failures: 0 })
-      }
-      const metrics = session.tools.get(toolName)!
-      metrics.calls++
-
-      if (toolName === "read" || toolName === "glob") {
-        const filePath = (_input.args as any)?.filePath || (_input.args as any)?.path
-        if (filePath && session.filesModified.size === 0) {
-          session.workingDirectory = (input as any).directory || process.cwd()
-          const projectRoot = (input as any).project?.path
-          if (projectRoot) {
-            const context = `project:${projectRoot}|dir:${session.workingDirectory}`
-            if (!session.projectContext.has(context)) {
-              session.projectContext.add(context)
-              storeMemory(`PROJECT: Working on ${projectRoot}`, "context")
+      if (toolName === "edit" || toolName === "write" || toolName === "multiedit") {
+        const filePath = (_input.args as Record<string, unknown>)?.filePath as string
+        if (filePath) {
+          session.filesModified.add(filePath)
+          
+          const lastError = [...session.errorsEncountered.keys()].pop()
+          if (lastError && !toolOutput.includes("Error")) {
+            const errorKey = lastError.slice(0, 50)
+            const now = Date.now()
+            const lastTime = recentErrors.get(errorKey) || 0
+            
+            if (now - lastTime > 300000) {
+              recentErrors.set(errorKey, now)
+              const solution = `Fixed "${errorKey}" by editing ${filePath.split('/').pop()}`
+              storeMemory(solution, "solutions", input)
+              session.errorsEncountered.delete(lastError)
             }
           }
         }
       }
 
-      const isError = output.output?.includes("Error") ||
-                      output.output?.includes("error:") ||
-                      output.output?.includes("failed")
+      const isError = toolOutput.includes("Error:") || 
+                     toolOutput.includes("error:") ||
+                     toolOutput.includes("ENOENT") ||
+                     toolOutput.includes("TypeError") ||
+                     toolOutput.includes("SyntaxError")
 
-      if (isError) {
-        metrics.failures++
-        if (output.output.length < 200) {
-          const errorContext = (_input.args as any)?.filePath
-            ? `${toolName}(${(_input.args as any)?.filePath}): ${output.output.slice(0, 80)}`
-            : `${toolName}: ${output.output.slice(0, 100)}`
-          storeMemory(errorContext, "errors")
-          showToast(input, { title: "Error Stored", message: errorContext.slice(0, 50), variant: "warning" })
-        }
-      } else {
-        metrics.successes++
-      }
-
-      if (metrics.successes > 0) {
-        session.toolSequence.push({
-          tool: toolName,
-          timestamp: Date.now()
-        })
-      }
-
-      if (session.toolSequence.length >= 3) {
-        const lastThree = session.toolSequence.slice(-3).map(t => t.tool).join("->")
-        if (!session.decisionsCaptured) {
-          storeMemory(`PATTERN: Effective workflow: ${lastThree}`, "context")
-          session.decisionsCaptured = true
-        }
-      }
-
-      if (toolName === "skill") {
-        const skillName = (_input.args as any)?.name
-        if (skillName) {
-          session.skills.add(skillName)
-        }
-      }
-
-      if (toolName === "background_task" || toolName === "call_omo_agent") {
-        const agent = (_input.args as any)?.agent || (_input.args as any)?.subagent_type
-        if (agent) {
-          session.agents.set(agent, (session.agents.get(agent) || 0) + 1)
-        }
-      }
-
-      if (toolName === "edit" || toolName === "write") {
-        const filePath = (_input.args as any)?.filePath
-        if (filePath) {
-          session.filesModified.add(filePath)
+      if (isError && toolOutput.length < 150) {
+        const errorKey = `${toolName}: ${toolOutput.slice(0, 80)}`
+        const existing = session.errorsEncountered.get(errorKey) || 0
+        session.errorsEncountered.set(errorKey, existing + 1)
+        
+        if (existing === 0) {
+          const errorSig = toolOutput.match(/(?:Error|error|ENOENT|TypeError|SyntaxError)[^.]{10,60}/)?.[0]
+          if (errorSig) {
+            storeMemory(`${toolName} error: ${errorSig}`, "errors")
+          }
         }
       }
     },
 
-    event: async (_event: any): Promise<void> => {
-      const props = (_event as any).properties
+    event: async (eventInput: { event: { type: string; properties?: Record<string, unknown> } }): Promise<void> => {
+      const { event } = eventInput
+      const props = event.properties
 
-      if ((_event as any).type === "session.idle") {
-        const sessionID = props?.sessionID as string
-        const session = sessionMetrics.get(sessionID)
-
-        if (session && session.tools.size > 0) {
-          const topTools = [...session.tools.entries()]
-            .sort((a, b) => b[1].calls - a[1].calls)
-            .slice(0, 5)
-            .map(([name, m]) => `${name}:${m.calls}`)
-            .join(",")
-
-          const skills = [...session.skills].join(",") || "none"
-          const agents = [...session.agents.keys()].join(",") || "none"
-          const files = session.filesModified.size
-
-          const summary = `tools:${topTools}|skills:${skills}|agents:${agents}|files:${files}`
-          storeMemory(summary, "workflows", input)
-
-          showToast(input, { title: "Session Summary", message: `${session.tools.size} tools used`, variant: "info" })
-          sessionMetrics.delete(sessionID)
-        }
-      }
-
-      if ((_event as any).type === "session.end") {
-        const sessionID = props?.sessionID as string
-        const session = sessionMetrics.get(sessionID)
-
-        if (session && session.tools.size > 0) {
-          const topTools = [...session.tools.entries()]
-            .sort((a, b) => b[1].calls - a[1].calls)
-            .slice(0, 5)
-            .map(([name, m]) => `${name}:${m.calls}`)
-            .join(",")
-
-          const skills = [...session.skills].join(",") || "none"
-          const agents = [...session.agents.keys()].join(",") || "none"
-          const files = session.filesModified.size
-
-          const summary = `tools:${topTools}|skills:${skills}|agents:${agents}|files:${files}`
-          storeMemory(summary, "workflows", input)
-
-          sessionMetrics.delete(sessionID)
+      if (event.type === "session.deleted" || event.type === "session.end") {
+        const sessionID = (props?.sessionID ?? (props?.info as { id?: string })?.id) as string
+        if (sessionID) {
+          sessionContexts.delete(sessionID)
         }
       }
     },

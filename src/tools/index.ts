@@ -34,11 +34,11 @@ import { context7_resolve_library_id, context7_get_library_docs, context7_query_
 
 import { grep_app_searchGitHub } from './grep-app'
 
-import { websearch } from './exa'
+import { websearch as exa_websearch } from './exa'
 
 import { glare } from './glare'
 
-import { codesearch } from './codesearch'
+import { codesearch as exa_codesearch } from './codesearch'
 
 import { webfetch } from './webfetch'
 
@@ -96,9 +96,9 @@ export const builtinTools = {
   context7_get_library_docs,
   context7_query_docs,
   grep_app_searchGitHub,
-  websearch,
+  exa_websearch,
   glare,
-  codesearch,
+  exa_codesearch,
   webfetch,
   multiedit,
 }
