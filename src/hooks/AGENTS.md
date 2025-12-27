@@ -26,6 +26,7 @@ hooks/
 ├── preemptive-compaction/      # Pre-emptive session compaction
 ├── rules-injector/             # Conditional rules from .claude/rules/
 ├── session-recovery/           # Recover from session errors
+├── skill-enforcer/            # Suggest skill loading based on file patterns
 ├── think-mode/                 # Auto-detect thinking triggers
 ├── context-window-monitor.ts   # Monitor context usage (standalone)
 ├── empty-task-response-detector.ts
@@ -38,11 +39,11 @@ hooks/
 
 | Category | Hooks | Purpose |
 |----------|-------|---------|
-| Context Injection | directory-agents-injector, directory-readme-injector, rules-injector, compaction-context-injector | Auto-inject relevant context |
+| Context Injection | directory-agents-injector, directory-readme-injector, rules-injector, compaction-context-injector, skill-enforcer | Auto-inject relevant context |
 | Session Management | session-recovery, anthropic-auto-compact, preemptive-compaction, empty-message-sanitizer | Handle session lifecycle |
 | Output Control | comment-checker, tool-output-truncator | Control agent output quality |
 | Notifications | session-notification, background-notification, auto-update-checker | OS/user notifications |
-| Behavior Enforcement | todo-continuation-enforcer, keyword-detector, think-mode, agent-usage-reminder | Enforce agent behavior |
+| Behavior Enforcement | todo-continuation-enforcer, keyword-detector, think-mode, agent-usage-reminder, skill-enforcer | Enforce agent behavior |
 | Environment | non-interactive-env, interactive-bash-session, context-window-monitor | Adapt to runtime environment |
 | Compatibility | claude-code-hooks | Claude Code settings.json support |
 

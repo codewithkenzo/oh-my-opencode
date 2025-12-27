@@ -25,5 +25,7 @@ export { createThinkingBlockValidatorHook } from "./thinking-block-validator";
 export { createMemoryCaptureHook } from "./memory-capture";
 export { createMemoryInjectorHook } from "./memory-injector";
 export { createBrowserRelayHook } from "./browser-relay";
+export { createSkillEnforcerHook } from "./skill-enforcer";
+export { createAgentsMdEnforcerHook } from "./agents-md-enforcer";
 
 export * from './compaction-state';
