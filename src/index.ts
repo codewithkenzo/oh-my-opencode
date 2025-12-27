@@ -59,7 +59,7 @@ import { BackgroundManager } from "./features/background-agent";
 import { createBuiltinMcps } from "./mcp";
 import { OhMyOpenCodeConfigSchema, type OhMyOpenCodeConfig, type HookName } from "./config";
 import { log, deepMerge, getUserConfigDir, addConfigLoadError, showToast } from "./shared";
-import { PLAN_SYSTEM_PROMPT, PLAN_PERMISSION } from "./agents/plan-prompt";
+import { PLAN_SYSTEM_PROMPT, PLAN_PERMISSION, PLANNER_MUSASHI_PROMPT } from "./agents/plan-prompt";
 import { DAIKU_PROMPT } from "./agents/builder";
 import { BUILD_PERMISSION } from "./agents/build-prompt";
 import * as fs from "fs";
@@ -115,7 +115,7 @@ function migrateConfigFile(configPath: string, rawConfig: Record<string, unknown
   }
 
   if (rawConfig.omo_agent) {
-    rawConfig.sisyphus_agent = rawConfig.omo_agent;
+    rawConfig.musashi_agent = rawConfig.omo_agent;
     delete rawConfig.omo_agent;
     needsWrite = true;
   }
@@ -479,7 +479,8 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
           const plannerMusashiOverride = pluginConfig.agents?.["Planner-Musashi"];
           const plannerMusashiBase = {
             ...planConfigWithoutName,
-            prompt: PLAN_SYSTEM_PROMPT,
+            mode: "primary" as const,
+            prompt: PLANNER_MUSASHI_PROMPT,
             permission: PLAN_PERMISSION,
             description: `${config.agent?.plan?.description ?? "Plan agent"} (OhMyOpenCode version)`,
             color: config.agent?.plan?.color ?? "#6495ED",

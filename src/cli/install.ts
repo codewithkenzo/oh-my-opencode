@@ -48,12 +48,12 @@ function formatConfigSummary(config: InstallConfig): string {
   lines.push(color.bold(color.white("Agent Configuration")))
   lines.push("")
 
-  const sisyphusModel = config.hasClaude ? "claude-opus-4-5" : "big-pickle"
+  const musashiModel = config.hasClaude ? "claude-opus-4-5" : "big-pickle"
   const oracleModel = config.hasChatGPT ? "gpt-5.2" : (config.hasClaude ? "claude-opus-4-5" : "big-pickle")
   const librarianModel = config.hasClaude && config.isMax20 ? "claude-sonnet-4-5" : "big-pickle"
   const frontendModel = config.hasGemini ? "gemini-3-pro-high" : (config.hasClaude ? "claude-opus-4-5" : "big-pickle")
 
-  lines.push(`  ${SYMBOLS.bullet} Sisyphus     ${SYMBOLS.arrow} ${color.cyan(sisyphusModel)}`)
+  lines.push(`  ${SYMBOLS.bullet} Musashi      ${SYMBOLS.arrow} ${color.cyan(musashiModel)}`)
   lines.push(`  ${SYMBOLS.bullet} Oracle       ${SYMBOLS.arrow} ${color.cyan(oracleModel)}`)
   lines.push(`  ${SYMBOLS.bullet} Librarian    ${SYMBOLS.arrow} ${color.cyan(librarianModel)}`)
   lines.push(`  ${SYMBOLS.bullet} Frontend     ${SYMBOLS.arrow} ${color.cyan(frontendModel)}`)

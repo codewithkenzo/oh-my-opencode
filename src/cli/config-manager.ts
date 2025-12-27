@@ -214,7 +214,7 @@ export function generateOmoConfig(installConfig: InstallConfig): Record<string, 
   const agents: Record<string, Record<string, unknown>> = {}
 
   if (!installConfig.hasClaude) {
-    agents["Sisyphus"] = { model: "opencode/big-pickle" }
+    agents["Musashi"] = { model: "opencode/big-pickle" }
     agents["Shisho - researcher"] = { model: "opencode/big-pickle" }
   } else if (!installConfig.isMax20) {
     agents["Shisho - researcher"] = { model: "opencode/big-pickle" }
@@ -488,7 +488,7 @@ export function detectCurrentConfig(): DetectedConfig {
 
     const agents = omoConfig.agents ?? {}
 
-    if (agents["Sisyphus"]?.model === "opencode/big-pickle") {
+    if (agents["Musashi"]?.model === "opencode/big-pickle") {
       result.hasClaude = false
       result.isMax20 = false
     } else if (agents["Shisho - researcher"]?.model === "opencode/big-pickle") {
