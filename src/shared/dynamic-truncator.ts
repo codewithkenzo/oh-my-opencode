@@ -139,7 +139,9 @@ export async function dynamicTruncate(
   const usage = await getContextWindowUsage(ctx, sessionID)
 
   if (!usage) {
-    return { result: output, truncated: false }
+    // PR #268 fix: Apply fallback truncation when context usage unavailable
+    // This prevents prompt-too-long errors on early requests or API failures
+    return truncateToTokenLimit(output, targetMaxTokens, preserveHeaderLines)
   }
 
   const maxOutputTokens = Math.min(usage.remainingTokens * 0.5, targetMaxTokens)
