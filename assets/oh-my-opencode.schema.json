@@ -65,7 +65,9 @@
           "thinking-block-validator",
           "memory-capture",
           "memory-injector",
-          "browser-relay"
+          "browser-relay",
+          "skill-enforcer",
+          "agents-md-enforcer"
         ]
       }
     },
