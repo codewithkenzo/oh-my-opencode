@@ -1,9 +1,9 @@
 import { execSync } from "child_process"
+import type { PluginInput } from "@opencode-ai/plugin"
 
 const MEMORY_CLI_PATH = `${process.env.HOME}/.config/opencode/lib/memory-cli.ts`
 
-// Collections with specific purposes
-type MemoryCollection = "rules" | "tools" | "workflows" | "errors"
+type MemoryCollection = "rules" | "tools" | "workflows" | "errors" | "context"
 
 interface ToolMetrics {
   calls: number
@@ -11,12 +11,15 @@ interface ToolMetrics {
   failures: number
 }
 
-// In-memory tracking (not persisted, just for session analysis)
 const sessionMetrics = new Map<string, {
   tools: Map<string, ToolMetrics>
   skills: Set<string>
   agents: Map<string, number>
   filesModified: Set<string>
+  workingDirectory: string | null
+  projectContext: Set<string>
+  toolSequence: Array<{ tool: string; timestamp: number }>
+  decisionsCaptured: boolean
 }>()
 
 function getSession(sessionID: string) {
@@ -25,13 +28,30 @@ function getSession(sessionID: string) {
       tools: new Map(),
       skills: new Set(),
       agents: new Map(),
-      filesModified: new Set()
+      filesModified: new Set(),
+      workingDirectory: null,
+      projectContext: new Set(),
+      toolSequence: [],
+      decisionsCaptured: false
     })
   }
   return sessionMetrics.get(sessionID)!
 }
 
-function storeMemory(content: string, collection: MemoryCollection): void {
+function showToast(ctx: PluginInput, title: string, message: string, variant: "info" | "warning" = "info"): void {
+  try {
+    ctx.client.tui.showToast?.({
+      body: {
+        title,
+        message: message.slice(0, 200),
+        variant,
+        duration: 3000
+      }
+    })
+  } catch {}
+}
+
+function storeMemory(content: string, collection: MemoryCollection, ctx?: PluginInput): void {
   if (!content || content.length < 10 || content.length > 300) return
   try {
     const sanitized = content.replace(/"/g, '\\"').replace(/\n/g, ' ').trim()
@@ -39,22 +59,16 @@ function storeMemory(content: string, collection: MemoryCollection): void {
       `bun ${MEMORY_CLI_PATH} add "${sanitized}" --collection=${collection}`,
       { encoding: "utf-8", timeout: 5000, stdio: "pipe" }
     )
-  } catch {
-    // Silent fail
-  }
-}
-
-function showNotification(title: string, message: string): void {
-  if (process.platform !== "linux") return
-  try {
-    const sanitized = message.replace(/"/g, '\\"').slice(0, 100)
-    execSync(`notify-send "${title}" "${sanitized}"`, { timeout: 1000, stdio: "pipe" })
+    if (ctx) {
+      const msg = collection === "errors"
+        ? `Stored error: ${sanitized.slice(0, 50)}`
+        : `Stored ${collection}: ${sanitized.slice(0, 50)}`
+      showToast(ctx, "Memory Stored", msg, "info")
+    }
   } catch {}
 }
 
-// Extract RULES from user messages (explicit instructions)
 function extractRule(content: string): string | null {
-  // Must contain explicit rule indicators
   const rulePatterns = [
     /\b(always|never|don'?t ever|must|should always)\s+(.{10,80})/i,
     /\b(rule|remember|from now on)[:\s]+(.{10,80})/i,
@@ -64,66 +78,69 @@ function extractRule(content: string): string | null {
   for (const pattern of rulePatterns) {
     const match = content.match(pattern)
     if (match) {
-      // Return just the rule, not the full message
       return match[0].slice(0, 150)
     }
   }
   return null
 }
 
-export function createMemoryCaptureHook() {
+export function createMemoryCaptureHook(input: PluginInput) {
   return {
     "chat.message": async (
-      _input: { sessionID: string },
-      output: {
-        message: Record<string, unknown>
-        parts: Array<{ type: string; text?: string }>
-      }
+      _input: any,
+      output: any
     ): Promise<void> => {
+      const sessionID = _input.sessionID as string
       const role = (output.message as any)?.role
-      if (role !== "user") return // Only capture from user messages
+      if (role !== "user") return
 
       const content = output.parts
-        .filter(p => p.type === "text" && p.text)
-        .map(p => p.text!)
+        .filter((p: any) => p.type === "text" && p.text)
+        .map((p: any) => p.text)
         .join(" ")
 
       if (!content || content.length < 20) return
 
-      // Skip continuation prompts and system injections
       if (content.includes("Continuation Prompt") ||
           content.includes("<recalled_memories>") ||
           content.includes("[COMPACTION") ||
           content.includes("[SYSTEM")) return
 
-      // Extract explicit rules only
       const rule = extractRule(content)
       if (rule) {
-        storeMemory(`RULE: ${rule}`, "rules")
-        showNotification("Rule Captured", rule)
+        storeMemory(`RULE: ${rule}`, "rules", input)
+        showToast(input, "Rule Captured", rule.slice(0, 50))
       }
     },
 
     "tool.execute.after": async (
-      input: {
-        sessionID: string
-        tool: string
-        args?: Record<string, unknown>
-      },
-      output: {
-        output: string
-        metadata?: unknown
-      }
+      _input: any,
+      output: any
     ): Promise<void> => {
-      const session = getSession(input.sessionID)
-      const toolName = input.tool
+      const sessionID = _input.sessionID as string
+      const toolName = _input.tool as string
+      const session = getSession(sessionID)
 
-      // Track tool usage
       if (!session.tools.has(toolName)) {
         session.tools.set(toolName, { calls: 0, successes: 0, failures: 0 })
       }
       const metrics = session.tools.get(toolName)!
       metrics.calls++
+
+      if (toolName === "read" || toolName === "glob") {
+        const filePath = (_input.args as any)?.filePath || (_input.args as any)?.path
+        if (filePath && session.filesModified.size === 0) {
+          session.workingDirectory = (input as any).directory || process.cwd()
+          const projectRoot = (input as any).project?.path
+          if (projectRoot) {
+            const context = `project:${projectRoot}|dir:${session.workingDirectory}`
+            if (!session.projectContext.has(context)) {
+              session.projectContext.add(context)
+              storeMemory(`PROJECT: Working on ${projectRoot}`, "context")
+            }
+          }
+        }
+      }
 
       const isError = output.output?.includes("Error") ||
                       output.output?.includes("error:") ||
@@ -131,51 +148,62 @@ export function createMemoryCaptureHook() {
 
       if (isError) {
         metrics.failures++
-
-        // Only store meaningful, actionable errors (not stack traces)
         if (output.output.length < 200) {
-          const errorSummary = `${toolName} error: ${output.output.slice(0, 100)}`
-          storeMemory(errorSummary, "errors")
+          const errorContext = (_input.args as any)?.filePath
+            ? `${toolName}(${(_input.args as any)?.filePath}): ${output.output.slice(0, 80)}`
+            : `${toolName}: ${output.output.slice(0, 100)}`
+          storeMemory(errorContext, "errors")
+          showToast(input, "Error Stored", errorContext.slice(0, 50), "warning")
         }
       } else {
         metrics.successes++
       }
 
-      // Track skill loads
+      if (metrics.successes > 0) {
+        session.toolSequence.push({
+          tool: toolName,
+          timestamp: Date.now()
+        })
+      }
+
+      if (session.toolSequence.length >= 3) {
+        const lastThree = session.toolSequence.slice(-3).map(t => t.tool).join("->")
+        if (!session.decisionsCaptured) {
+          storeMemory(`PATTERN: Effective workflow: ${lastThree}`, "context")
+          session.decisionsCaptured = true
+        }
+      }
+
       if (toolName === "skill") {
-        const skillName = (input.args as any)?.name
+        const skillName = (_input.args as any)?.name
         if (skillName) {
           session.skills.add(skillName)
         }
       }
 
-      // Track agent spawns
       if (toolName === "background_task" || toolName === "call_omo_agent") {
-        const agent = (input.args as any)?.agent || (input.args as any)?.subagent_type
+        const agent = (_input.args as any)?.agent || (_input.args as any)?.subagent_type
         if (agent) {
           session.agents.set(agent, (session.agents.get(agent) || 0) + 1)
         }
       }
 
-      // Track file modifications
       if (toolName === "edit" || toolName === "write") {
-        const filePath = (input.args as any)?.filePath
+        const filePath = (_input.args as any)?.filePath
         if (filePath) {
           session.filesModified.add(filePath)
         }
       }
     },
 
-    event: async ({ event }: { event: { type: string; properties?: unknown } }): Promise<void> => {
-      const props = event.properties as Record<string, unknown> | undefined
+    event: async (_event: any): Promise<void> => {
+      const props = (_event as any).properties
 
-      // On session end, store workflow summary (compact format)
-      if (event.type === "session.end") {
+      if ((_event as any).type === "session.idle") {
         const sessionID = props?.sessionID as string
         const session = sessionMetrics.get(sessionID)
 
         if (session && session.tools.size > 0) {
-          // Create compact workflow summary
           const topTools = [...session.tools.entries()]
             .sort((a, b) => b[1].calls - a[1].calls)
             .slice(0, 5)
@@ -186,9 +214,31 @@ export function createMemoryCaptureHook() {
           const agents = [...session.agents.keys()].join(",") || "none"
           const files = session.filesModified.size
 
-          // Compact format: "tools:X|skills:Y|agents:Z|files:N"
           const summary = `tools:${topTools}|skills:${skills}|agents:${agents}|files:${files}`
-          storeMemory(summary, "workflows")
+          storeMemory(summary, "workflows", input)
+
+          showToast(input, "Session Summary", `${session.tools.size} tools used`, "info")
+          sessionMetrics.delete(sessionID)
+        }
+      }
+
+      if ((_event as any).type === "session.end") {
+        const sessionID = props?.sessionID as string
+        const session = sessionMetrics.get(sessionID)
+
+        if (session && session.tools.size > 0) {
+          const topTools = [...session.tools.entries()]
+            .sort((a, b) => b[1].calls - a[1].calls)
+            .slice(0, 5)
+            .map(([name, m]) => `${name}:${m.calls}`)
+            .join(",")
+
+          const skills = [...session.skills].join(",") || "none"
+          const agents = [...session.agents.keys()].join(",") || "none"
+          const files = session.filesModified.size
+
+          const summary = `tools:${topTools}|skills:${skills}|agents:${agents}|files:${files}`
+          storeMemory(summary, "workflows", input)
 
           sessionMetrics.delete(sessionID)
         }

@@ -1,4 +1,5 @@
 import { execSync } from "child_process"
+import type { PluginInput } from "@opencode-ai/plugin"
 
 const MEMORY_CLI_PATH = `${process.env.HOME}/.config/opencode/lib/memory-cli.ts`
 
@@ -7,10 +8,10 @@ interface Memory {
   collection: string
 }
 
-function queryMemories(prompt: string, limit: number = 3): Memory[] {
-  if (!prompt || prompt.length < 15) return []
+function queryMemories(query: string, limit: number = 3): Memory[] {
+  if (!query || query.length < 15) return []
   try {
-    const sanitized = prompt.replace(/"/g, '\\"').slice(0, 150)
+    const sanitized = query.replace(/"/g, '\\"').slice(0, 150)
     const result = execSync(
       `bun ${MEMORY_CLI_PATH} query "${sanitized}" --limit=${limit}`,
       { encoding: "utf-8", timeout: 5000, stdio: "pipe" }
@@ -30,7 +31,8 @@ function formatCompact(memories: Memory[]): string {
   const rules = memories.filter(m => m.collection === "rules")
   const workflows = memories.filter(m => m.collection === "workflows")
   const errors = memories.filter(m => m.collection === "errors")
-  const other = memories.filter(m => !["rules", "workflows", "errors"].includes(m.collection))
+  const context = memories.filter(m => m.collection === "context")
+  const other = memories.filter(m => !["rules", "workflows", "errors", "context"].includes(m.collection))
   
   const lines: string[] = []
   
@@ -43,22 +45,48 @@ function formatCompact(memories: Memory[]): string {
   if (workflows.length > 0) {
     lines.push(`[WORKFLOWS] ${workflows.map(w => w.content).join(" | ")}`)
   }
+  if (context.length > 0) {
+    lines.push(`[CONTEXT] ${context.map(c => c.content.slice(0, 100)).join(" | ")}`)
+  }
   if (other.length > 0) {
-    lines.push(`[CONTEXT] ${other.map(o => o.content.slice(0, 80)).join(" | ")}`)
+    lines.push(`[MEMORY] ${other.map(o => o.content.slice(0, 80)).join(" | ")}`)
   }
   
   return lines.join("\n")
 }
 
-export function createMemoryInjectorHook() {
+function buildQueryContext(prompt: string, workingDir: string): string {
+  const contextParts: string[] = [prompt.slice(0, 100)]
+  if (workingDir) {
+    contextParts.push(`wd:${workingDir.split("/").pop()}`)
+  }
+  return contextParts.join(" ")
+}
+
+function showToast(ctx: PluginInput, title: string, message: string, variant: "info" | "warning" = "info"): void {
+  try {
+    ctx.client.tui.showToast?.({
+      body: {
+        title,
+        message: message.slice(0, 200),
+        variant,
+        duration: 3000
+      }
+    })
+  } catch {}
+}
+
+export function createMemoryInjectorHook(input: PluginInput) {
   const injectedSessions = new Set<string>()
+  const recentTools = new Map<string, number>()
+  const recentSkills = new Set<string>()
 
   return {
     "prompt.submit": async (
-      input: { sessionID: string },
+      _input: { sessionID: string },
       output: { parts: Array<{ type: string; text?: string }> }
     ) => {
-      if (injectedSessions.has(input.sessionID)) return
+      if (injectedSessions.has(_input.sessionID)) return
 
       const promptText = output.parts
         .filter(p => p.type === "text" && p.text)
@@ -69,10 +97,12 @@ export function createMemoryInjectorHook() {
 
       if (promptText.includes("[COMPACTION") || promptText.includes("[SYSTEM")) return
 
-      const memories = queryMemories(promptText, 5)
+      // Build better query context from working directory and recent usage
+      const queryContext = buildQueryContext(promptText, input.directory || process.cwd())
+      const memories = queryMemories(queryContext, 5)
       if (memories.length === 0) return
       
-      injectedSessions.add(input.sessionID)
+      injectedSessions.add(_input.sessionID)
 
       const compact = formatCompact(memories)
       if (!compact) return
@@ -82,6 +112,8 @@ export function createMemoryInjectorHook() {
         text: `<memory>${compact}</memory>`
       })
 
+      showToast(input, "Memories Recalled", `${memories.length} memories recalled`, "info")
+
       return {
         notifications: [{
           type: "info" as const,
@@ -90,10 +122,41 @@ export function createMemoryInjectorHook() {
       }
     },
 
+    onSummarize: async (
+      _input: { sessionID: string },
+      output: { contextToPreserve: Array<{ role: string; content: string }> }
+    ) => {
+      // Inject memories into compaction context to preserve them
+      const queryContext = buildQueryContext("compaction", input.directory || process.cwd())
+      const memories = queryMemories(queryContext, 3)
+      if (memories.length === 0) return
+
+      const compact = formatCompact(memories)
+      if (!compact) return
+
+      output.contextToPreserve.push({
+        role: "system",
+        content: `<memory>${compact}</memory>`
+      })
+
+      showToast(input, "Memories Preserved", `${memories.length} memories preserved`, "info")
+    },
+
     event: async ({ event }: { event: { type: string; properties?: unknown } }) => {
+      const props = event.properties as Record<string, unknown> | undefined
+
+      // Clear injected flag on compaction so memories re-inject
+      if (event.type === "session.compacted") {
+        const sessionID = (props?.sessionID ?? (props?.info as { id?: string } | undefined)?.id) as string | undefined
+        if (sessionID) {
+          injectedSessions.delete(sessionID)
+          showToast(input, "Memory Ready", "Memories re-injected after compaction", "info")
+        }
+      }
+
+      // Clear injected flag on session end/delete
       if (event.type === "session.deleted" || event.type === "session.end") {
-        const props = event.properties as Record<string, unknown> | undefined
-        const sessionID = props?.sessionID as string
+        const sessionID = (props?.sessionID ?? (props?.info as { id?: string } | undefined)?.id) as string | undefined
         if (sessionID) injectedSessions.delete(sessionID)
       }
     }
