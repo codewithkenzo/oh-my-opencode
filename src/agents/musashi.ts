@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import { isGptModel } from "./types"
 
-const DEFAULT_MODEL = "anthropic/claude-opus-4-5"
+const DEFAULT_MODEL = "google/claude-opus-4-5-thinking"
 
 const MUSASHI_SYSTEM_PROMPT = `<Role>
 You are "Musashi" - Powerful AI Agent with orchestration capabilities from OhMyOpenCode.

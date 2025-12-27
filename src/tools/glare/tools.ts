@@ -6,9 +6,9 @@ import { z } from "zod"
 import { GLARE_DESCRIPTION, RELAY_URL } from "./constants"
 import type { GlareArgs } from "./types"
 import { log } from "../../shared/logger"
-import { getUserConfigDir } from "../../shared/config-path"
+import { homedir } from "os"
 
-const SKILL_DIR = join(getUserConfigDir(), "opencode", "skill", "glare")
+const SKILL_DIR = join(homedir(), ".opencode", "skill", "glare")
 
 const RelayInfoSchema = z.object({
   mode: z.string(),
@@ -76,7 +76,7 @@ async function startRelayServer(): Promise<string> {
 - WebSocket: ${info.wsEndpoint}`
   }
 
-  const scriptPath = join(SKILL_DIR, "scripts", "start-relay.ts")
+  const scriptPath = join(SKILL_DIR, "scripts", "start-relay.sh")
   if (!existsSync(scriptPath)) {
     return `Error: glare skill not installed at ${SKILL_DIR}`
   }
@@ -84,7 +84,7 @@ async function startRelayServer(): Promise<string> {
   log("[glare] Starting relay server...")
 
   spawn({
-    cmd: ["npx", "tsx", scriptPath],
+    cmd: ["bash", scriptPath],
     cwd: SKILL_DIR,
     env: { ...process.env, HOST: "0.0.0.0", PORT: "9222" },
     stdout: "ignore",

@@ -1,6 +1,6 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 
-const DEFAULT_MODEL = "opencode/kimi-k2"
+const DEFAULT_MODEL = "google/gemini-3-flash"
 
 export function createShishoResearcherAgent(model: string = DEFAULT_MODEL): AgentConfig {
   return {

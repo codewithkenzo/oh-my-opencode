@@ -91,14 +91,14 @@ oh-my-opencode/
 |-------|-------|---------|
 | Musashi | google/claude-opus-4-5-thinking | Primary orchestrator |
 | Kenja - advisor | zai-coding-plan/glm-4.7 | Strategic advisor, code review |
-| Shisho - researcher | opencode/kimi-k2 | Multi-repo analysis, docs |
+| Shisho - researcher | google/gemini-3-flash | Multi-repo analysis, docs |
 | Ninja - explorer | opencode/grok-code | Fast codebase exploration |
 | Daiku - builder | zai-coding-plan/glm-4.7 | General/backend builder - APIs, databases, TypeScript |
 | Shokunin - designer | google/gemini-3-pro-high | UI design language, visual systems, multimodal |
 | Takumi - builder | minimax/MiniMax-M2.1 | Frontend components only - React, Tailwind, Motion |
 | Hayai - builder | opencode/grok-code | Fast bulk edits, renames, simple changes |
 | Tantei - debugger | google/gemini-3-flash | Visual debugging with multimodal |
-| Sakka - writer | google/gemini-3-flash | Technical docs |
+| Sakka - writer | google/gemini-3-flash-preview | Technical docs |
 | Miru - observer | google/gemini-3-flash | PDF/image analysis |
 
 ### Builder Agent Routing

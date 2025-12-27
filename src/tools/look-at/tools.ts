@@ -1,4 +1,6 @@
 import { extname, basename } from "node:path"
+import { pathToFileURL } from "node:url"
+import { existsSync } from "fs"
 import { tool, type PluginInput } from "@opencode-ai/plugin"
 import { LOOK_AT_DESCRIPTION, MULTIMODAL_LOOKER_AGENT } from "./constants"
 import type { LookAtArgs } from "./types"
@@ -38,8 +40,21 @@ export function createLookAt(ctx: PluginInput) {
     async execute(args: LookAtArgs, toolContext) {
       log(`[look_at] Analyzing file: ${args.file_path}, goal: ${args.goal}`)
 
-      const mimeType = inferMimeType(args.file_path)
-      const filename = basename(args.file_path)
+      const filePath = args.file_path
+
+      if (!filePath.startsWith("/") && !/^[A-Za-z]:\\/.test(filePath)) {
+        log(`[look_at] Invalid path: ${filePath}`)
+        return `Error: Path must be absolute. Got: ${filePath}`
+      }
+
+      if (!existsSync(filePath)) {
+        log(`[look_at] File not found: ${filePath}`)
+        return `Error: File not found: ${filePath}`
+      }
+
+      const mimeType = inferMimeType(filePath)
+      const filename = basename(filePath)
+      const fileUrl = pathToFileURL(filePath).href
 
       const prompt = `Analyze this file and extract the requested information.
 
@@ -78,7 +93,7 @@ If the requested information is not found, clearly state what is missing.`
           },
           parts: [
             { type: "text", text: prompt },
-            { type: "file", mime: mimeType, url: `file://${args.file_path}`, filename },
+            { type: "file", mime: mimeType, url: fileUrl, filename },
           ],
         },
       })
