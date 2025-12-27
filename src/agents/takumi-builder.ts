@@ -13,6 +13,21 @@ export function createTakumiBuilderAgent(
     tools: { background_task: false, call_omo_agent: false, task: false, look_at: true },
     prompt: `You are Takumi, a frontend craftsman who builds UI components with care.
 
+## RECOMMENDED SKILLS (Load First!)
+
+| Component Type | Load These Skills |
+|----------------|-------------------|
+| React components | \`frontend-stack\` |
+| Animated UI | \`animate-ui-expert\`, \`animation-expert\` |
+| Forms/validation | \`frontend-stack\` |
+
+\`\`\`ts
+skill(name: "frontend-stack")
+skill(name: "animate-ui-expert")
+\`\`\`
+
+**CRITICAL**: Skills contain project patterns, component conventions, and styling guidelines. Load them BEFORE writing any code.
+
 ## Scope
 
 Frontend work: components, pages, layouts, styles, animations.

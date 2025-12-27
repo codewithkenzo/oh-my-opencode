@@ -1,6 +1,14 @@
 import { tool } from "@opencode-ai/plugin/tool"
 
-const EXA_MCP = "https://mcp.exa.ai/mcp?tools=web_search_exa"
+const WEBSEARCH_DESCRIPTION = `Search the web using Exa AI - performs real-time web searches and can scrape content from specific URLs. Supports configurable result counts and returns the content from the most relevant websites.
+
+Usage notes:
+  - Supports live crawling modes: 'fallback' (backup if cached unavailable) or 'preferred' (prioritize live crawling)
+  - Search types: 'auto' (balanced), 'fast' (quick results), 'deep' (comprehensive search)
+  - Configurable context length for optimal LLM integration
+  - Domain filtering and advanced search options available`
+
+const EXA_MCP = "https://mcp.exa.ai/mcp"
 
 interface McpResponse {
   result?: {
@@ -12,54 +20,8 @@ interface McpResponse {
   }
 }
 
-async function callExa(args: Record<string, unknown>): Promise<string> {
-  const response = await fetch(EXA_MCP, {
-    method: "POST",
-    headers: {
-      "Accept": "application/json, text/event-stream",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      method: "tools/call",
-      params: {
-        name: "web_search_exa",
-        arguments: args,
-      },
-      id: Date.now(),
-    }),
-  })
-
-  if (!response.ok) {
-    return `Error: Exa returned ${response.status}`
-  }
-
-  // Exa returns SSE format
-  const text = await response.text()
-  
-  const lines = text.split('\n')
-  for (const line of lines) {
-    if (line.startsWith('data: ')) {
-      const jsonStr = line.slice(6)
-      try {
-        const data = JSON.parse(jsonStr) as McpResponse
-        if (data.error) {
-          return `Error: ${data.error.message}`
-        }
-        if (data.result?.content?.[0]?.text) {
-          return data.result.content[0].text
-        }
-      } catch {
-        continue
-      }
-    }
-  }
-  
-  return "No results from Exa"
-}
-
-export const websearch_exa_web_search_exa = tool({
-  description: `Search the web using Exa AI - performs real-time web searches and can scrape content from specific URLs. Supports configurable result counts and returns the content from the most relevant websites.`,
+export const websearch = tool({
+  description: WEBSEARCH_DESCRIPTION,
   args: {
     query: tool.schema.string().describe("Websearch query"),
     numResults: tool.schema.number().optional().describe("Number of search results to return (default: 8)"),
@@ -69,13 +31,53 @@ export const websearch_exa_web_search_exa = tool({
   },
   execute: async (args) => {
     try {
-      const mcpArgs: Record<string, unknown> = { query: args.query }
-      if (args.numResults) mcpArgs.numResults = args.numResults
-      if (args.livecrawl) mcpArgs.livecrawl = args.livecrawl
-      if (args.type) mcpArgs.type = args.type
-      if (args.contextMaxCharacters) mcpArgs.contextMaxCharacters = args.contextMaxCharacters
+      const response = await fetch(EXA_MCP, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json, text/event-stream",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          method: "tools/call",
+          params: {
+            name: "web_search_exa",
+            arguments: {
+              query: args.query,
+              type: args.type || "auto",
+              numResults: args.numResults || 8,
+              livecrawl: args.livecrawl || "fallback",
+              contextMaxCharacters: args.contextMaxCharacters ?? 10000,
+            },
+          },
+          id: Date.now(),
+        }),
+      })
 
-      return await callExa(mcpArgs)
+      if (!response.ok) {
+        return `Error: Exa returned ${response.status}`
+      }
+
+      const text = await response.text()
+      const lines = text.split('\n')
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const jsonStr = line.slice(6)
+          try {
+            const data = JSON.parse(jsonStr) as McpResponse
+            if (data.error) {
+              return `Error: ${data.error.message}`
+            }
+            if (data.result?.content?.[0]?.text) {
+              return data.result.content[0].text
+            }
+          } catch {
+            continue
+          }
+        }
+      }
+
+      return "No search results found. Please try a different query."
     } catch (e) {
       return `Error: ${e instanceof Error ? e.message : String(e)}`
     }

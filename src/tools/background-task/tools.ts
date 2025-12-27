@@ -86,26 +86,10 @@ function truncateText(text: string, maxLength: number): string {
 
 function formatTaskStatus(task: BackgroundTask): string {
   const duration = formatDuration(task.startedAt, task.completedAt)
-  const promptPreview = truncateText(task.prompt, 500)
   
   let progressSection = ""
   if (task.progress?.lastTool) {
     progressSection = `\n| Last tool | ${task.progress.lastTool} |`
-  }
-
-  let lastMessageSection = ""
-  if (task.progress?.lastMessage) {
-    const truncated = truncateText(task.progress.lastMessage, 500)
-    const messageTime = task.progress.lastMessageAt 
-      ? task.progress.lastMessageAt.toISOString()
-      : "N/A"
-    lastMessageSection = `
-
-## Last Message (${messageTime})
-
-\`\`\`
-${truncated}
-\`\`\``
   }
 
   let statusNote = ""
@@ -116,7 +100,7 @@ ${truncated}
   } else if (task.status === "error") {
     statusNote = `
 
-> **Failed**: The task encountered an error. Check the last message for details.`
+> **Failed**: The task encountered an error.`
   }
 
   return `# Task Status
@@ -129,12 +113,7 @@ ${truncated}
 | Status | **${task.status}** |
 | Duration | ${duration} |
 | Session ID | \`${task.sessionID}\` |${progressSection}
-${statusNote}
-## Original Prompt
-
-\`\`\`
-${promptPreview}
-\`\`\`${lastMessageSection}`
+${statusNote}`
 }
 
 async function formatTaskResult(task: BackgroundTask, client: OpencodeClient): Promise<string> {
