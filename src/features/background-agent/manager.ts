@@ -5,7 +5,7 @@ import type {
   BackgroundTask,
   LaunchInput,
 } from "./types"
-import { log } from "../../shared/logger"
+import { log, showToast } from "../../shared"
 import {
   findNearestMessageWithFields,
   MESSAGE_STORAGE,
@@ -57,6 +57,7 @@ export class BackgroundManager {
   private notifications: Map<string, BackgroundTask[]>
   private client: OpencodeClient
   private directory: string
+  private ctx: PluginInput
   private pollingInterval?: Timer
 
   constructor(ctx: PluginInput) {
@@ -64,6 +65,7 @@ export class BackgroundManager {
     this.notifications = new Map()
     this.client = ctx.client
     this.directory = ctx.directory
+    this.ctx = ctx
   }
 
   async launch(input: LaunchInput): Promise<BackgroundTask> {
@@ -301,18 +303,12 @@ export class BackgroundManager {
 
     log("[background-agent] notifyParentSession called for task:", task.id)
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tuiClient = this.client as any
-    if (tuiClient.tui?.showToast) {
-      tuiClient.tui.showToast({
-        body: {
-          title: "Background Task Completed",
-          message: `Task "${task.description}" finished in ${duration}.`,
-          variant: "success",
-          duration: 5000,
-        },
-      }).catch(() => {})
-    }
+    showToast(this.ctx, {
+      title: "Background Task Completed",
+      message: `Task "${task.description}" finished in ${duration}.`,
+      variant: "success",
+      duration: 5000,
+    })
 
     const message = `[BACKGROUND TASK COMPLETED] Task "${task.description}" finished in ${duration}. Use background_output with task_id="${task.id}" to get results.`
 

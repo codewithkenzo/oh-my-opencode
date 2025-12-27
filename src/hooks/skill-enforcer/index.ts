@@ -2,6 +2,7 @@ import type { PluginInput } from "@opencode-ai/plugin";
 import type { SkillEnforcerState } from "./types";
 import { REMINDER_TEMPLATE } from "./constants";
 import { discoverAllSkills, matchSkillsForFile } from "./discovery";
+import { showToast } from "../../shared";
 
 interface ToolExecuteInput {
   tool: string;
@@ -78,17 +79,6 @@ export function createSkillEnforcerHook(ctx: PluginInput) {
     state.suggestionCount++;
   }
 
-  function showToast(title: string, message: string): void {
-    ctx.client.tui.showToast?.({
-      body: {
-        title,
-        message,
-        variant: "info",
-        duration: 4000
-      }
-    }).catch(() => {});
-  }
-
   const toolExecuteAfter = async (
     input: ToolExecuteInput,
     output: ToolExecuteOutput
@@ -134,8 +124,11 @@ export function createSkillEnforcerHook(ctx: PluginInput) {
     skillsToSuggest.forEach(name => recordSuggestion(state, name));
 
     showToast(
-      "Skill Suggestion",
-      `Consider loading: ${skillsToSuggest.join(", ")}`
+      ctx,
+      {
+        title: "Skill Suggestion",
+        message: `Consider loading: ${skillsToSuggest.join(", ")}`
+      }
     );
   };
 

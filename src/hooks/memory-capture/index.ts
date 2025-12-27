@@ -1,5 +1,6 @@
 import { execSync } from "child_process"
 import type { PluginInput } from "@opencode-ai/plugin"
+import { showToast } from "../../shared"
 
 const MEMORY_CLI_PATH = `${process.env.HOME}/.config/opencode/lib/memory-cli.ts`
 
@@ -38,19 +39,6 @@ function getSession(sessionID: string) {
   return sessionMetrics.get(sessionID)!
 }
 
-function showToast(ctx: PluginInput, title: string, message: string, variant: "info" | "warning" = "info"): void {
-  try {
-    ctx.client.tui.showToast?.({
-      body: {
-        title,
-        message: message.slice(0, 200),
-        variant,
-        duration: 3000
-      }
-    })
-  } catch {}
-}
-
 function storeMemory(content: string, collection: MemoryCollection, ctx?: PluginInput): void {
   if (!content || content.length < 10 || content.length > 300) return
   try {
@@ -63,7 +51,7 @@ function storeMemory(content: string, collection: MemoryCollection, ctx?: Plugin
       const msg = collection === "errors"
         ? `Stored error: ${sanitized.slice(0, 50)}`
         : `Stored ${collection}: ${sanitized.slice(0, 50)}`
-      showToast(ctx, "Memory Stored", msg, "info")
+      showToast(ctx, { title: "Memory Stored", message: msg, variant: "info" })
     }
   } catch {}
 }
@@ -109,7 +97,7 @@ export function createMemoryCaptureHook(input: PluginInput) {
       const rule = extractRule(content)
       if (rule) {
         storeMemory(`RULE: ${rule}`, "rules", input)
-        showToast(input, "Rule Captured", rule.slice(0, 50))
+        showToast(input, { title: "Rule Captured", message: rule.slice(0, 50) })
       }
     },
 
@@ -153,7 +141,7 @@ export function createMemoryCaptureHook(input: PluginInput) {
             ? `${toolName}(${(_input.args as any)?.filePath}): ${output.output.slice(0, 80)}`
             : `${toolName}: ${output.output.slice(0, 100)}`
           storeMemory(errorContext, "errors")
-          showToast(input, "Error Stored", errorContext.slice(0, 50), "warning")
+          showToast(input, { title: "Error Stored", message: errorContext.slice(0, 50), variant: "warning" })
         }
       } else {
         metrics.successes++
@@ -217,7 +205,7 @@ export function createMemoryCaptureHook(input: PluginInput) {
           const summary = `tools:${topTools}|skills:${skills}|agents:${agents}|files:${files}`
           storeMemory(summary, "workflows", input)
 
-          showToast(input, "Session Summary", `${session.tools.size} tools used`, "info")
+          showToast(input, { title: "Session Summary", message: `${session.tools.size} tools used`, variant: "info" })
           sessionMetrics.delete(sessionID)
         }
       }

@@ -13,6 +13,7 @@ import {
   MESSAGE_STORAGE,
 } from "../../features/hook-message-injector"
 import { log } from "../../shared/logger"
+import { showToast } from "../../shared/toast"
 import {
   isCompactionAllowed,
   markCompactionStart,
@@ -119,14 +120,12 @@ export function createPreemptiveCompactionHook(
       const ratio = pct / 100
       if (usageRatio >= ratio && !thresholds.has(pct)) {
         thresholds.add(pct)
-        await ctx.client.tui.showToast({
-          body: {
-            title: "Context Window",
-            message: `${pct}% context used - ${pct >= 60 ? 'consider wrapping up current task' : 'proceeding normally'}`,
-            variant: pct >= 80 ? "warning" : "info",
-            duration: 2000,
-          },
-        }).catch(() => {})
+        showToast(ctx, {
+          title: "Context Window",
+          message: `${pct}% context used - ${pct >= 60 ? 'consider wrapping up current task' : 'proceeding normally'}`,
+          variant: pct >= 80 ? "warning" : "info",
+          duration: 2000,
+        })
       }
     }
   }
@@ -187,16 +186,12 @@ export function createPreemptiveCompactionHook(
       return
     }
 
-    await ctx.client.tui
-      .showToast({
-        body: {
-          title: "Preemptive Compaction",
-          message: `Context at ${(usageRatio * 100).toFixed(0)}% - compacting to prevent overflow...`,
-          variant: "warning",
-          duration: 3000,
-        },
-      })
-      .catch(() => {})
+    showToast(ctx, {
+      title: "Preemptive Compaction",
+      message: `Context at ${(usageRatio * 100).toFixed(0)}% - compacting to prevent overflow...`,
+      variant: "warning",
+      duration: 3000,
+    })
 
     log("[preemptive-compaction] triggering compaction", { sessionID, usageRatio })
 
@@ -217,16 +212,12 @@ export function createPreemptiveCompactionHook(
         query: { directory: ctx.directory },
       })
 
-      await ctx.client.tui
-        .showToast({
-          body: {
-            title: "Compaction Complete",
-            message: "Session compacted. Send any message to continue.",
-            variant: "success",
-            duration: 2000,
-          },
-        })
-        .catch(() => {})
+      showToast(ctx, {
+        title: "Compaction Complete",
+        message: "Session compacted. Send any message to continue.",
+        variant: "success",
+        duration: 2000,
+      })
 
       markCompactionEnd(sessionID)
       state.compactionInProgress.delete(sessionID)

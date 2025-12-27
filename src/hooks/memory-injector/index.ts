@@ -1,5 +1,6 @@
 import { execSync } from "child_process"
 import type { PluginInput } from "@opencode-ai/plugin"
+import { showToast } from "../../shared"
 
 const MEMORY_CLI_PATH = `${process.env.HOME}/.config/opencode/lib/memory-cli.ts`
 
@@ -63,19 +64,6 @@ function buildQueryContext(prompt: string, workingDir: string): string {
   return contextParts.join(" ")
 }
 
-function showToast(ctx: PluginInput, title: string, message: string, variant: "info" | "warning" = "info"): void {
-  try {
-    ctx.client.tui.showToast?.({
-      body: {
-        title,
-        message: message.slice(0, 200),
-        variant,
-        duration: 3000
-      }
-    })
-  } catch {}
-}
-
 export function createMemoryInjectorHook(input: PluginInput) {
   const injectedSessions = new Set<string>()
   const recentTools = new Map<string, number>()
@@ -112,7 +100,7 @@ export function createMemoryInjectorHook(input: PluginInput) {
         text: `<memory>${compact}</memory>`
       })
 
-      showToast(input, "Memories Recalled", `${memories.length} memories recalled`, "info")
+      showToast(input, { title: "Memories Recalled", message: `${memories.length} memories recalled`, variant: "info" })
 
       return {
         notifications: [{
@@ -134,13 +122,13 @@ export function createMemoryInjectorHook(input: PluginInput) {
       const compact = formatCompact(memories)
       if (!compact) return
 
-      output.contextToPreserve.push({
-        role: "system",
-        content: `<memory>${compact}</memory>`
-      })
+        output.contextToPreserve.push({
+          role: "system",
+          content: `<memory>${compact}</memory>`
+        })
 
-      showToast(input, "Memories Preserved", `${memories.length} memories preserved`, "info")
-    },
+        showToast(input, { title: "Memories Preserved", message: `${memories.length} memories preserved`, variant: "info" })
+      },
 
     event: async ({ event }: { event: { type: string; properties?: unknown } }) => {
       const props = event.properties as Record<string, unknown> | undefined
@@ -150,7 +138,7 @@ export function createMemoryInjectorHook(input: PluginInput) {
         const sessionID = (props?.sessionID ?? (props?.info as { id?: string } | undefined)?.id) as string | undefined
         if (sessionID) {
           injectedSessions.delete(sessionID)
-          showToast(input, "Memory Ready", "Memories re-injected after compaction", "info")
+          showToast(input, { title: "Memory Ready", message: "Memories re-injected after compaction", variant: "info" })
         }
       }
 

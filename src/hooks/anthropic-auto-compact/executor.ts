@@ -235,16 +235,14 @@ async function fixEmptyMessages(
   if (!fixed) {
     const emptyMessageIds = findEmptyMessages(sessionID);
     if (emptyMessageIds.length === 0) {
-      await client.tui
-        .showToast({
-          body: {
-            title: "Empty Content Error",
-            message: "No empty messages found in storage. Cannot auto-recover.",
-            variant: "error",
-            duration: 5000,
-          },
-        })
-        .catch(() => {});
+      await client.tui.showToast({
+        body: {
+          title: "Empty Content Error",
+          message: "No empty messages found in storage. Cannot auto-recover.",
+          variant: "error",
+          duration: 5000,
+        },
+      }).catch(() => {});
       return false;
     }
 
@@ -267,17 +265,15 @@ async function fixEmptyMessages(
     }
   }
 
-  if (fixed) {
-    await client.tui
-      .showToast({
+    if (fixed) {
+      await client.tui.showToast({
         body: {
           title: "Session Recovery",
           message: `Fixed ${fixedMessageIds.length} empty message(s). Retrying...`,
           variant: "warning",
           duration: 3000,
         },
-      })
-      .catch(() => {});
+      }).catch(() => {});
   }
 
   return fixed;
@@ -293,17 +289,14 @@ export async function executeCompact(
   experimental?: ExperimentalConfig,
 ): Promise<void> {
   if (autoCompactState.compactionInProgress.has(sessionID)) {
-    await (client as Client).tui
-      .showToast({
+      await (client as Client).tui.showToast({
         body: {
           title: "Compact In Progress",
-          message:
-            "Recovery already running. Please wait or start new session if stuck.",
+          message: "Recovery already running. Please wait or start new session if stuck.",
           variant: "warning",
           duration: 5000,
         },
-      })
-      .catch(() => {});
+      }).catch(() => {});
     return;
   }
   autoCompactState.compactionInProgress.add(sessionID);
@@ -338,23 +331,19 @@ export async function executeCompact(
 
         const toolNames = aggressiveResult.truncatedTools
           .map((t) => t.toolName)
-          .join(", ");
+          .join(", ")
         const statusMsg = aggressiveResult.sufficient
           ? `Truncated ${aggressiveResult.truncatedCount} outputs (${formatBytes(aggressiveResult.totalBytesRemoved)})`
-          : `Truncated ${aggressiveResult.truncatedCount} outputs (${formatBytes(aggressiveResult.totalBytesRemoved)}) but need ${formatBytes(aggressiveResult.targetBytesToRemove)}. Falling back to summarize/revert...`;
+          : `Truncated ${aggressiveResult.truncatedCount} outputs (${formatBytes(aggressiveResult.totalBytesRemoved)}) but need ${formatBytes(aggressiveResult.targetBytesToRemove)}. Falling back to summarize/revert...`
 
-        await (client as Client).tui
-          .showToast({
-            body: {
-              title: aggressiveResult.sufficient
-                ? "Aggressive Truncation"
-                : "Partial Truncation",
-              message: `${statusMsg}: ${toolNames}`,
-              variant: "warning",
-              duration: 4000,
-            },
-          })
-          .catch(() => {});
+        await (client as Client).tui.showToast({
+          body: {
+            title: aggressiveResult.sufficient ? "Aggressive Truncation" : "Partial Truncation",
+            message: `${statusMsg}: ${toolNames}`,
+            variant: "warning",
+            duration: 4000,
+          },
+        }).catch(() => {});
 
         log("[auto-compact] aggressive truncation completed", aggressiveResult);
 
@@ -370,17 +359,15 @@ export async function executeCompact(
           }, 500);
           return;
         }
-      } else {
-        await (client as Client).tui
-          .showToast({
+        } else {
+          await (client as Client).tui.showToast({
             body: {
               title: "Truncation Skipped",
               message: "No tool outputs found to truncate.",
               variant: "warning",
               duration: 3000,
             },
-          })
-          .catch(() => {});
+          }).catch(() => {});
       }
     }
 
@@ -588,17 +575,15 @@ export async function executeCompact(
           }, cappedDelay);
           return;
         }
-      } else {
-        await (client as Client).tui
-          .showToast({
+        } else {
+          await (client as Client).tui.showToast({
             body: {
               title: "Summarize Skipped",
               message: "Missing providerID or modelID. Skipping to revert...",
               variant: "warning",
               duration: 3000,
             },
-          })
-          .catch(() => {});
+          }).catch(() => {});
       }
     }
 
@@ -613,16 +598,14 @@ export async function executeCompact(
 
       if (pair) {
         try {
-          await (client as Client).tui
-            .showToast({
+            await (client as Client).tui.showToast({
               body: {
                 title: "Emergency Recovery",
                 message: "Removing last message pair...",
                 variant: "warning",
                 duration: 3000,
               },
-            })
-            .catch(() => {});
+            }).catch(() => {});
 
           if (pair.assistantMessageID) {
             await (client as Client).session.revert({
@@ -656,17 +639,15 @@ export async function executeCompact(
           }, 500);
           return;
         } catch {}
-      } else {
-        await (client as Client).tui
-          .showToast({
+        } else {
+          await (client as Client).tui.showToast({
             body: {
               title: "Revert Skipped",
               message: "Could not find last message pair to revert.",
               variant: "warning",
               duration: 3000,
             },
-          })
-          .catch(() => {});
+          }).catch(() => {});
       }
     }
 

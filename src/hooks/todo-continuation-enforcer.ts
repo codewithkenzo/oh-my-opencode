@@ -8,6 +8,7 @@ import {
 } from "../features/hook-message-injector"
 import type { BackgroundManager } from "../features/background-agent"
 import { log } from "../shared/logger"
+import { showToast } from "../shared/toast"
 import { isNonInteractive } from "./non-interactive-env/detector"
 
 const HOOK_NAME = "todo-continuation-enforcer"
@@ -228,14 +229,12 @@ export function createTodoContinuationEnforcer(
       log(`[${HOOK_NAME}] Found incomplete todos, starting countdown`, { sessionID, incomplete: incomplete.length, total: todos.length })
 
       const showCountdownToast = async (seconds: number): Promise<void> => {
-        await ctx.client.tui.showToast({
-          body: {
-            title: "Todo Continuation",
-            message: `Resuming in ${seconds}s... (${incomplete.length} tasks remaining)`,
-            variant: "warning" as const,
-            duration: TOAST_DURATION_MS,
-          },
-        }).catch(() => {})
+        showToast(ctx, {
+          title: "Todo Continuation",
+          message: `Resuming in ${seconds}s... (${incomplete.length} tasks remaining)`,
+          variant: "warning",
+          duration: TOAST_DURATION_MS,
+        })
       }
 
       const executeAfterCountdown = async (): Promise<void> => {
@@ -300,14 +299,12 @@ export function createTodoContinuationEnforcer(
             log(`[${HOOK_NAME}] No tests found for changed files, adding TDD reminder`, { sessionID, fileCount: sessionFiles.size })
             prompt = `${prompt}\n\n${TDD_REMINDER}`
 
-            await ctx.client.tui.showToast({
-              body: {
-                title: "TDD Validation",
-                message: "Tests required before task completion",
-                variant: "warning" as const,
-                duration: TOAST_DURATION_MS,
-              },
-            }).catch(() => {})
+            showToast(ctx, {
+              title: "TDD Validation",
+              message: "Tests required before task completion",
+              variant: "warning",
+              duration: TOAST_DURATION_MS,
+            })
           }
 
           log(`[${HOOK_NAME}] Injecting continuation prompt`, { sessionID, agent: prevMessage?.agent })

@@ -58,7 +58,7 @@ import { builtinTools, createCallOmoAgent, createBackgroundTools, createLookAt, 
 import { BackgroundManager } from "./features/background-agent";
 import { createBuiltinMcps } from "./mcp";
 import { OhMyOpenCodeConfigSchema, type OhMyOpenCodeConfig, type HookName } from "./config";
-import { log, deepMerge, getUserConfigDir, addConfigLoadError } from "./shared";
+import { log, deepMerge, getUserConfigDir, addConfigLoadError, showToast } from "./shared";
 import { PLAN_SYSTEM_PROMPT, PLAN_PERMISSION } from "./agents/plan-prompt";
 import { DAIKU_PROMPT } from "./agents/builder";
 import { BUILD_PERMISSION } from "./agents/build-prompt";
@@ -146,20 +146,18 @@ function loadConfigFromPath(configPath: string, ctx: any): OhMyOpenCodeConfig | 
         const errorMsg = result.error.issues.map(i => `${i.path.join(".")}: ${i.message}`).join(", ");
         log(`Config validation error in ${configPath}:`, result.error.issues);
         addConfigLoadError({ path: configPath, error: `Validation error: ${errorMsg}` });
-        
+
         const errorList = result.error.issues
           .map(issue => `• ${issue.path.join(".")}: ${issue.message}`)
           .join("\n");
-        
-        ctx.client.tui.showToast({
-          body: {
-            title: "❌ OhMyOpenCode: Config Validation Failed",
-            message: `Failed to load ${configPath}\n\nValidation errors:\n${errorList}\n\nConfig will be ignored. Please fix the errors above.`,
-            variant: "error" as const,
-            duration: 10000,
-          },
-        }).catch(() => {});
-        
+
+        showToast(ctx, {
+          title: "❌ OhMyOpenCode: Config Validation Failed",
+          message: `Failed to load ${configPath}\n\nValidation errors:\n${errorList}\n\nConfig will be ignored. Please fix the errors above.`,
+          variant: "error" as const,
+          duration: 10000,
+        });
+
         return null;
       }
 
@@ -174,15 +172,13 @@ function loadConfigFromPath(configPath: string, ctx: any): OhMyOpenCodeConfig | 
     const hint = err instanceof SyntaxError
       ? "\n\nHint: Check for syntax errors in your JSON file (missing commas, quotes, brackets, etc.)"
       : "";
-    
-    ctx.client.tui.showToast({
-      body: {
-        title: "❌ OhMyOpenCode: Config Load Failed",
-        message: `Failed to load ${configPath}\n\nError: ${errorMsg}${hint}\n\nConfig will be ignored. Please fix the error above.`,
-        variant: "error" as const,
-        duration: 10000,
-      },
-    }).catch(() => {});
+
+    showToast(ctx, {
+      title: "❌ OhMyOpenCode: Config Load Failed",
+      message: `Failed to load ${configPath}\n\nError: ${errorMsg}${hint}\n\nConfig will be ignored. Please fix: error above.`,
+      variant: "error" as const,
+      duration: 10000,
+    });
   }
   return null;
 }

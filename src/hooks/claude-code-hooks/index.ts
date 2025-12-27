@@ -26,7 +26,7 @@ import {
 import { cacheToolInput, getToolInput } from "./tool-input-cache"
 import { recordToolUse, recordToolResult, getTranscriptPath, recordUserMessage } from "./transcript"
 import type { PluginConfig } from "./types"
-import { log, isHookDisabled } from "../../shared"
+import { log, isHookDisabled, showToast } from "../../shared"
 import { injectHookMessage } from "../../features/hook-message-injector"
 
 const sessionFirstMessageProcessed = new Set<string>()
@@ -189,16 +189,12 @@ export function createClaudeCodeHooksHook(ctx: PluginInput, config: PluginConfig
         const result = await executePreToolUseHooks(preCtx, claudeConfig, extendedConfig)
 
         if (result.decision === "deny") {
-          ctx.client.tui
-            .showToast({
-              body: {
-                title: "PreToolUse Hook Executed",
-                message: `✗ ${result.toolName ?? input.tool} ${result.hookName ?? "hook"}: BLOCKED ${result.elapsedMs ?? 0}ms\n${result.inputLines ?? ""}`,
-                variant: "error",
-                duration: 4000,
-              },
-            })
-            .catch(() => {})
+          showToast(ctx, {
+            title: "PreToolUse Hook Executed",
+            message: `✗ ${result.toolName ?? input.tool} ${result.hookName ?? "hook"}: BLOCKED ${result.elapsedMs ?? 0}ms\n${result.inputLines ?? ""}`,
+            variant: "error",
+            duration: 4000,
+          })
           throw new Error(result.reason ?? "Hook blocked the operation")
         }
 
@@ -251,16 +247,12 @@ export function createClaudeCodeHooksHook(ctx: PluginInput, config: PluginConfig
         const result = await executePostToolUseHooks(postCtx, claudeConfig, extendedConfig)
 
         if (result.block) {
-          ctx.client.tui
-            .showToast({
-              body: {
-                title: "PostToolUse Hook Warning",
-                message: result.reason ?? "Hook returned warning",
-                variant: "warning",
-                duration: 4000,
-              },
-            })
-            .catch(() => {})
+          showToast(ctx, {
+            title: "PostToolUse Hook Warning",
+            message: result.reason ?? "Hook returned warning",
+            variant: "warning",
+            duration: 4000,
+          })
         }
 
         if (result.warnings && result.warnings.length > 0) {
@@ -272,16 +264,12 @@ export function createClaudeCodeHooksHook(ctx: PluginInput, config: PluginConfig
         }
 
         if (result.hookName) {
-          ctx.client.tui
-            .showToast({
-              body: {
-                title: "PostToolUse Hook Executed",
-                message: `▶ ${result.toolName ?? input.tool} ${result.hookName}: ${result.elapsedMs ?? 0}ms`,
-                variant: "success",
-                duration: 2000,
-              },
-            })
-            .catch(() => {})
+          showToast(ctx, {
+            title: "PostToolUse Hook Executed",
+            message: `▶ ${result.toolName ?? input.tool} ${result.hookName}: ${result.elapsedMs ?? 0}ms`,
+            variant: "success",
+            duration: 2000,
+          })
         }
       }
     },
