@@ -27,6 +27,8 @@ import {
   createMemoryCaptureHook,
   createMemoryInjectorHook,
   createBrowserRelayHook,
+  createSkillEnforcerHook,
+  createAgentsMdEnforcerHook,
 } from "./hooks";
 import { createGoogleAntigravityAuthPlugin } from "./auth/antigravity";
 import {
@@ -337,13 +339,19 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     ? createThinkingBlockValidatorHook()
     : null;
   const memoryCapture = isHookEnabled("memory-capture")
-    ? createMemoryCaptureHook()
+    ? createMemoryCaptureHook(ctx)
     : null;
   const memoryInjector = isHookEnabled("memory-injector")
-    ? createMemoryInjectorHook()
+    ? createMemoryInjectorHook(ctx)
     : null;
   const browserRelay = isHookEnabled("browser-relay")
     ? createBrowserRelayHook()
+    : null;
+  const skillEnforcer = isHookEnabled("skill-enforcer")
+    ? createSkillEnforcerHook(ctx)
+    : null;
+  const agentsMdEnforcer = isHookEnabled("agents-md-enforcer")
+    ? createAgentsMdEnforcerHook(ctx)
     : null;
 
   const backgroundManager = new BackgroundManager(ctx);
@@ -605,6 +613,8 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await memoryCapture?.event(input);
       await memoryInjector?.event(input);
       await browserRelay?.event(input);
+      await skillEnforcer?.event(input);
+      await agentsMdEnforcer?.event(input);
 
       const { event } = input;
       const props = event.properties as Record<string, unknown> | undefined;
@@ -684,6 +694,8 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await emptyTaskResponseDetector?.["tool.execute.after"](input, output);
       await agentUsageReminder?.["tool.execute.after"](input, output);
       await interactiveBashSession?.["tool.execute.after"](input, output);
+      await skillEnforcer?.["tool.execute.after"](input, output);
+      await agentsMdEnforcer?.["tool.execute.after"](input, output);
       await memoryCapture?.["tool.execute.after"]?.(input, output);
     },
   };

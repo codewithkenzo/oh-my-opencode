@@ -1,5 +1,5 @@
 import { existsSync, readdirSync } from "node:fs"
-import { join } from "node:path"
+import { basename, dirname, extname, join } from "node:path"
 import type { PluginInput } from "@opencode-ai/plugin"
 import { getMainSessionID } from "../features/claude-code-session-state"
 import {
@@ -37,6 +37,22 @@ Incomplete tasks remain in your todo list. Continue working on the next pending 
 - Mark each task complete when finished
 - Do not stop until all tasks are done`
 
+const TDD_REMINDER = `[TDD VALIDATION REQUIRED]
+Before marking this task complete, ensure tests exist:
+- Write tests for new functionality
+- Run tests to verify: bun test
+- Tests should cover the changes made
+
+Without tests, the task cannot be verified as complete.`
+
+const TEST_FILE_PATTERNS = [
+  ".test.ts",
+  ".spec.ts",
+  ".test.tsx",
+  ".spec.tsx",
+  "_test.ts"
+]
+
 function getMessageDir(sessionID: string): string | null {
   if (!existsSync(MESSAGE_STORAGE)) return null
 
@@ -49,6 +65,29 @@ function getMessageDir(sessionID: string): string | null {
   }
 
   return null
+}
+
+function hasRelatedTests(changedFiles: Set<string>): boolean {
+  for (const file of changedFiles) {
+    if (TEST_FILE_PATTERNS.some(p => file.includes(p))) continue
+
+    const baseName = file.replace(/\.(ts|tsx)$/, "")
+    for (const pattern of TEST_FILE_PATTERNS) {
+      const testFile = baseName + pattern
+      if (existsSync(testFile)) return true
+    }
+
+    const dir = dirname(file)
+    const fileName = basename(file, extname(file))
+    const testsDir = join(dir, "__tests__")
+    if (existsSync(testsDir)) {
+      for (const pattern of TEST_FILE_PATTERNS) {
+        const testFile = join(testsDir, fileName + pattern)
+        if (existsSync(testFile)) return true
+      }
+    }
+  }
+  return false
 }
 
 function detectInterrupt(error: unknown): boolean {
@@ -87,6 +126,7 @@ export function createTodoContinuationEnforcer(
   const recoveringSessions = new Set<string>()
   const pendingCountdowns = new Map<string, CountdownState>()
   const preemptivelyInjectedSessions = new Set<string>()
+  const changedFilesPerSession = new Map<string, Set<string>>()
 
   const markRecovering = (sessionID: string): void => {
     recoveringSessions.add(sessionID)
@@ -253,6 +293,23 @@ export function createTodoContinuationEnforcer(
             return
           }
 
+          const sessionFiles = changedFilesPerSession.get(sessionID) || new Set()
+          let prompt = `${CONTINUATION_PROMPT}\n\n[Status: ${freshTodos.length - freshIncomplete.length}/${freshTodos.length} completed, ${freshIncomplete.length} remaining]`
+
+          if (sessionFiles.size > 0 && !hasRelatedTests(sessionFiles)) {
+            log(`[${HOOK_NAME}] No tests found for changed files, adding TDD reminder`, { sessionID, fileCount: sessionFiles.size })
+            prompt = `${prompt}\n\n${TDD_REMINDER}`
+
+            await ctx.client.tui.showToast({
+              body: {
+                title: "TDD Validation",
+                message: "Tests required before task completion",
+                variant: "warning" as const,
+                duration: TOAST_DURATION_MS,
+              },
+            }).catch(() => {})
+          }
+
           log(`[${HOOK_NAME}] Injecting continuation prompt`, { sessionID, agent: prevMessage?.agent })
           await ctx.client.session.prompt({
             path: { id: sessionID },
@@ -261,7 +318,7 @@ export function createTodoContinuationEnforcer(
               parts: [
                 {
                   type: "text",
-                  text: `${CONTINUATION_PROMPT}\n\n[Status: ${freshTodos.length - freshIncomplete.length}/${freshTodos.length} completed, ${freshIncomplete.length} remaining]`,
+                  text: prompt,
                 },
               ],
             },
@@ -394,11 +451,25 @@ export function createTodoContinuationEnforcer(
         errorSessions.delete(sessionInfo.id)
         recoveringSessions.delete(sessionInfo.id)
         preemptivelyInjectedSessions.delete(sessionInfo.id)
-        
+        changedFilesPerSession.delete(sessionInfo.id)
+
         const countdown = pendingCountdowns.get(sessionInfo.id)
         if (countdown) {
           clearInterval(countdown.intervalId)
           pendingCountdowns.delete(sessionInfo.id)
+        }
+      }
+    }
+
+    if (event.type === "tool.execute.after") {
+      const toolInfo = props as { sessionID?: string; tool?: string; args?: Record<string, unknown> } | undefined
+      if (toolInfo?.sessionID && (toolInfo.tool === "edit" || toolInfo.tool === "write")) {
+        const filePath = toolInfo.args?.filePath as string | undefined
+        if (filePath) {
+          const sessionFiles = changedFilesPerSession.get(toolInfo.sessionID) || new Set()
+          sessionFiles.add(filePath)
+          changedFilesPerSession.set(toolInfo.sessionID, sessionFiles)
+          log(`[${HOOK_NAME}] Tracked changed file`, { sessionID: toolInfo.sessionID, filePath })
         }
       }
     }

@@ -68,12 +68,14 @@ export const HookNameSchema = z.enum([
   "non-interactive-env",
   "interactive-bash-session",
   "empty-message-sanitizer",
-
+  
   "thinking-block-validator",
-
+  
   "memory-capture",
   "memory-injector",
   "browser-relay",
+  "skill-enforcer",
+  "agents-md-enforcer",
 ])
 
 export const AgentOverrideConfigSchema = z.object({
