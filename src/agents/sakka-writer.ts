@@ -1,6 +1,6 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 
-const DEFAULT_MODEL = "google/gemini-3-flash"
+const DEFAULT_MODEL = "google/gemini-3-flash-preview"
 
 export function createSakkaWriterAgent(
   model: string = DEFAULT_MODEL

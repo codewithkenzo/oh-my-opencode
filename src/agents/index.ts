@@ -8,6 +8,7 @@ import { takumiBuilderAgent } from "./takumi-builder"
 import { daikuBuilderAgent } from "./builder"
 import { hayaiBuilderAgent } from "./hayai-builder"
 import { tanteiDebuggerAgent } from "./tantei-debugger"
+import { kojiDebuggerAgent } from "./koji-debugger"
 import { sakkaWriterAgent } from "./sakka-writer"
 import { miruObserverAgent } from "./miru-observer"
 
@@ -21,6 +22,7 @@ export const builtinAgents: Record<string, AgentConfig> = {
   "Daiku - builder": daikuBuilderAgent,
   "Hayai - builder": hayaiBuilderAgent,
   "Tantei - debugger": tanteiDebuggerAgent,
+  "Koji - debugger": kojiDebuggerAgent,
   "Sakka - writer": sakkaWriterAgent,
   "Miru - observer": miruObserverAgent,
 }
