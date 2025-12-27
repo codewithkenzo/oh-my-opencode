@@ -16,14 +16,14 @@ export function createCallOmoAgent(
   return tool({
     description,
     args: {
-      description: tool.schema.string().describe("A short (3-5 words) description of the task"),
-      prompt: tool.schema.string().describe("The task for the agent to perform"),
+      description: tool.schema.string().describe("Short task description (3-5 words, shown in UI)"),
+      prompt: tool.schema.string().describe("Detailed instructions for the agent (not shown in UI preview)"),
       subagent_type: tool.schema
         .enum(ALLOWED_AGENTS)
-        .describe("The type of specialized agent to use for this task (explore or librarian only)"),
+        .describe(`Allowed: ${ALLOWED_AGENTS.join(", ")}`),
       run_in_background: tool.schema
         .boolean()
-        .describe("REQUIRED. true: run asynchronously (use background_output to get results), false: run synchronously and wait for completion"),
+        .describe("true=async (get results via background_output), false=sync (wait for completion)"),
       session_id: tool.schema.string().describe("Existing Task session to continue").optional(),
     },
     async execute(args: CallOmoAgentArgs, toolContext) {
@@ -59,21 +59,13 @@ async function executeBackground(
       parentMessageID: toolContext.messageID,
     })
 
-    return `Background agent task launched successfully.
-
-Task ID: ${task.id}
-Session ID: ${task.sessionID}
-Description: ${task.description}
-Agent: ${task.agent} (subagent)
-Status: ${task.status}
+    return `✓ Task ${task.id} launched (${task.agent}): ${task.description}
 
 The system will notify you when the task completes.
-Use \`background_output\` tool with task_id="${task.id}" to check progress:
-- block=false (default): Check status immediately - returns full status info
-- block=true: Wait for completion (rarely needed since system notifies)`
+Use \`background_output\` tool with task_id="${task.id}" to check progress.`
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    return `Failed to launch background agent task: ${message}`
+    return `❌ Failed to launch background task: ${message}`
   }
 }
 

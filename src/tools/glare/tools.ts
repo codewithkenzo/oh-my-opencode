@@ -3,8 +3,8 @@ import { existsSync, mkdirSync, writeFileSync } from "fs"
 import { dirname, join } from "path"
 import { spawn } from "bun"
 import { z } from "zod"
-import { GLARE_DESCRIPTION, RELAY_URL } from "./constants"
-import type { GlareArgs } from "./types"
+import { GLARE_DESCRIPTION, RELAY_URL, FRAMEWORK_DETECT_SCRIPT, FRAMEWORK_STATE_SCRIPTS, COMPONENT_TREE_SCRIPTS, TANSTACK_QUERY_SCRIPT, ROUTER_STATE_SCRIPTS } from "./constants"
+import type { GlareArgs, Framework } from "./types"
 import { log } from "../../shared/logger"
 import { homedir } from "os"
 
@@ -135,16 +135,45 @@ async function relayGet(path: string): Promise<string> {
   return response.text()
 }
 
+async function ensurePage(): Promise<void> {
+  const pagesRes = await fetch(`${RELAY_URL}/pages`, { signal: AbortSignal.timeout(5000) })
+  const pages = await pagesRes.json() as { pages: Array<{ name: string }> }
+  
+  if (pages.pages.length === 0) {
+    await fetch(`${RELAY_URL}/pages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "glare" }),
+      signal: AbortSignal.timeout(5000),
+    })
+  }
+}
+
+async function getPageUrl(): Promise<string> {
+  try {
+    const result = await relayPost("/evaluate", { expression: "window.location.href" }) as { result: { result: { value: string } } }
+    return result.result?.result?.value || "about:blank"
+  } catch {
+    return "about:blank"
+  }
+}
+
+function isBlankPage(url: string): boolean {
+  return url === "about:blank" || url.startsWith("about:") || url === ""
+}
+
 export const glare = tool({
   description: GLARE_DESCRIPTION,
   args: {
     action: tool.schema
-      .enum(["screenshot", "navigate", "snapshot", "info", "start", "console", "styles", "network", "eval", "source", "click"])
+      .enum(["screenshot", "navigate", "snapshot", "info", "start", "console", "styles", "network", "eval", "source", "click", "detect", "state", "tree", "queries", "routes", "markdown"])
       .describe("Action to perform"),
     url: tool.schema.string().optional().describe("URL to navigate to"),
     output_path: tool.schema.string().optional().describe("Screenshot output path"),
     selector: tool.schema.string().optional().describe("CSS selector"),
     script: tool.schema.string().optional().describe("JavaScript to execute"),
+    level: tool.schema.enum(["error", "warn", "all"]).optional().describe("Console verbosity: error (errors only), warn (errors+warnings), all (default)"),
+    framework: tool.schema.enum(["next", "nuxt", "react", "vue", "tanstack", "unknown"]).optional().describe("Framework for state/tree/routes actions (auto-detected if not specified)"),
   },
   async execute(args: GlareArgs) {
     log(`[glare] Action: ${args.action}`)
@@ -161,13 +190,21 @@ export const glare = tool({
       switch (args.action) {
         case "info": {
           const info = await fetchRelayTyped("/", RelayInfoSchema)
-          return `Relay Status:
-- Mode: ${info.mode}
-- Extension Connected: ${info.extensionConnected}
-- WebSocket: ${info.wsEndpoint}`
+          if (!info.extensionConnected) {
+            return "Not connected"
+          }
+          try {
+            await ensurePage()
+            const result = await relayPost("/evaluate", { expression: "window.location.href" }) as { result: { result: { value: string } } }
+            const url = result.result?.result?.value
+            return url ? `Connected (${url})` : "Connected"
+          } catch {
+            return "Connected"
+          }
         }
 
         case "screenshot": {
+          await ensurePage()
           const outputPath = args.output_path ?? "tmp/screenshot.png"
           const dir = dirname(outputPath)
           if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
@@ -182,6 +219,7 @@ export const glare = tool({
 
         case "navigate": {
           if (!args.url) return "Error: url parameter required"
+          await ensurePage()
 
           await relayPost("/cdp/execute", {
             method: "Page.navigate",
@@ -193,6 +231,7 @@ export const glare = tool({
 
         case "eval": {
           if (!args.script) return "Error: script parameter required"
+          await ensurePage()
 
           const result = await relayPost("/evaluate", {
             expression: args.script,
@@ -202,6 +241,11 @@ export const glare = tool({
         }
 
         case "source": {
+          await ensurePage()
+          const sourceUrl = await getPageUrl()
+          if (isBlankPage(sourceUrl)) {
+            return `Error: Page is on ${sourceUrl}. Use 'glare navigate url="https://..."' first.`
+          }
           const html = await relayGet("/source")
           return html.length > 50000
             ? html.substring(0, 50000) + "\n\n[Truncated...]"
@@ -209,6 +253,11 @@ export const glare = tool({
         }
 
         case "snapshot": {
+          await ensurePage()
+          const snapshotUrl = await getPageUrl()
+          if (isBlankPage(snapshotUrl)) {
+            return `Error: Page is on ${snapshotUrl}. Use 'glare navigate url="https://..."' first.`
+          }
           const result = await relayPost("/cdp/execute", {
             method: "Accessibility.getFullAXTree",
             params: {},
@@ -218,6 +267,7 @@ export const glare = tool({
 
         case "styles": {
           if (!args.selector) return "Error: selector parameter required"
+          await ensurePage()
 
           const script = `(() => {
             const el = document.querySelector("${args.selector}");
@@ -238,6 +288,7 @@ export const glare = tool({
 
         case "click": {
           if (!args.selector) return "Error: selector parameter required"
+          await ensurePage()
 
           const script = `(() => {
             const el = document.querySelector("${args.selector}");
@@ -250,21 +301,121 @@ export const glare = tool({
         }
 
         case "console": {
+          await ensurePage()
+          const level = args.level ?? "all"
+          const filterCode = level === "error" 
+            ? `.filter(l => l.level === 'error')` 
+            : level === "warn" 
+              ? `.filter(l => l.level === 'error' || l.level === 'warn' || l.level === 'warning')` 
+              : ""
           const script = `(() => {
             if (!window.__devBrowserLogs) window.__devBrowserLogs = [];
-            return window.__devBrowserLogs.slice(-50);
+            return window.__devBrowserLogs${filterCode}.slice(-50);
           })()`
           const result = await relayPost("/evaluate", { expression: script }) as { result: { result: { value: unknown } } }
           return JSON.stringify(result.result?.result?.value ?? result, null, 2)
         }
 
         case "network": {
+          await ensurePage()
           const script = `(() => {
             if (!window.__devBrowserRequests) window.__devBrowserRequests = [];
             return window.__devBrowserRequests.slice(-20);
           })()`
           const result = await relayPost("/evaluate", { expression: script }) as { result: { result: { value: unknown } } }
           return JSON.stringify(result.result?.result?.value ?? result, null, 2)
+        }
+
+        case "detect": {
+          await ensurePage()
+          const detectUrl = await getPageUrl()
+          if (isBlankPage(detectUrl)) {
+            return `Error: Page is on ${detectUrl}. Use 'glare navigate url="https://..."' first.`
+          }
+          const result = await relayPost("/evaluate", { expression: FRAMEWORK_DETECT_SCRIPT }) as { result: { result: { value: unknown } } }
+          return JSON.stringify(result.result?.result?.value ?? result, null, 2)
+        }
+
+        case "state": {
+          await ensurePage()
+          const stateUrl = await getPageUrl()
+          if (isBlankPage(stateUrl)) {
+            return `Error: Page is on ${stateUrl}. Use 'glare navigate url="https://..."' first.`
+          }
+          let fw = args.framework as Framework | undefined
+          if (!fw) {
+            const detectResult = await relayPost("/evaluate", { expression: FRAMEWORK_DETECT_SCRIPT }) as { result: { result: { value: { primary: string } } } }
+            fw = (detectResult.result?.result?.value?.primary || "unknown") as Framework
+          }
+          const stateScript = FRAMEWORK_STATE_SCRIPTS[fw] || FRAMEWORK_STATE_SCRIPTS.unknown
+          const result = await relayPost("/evaluate", { expression: stateScript }) as { result: { result: { value: unknown } } }
+          return JSON.stringify({ framework: fw, ...result.result?.result?.value as object }, null, 2)
+        }
+
+        case "tree": {
+          await ensurePage()
+          const treeUrl = await getPageUrl()
+          if (isBlankPage(treeUrl)) {
+            return `Error: Page is on ${treeUrl}. Use 'glare navigate url="https://..."' first.`
+          }
+          let fw = args.framework as Framework | undefined
+          if (!fw || !["react", "vue"].includes(fw)) {
+            const detectResult = await relayPost("/evaluate", { expression: FRAMEWORK_DETECT_SCRIPT }) as { result: { result: { value: { frameworks: string[] } } } }
+            const detected = detectResult.result?.result?.value?.frameworks || []
+            fw = detected.includes("react") ? "react" : detected.includes("vue") ? "vue" : "unknown"
+          }
+          const treeScript = COMPONENT_TREE_SCRIPTS[fw as string] || COMPONENT_TREE_SCRIPTS.unknown
+          const result = await relayPost("/evaluate", { expression: treeScript }) as { result: { result: { value: unknown } } }
+          return JSON.stringify({ framework: fw, ...result.result?.result?.value as object }, null, 2)
+        }
+
+        case "queries": {
+          await ensurePage()
+          const queriesUrl = await getPageUrl()
+          if (isBlankPage(queriesUrl)) {
+            return `Error: Page is on ${queriesUrl}. Use 'glare navigate url="https://..."' first.`
+          }
+          const result = await relayPost("/evaluate", { expression: TANSTACK_QUERY_SCRIPT }) as { result: { result: { value: unknown } } }
+          return JSON.stringify(result.result?.result?.value ?? result, null, 2)
+        }
+
+        case "routes": {
+          await ensurePage()
+          const routesUrl = await getPageUrl()
+          if (isBlankPage(routesUrl)) {
+            return `Error: Page is on ${routesUrl}. Use 'glare navigate url="https://..."' first.`
+          }
+          let fw = args.framework as Framework | undefined
+          if (!fw || !["next", "nuxt", "tanstack"].includes(fw)) {
+            const detectResult = await relayPost("/evaluate", { expression: FRAMEWORK_DETECT_SCRIPT }) as { result: { result: { value: { frameworks: string[] } } } }
+            const detected = detectResult.result?.result?.value?.frameworks || []
+            fw = detected.includes("next") ? "next" : detected.includes("nuxt") ? "nuxt" : detected.includes("tanstack") ? "tanstack" : "unknown"
+          }
+          const routeScript = ROUTER_STATE_SCRIPTS[fw as string] || ROUTER_STATE_SCRIPTS.unknown
+          const result = await relayPost("/evaluate", { expression: routeScript }) as { result: { result: { value: unknown } } }
+          return JSON.stringify({ framework: fw, ...result.result?.result?.value as object }, null, 2)
+        }
+
+        case "markdown": {
+          await ensurePage()
+          const markdownUrl = await getPageUrl()
+          if (isBlankPage(markdownUrl)) {
+            return `Error: Page is on ${markdownUrl}. Use 'glare navigate url="https://..."' first.`
+          }
+          const html = await relayGet("/source")
+          const TurndownService = (await import("turndown")).default
+          const turndownService = new TurndownService({
+            headingStyle: "atx",
+            hr: "---",
+            bulletListMarker: "-",
+            codeBlockStyle: "fenced",
+            emDelimiter: "*",
+          })
+          turndownService.remove(["script", "style", "meta", "link", "noscript"])
+          const markdown = turndownService.turndown(html)
+          return markdown.length > 50000
+            ? markdown.substring(0, 50000) + "\n\n[Truncated...]"
+            : markdown
         }
 
         default:

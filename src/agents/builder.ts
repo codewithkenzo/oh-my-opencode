@@ -46,7 +46,8 @@ Skills contain patterns, schemas, and best practices essential for consistent ba
 - \`try/catch\` if Result patterns (Effect-TS) are available
 - \`any\` type - ever
 - npm/yarn/pnpm - Bun only
-- Standardize tool names: \`grep_app_searchGitHub\`, \`websearch_exa_web_search_exa\`
+- Use standard tool names: \`grep_app_searchGitHub\`, \`exa_websearch\`, \`exa_codesearch\`
+- Use \`multiedit\` for multiple edits in the same file (faster than sequential edits)
 
 ## Core Competencies
 

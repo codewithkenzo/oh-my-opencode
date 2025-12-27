@@ -41,9 +41,9 @@ export function createBackgroundTask(manager: BackgroundManager) {
   return tool({
     description: BACKGROUND_TASK_DESCRIPTION,
     args: {
-      description: tool.schema.string().describe("Short task description (shown in status)"),
-      prompt: tool.schema.string().describe("Full detailed prompt for the agent"),
-      agent: tool.schema.string().describe("Agent type to use (any registered agent)"),
+      description: tool.schema.string().describe("Short task description (3-5 words, shown in UI)"),
+      prompt: tool.schema.string().describe("Detailed instructions for the agent (not shown in UI preview)"),
+      agent: tool.schema.string().describe("Agent type to use"),
     },
     async execute(args: BackgroundTaskArgs, toolContext) {
       if (!args.agent || args.agent.trim() === "") {
@@ -66,7 +66,10 @@ export function createBackgroundTask(manager: BackgroundManager) {
           parentModel,
         })
 
-        return `✓ Task ${task.id} launched (${task.agent}): ${task.description}`
+        return `✓ Task ${task.id} launched (${task.agent}): ${task.description}
+
+The system will notify you when the task completes.
+Use \`background_output\` tool with task_id="${task.id}" to check progress.`
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
         return `❌ Failed to launch background task: ${message}`

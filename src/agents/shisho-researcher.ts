@@ -5,7 +5,7 @@ const DEFAULT_MODEL = "google/gemini-3-flash"
 export function createShishoResearcherAgent(model: string = DEFAULT_MODEL): AgentConfig {
   return {
     description:
-      "Shisho - researcher: Specialized research agent with websearch, codesearch, context7, grep_app, and webfetch tools. For multi-repository analysis, official documentation lookup, finding implementation examples in open source. MUST BE USED when users ask to look up external libraries, explain library internals, or find usage examples.",
+      "Shisho - researcher: Specialized research agent with exa_websearch, exa_codesearch, context7, grep_app, and webfetch tools. For multi-repository analysis, official documentation lookup, finding implementation examples in open source. MUST BE USED when users ask to look up external libraries, explain library internals, or find usage examples.",
     mode: "subagent" as const,
     model,
     temperature: 0.1,
@@ -55,7 +55,7 @@ Classify EVERY request into one of these categories before taking action:
 
 | Type | Trigger Examples | Tools |
 |------|------------------|-------|
-| **TYPE A: CONCEPTUAL** | "How do I use X?", "Best practice for Y?" | context7 + websearch_exa_web_search_exa + codesearch (parallel) |
+| **TYPE A: CONCEPTUAL** | "How do I use X?", "Best practice for Y?" | context7 + exa_websearch + exa_codesearch (parallel) |
 | **TYPE B: IMPLEMENTATION** | "How does X implement Y?", "Show me source of Z" | gh clone + read + blame |
 | **TYPE C: CONTEXT** | "Why was this changed?", "History of X?" | gh issues/prs + git log/blame |
 | **TYPE D: COMPREHENSIVE** | Complex/ambiguous requests | ALL tools in parallel |
@@ -71,8 +71,8 @@ Classify EVERY request into one of these categories before taking action:
 \`\`\`
 Tool 1: context7_resolve_library_id(libraryName: "library-name")
         → then context7_get_library_docs(context7CompatibleLibraryID: id, topic: "specific question")
-Tool 2: websearch_exa_web_search_exa(query: "library-name topic 2025")
-Tool 3: codesearch(query: "library-name usage examples", tokensNum: 5000)
+Tool 2: exa_websearch(query: "library-name topic 2025")
+Tool 3: exa_codesearch(query: "library-name usage examples", tokensNum: 5000)
 Tool 4: grep_app_searchGitHub(query: "usage pattern", language: ["TypeScript"])
 \`\`\`
 
@@ -139,7 +139,7 @@ gh api repos/owner/repo/pulls/<number>/files
 \`\`\`
 // Documentation & Web
 Tool 1: context7_resolve_library_id → context7_get_library_docs
-Tool 2: websearch_exa_web_search_exa(query: "topic recent updates")
+Tool 2: exa_websearch(query: "topic recent updates")
 
 // Code Search
 Tool 3: grep_app_searchGitHub(query: "pattern1", language: [...])
@@ -195,8 +195,8 @@ https://github.com/tanstack/query/blob/abc123def/packages/react-query/src/useQue
 | Purpose | Tool | Command/Usage |
 |---------|------|---------------|
 | **Official Docs** | context7 | \`context7_resolve_library_id\` → \`context7_get_library_docs\` |
-| **Latest Info** | websearch_exa_web_search_exa | \`websearch_exa_web_search_exa(query: "query 2025")\` |
-| **Code Context** | codesearch | \`codesearch(query, tokensNum)\` - natural language queries |
+| **Latest Info** | exa_websearch | \`exa_websearch(query: "query 2025")\` |
+| **Code Context** | exa_codesearch | \`exa_codesearch(query, tokensNum)\` - natural language queries |
 | **Fast Code Search** | grep_app_searchGitHub | \`grep_app_searchGitHub(query, language, useRegexp)\` |
 | **Deep Code Search** | gh CLI | \`gh search code "query" --repo owner/repo\` |
 | **Clone Repo** | gh CLI | \`gh repo clone owner/repo \${TMPDIR:-/tmp}/name -- --depth 1\` |
