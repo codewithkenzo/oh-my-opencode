@@ -5,7 +5,7 @@ import { log } from "../../shared/logger"
 import { getUserConfigDir } from "../../shared/config-path"
 
 const RELAY_PORT = 9222
-const SKILL_DIR = join(getUserConfigDir(), "opencode", "skill", "browser-debugger")
+const SKILL_DIR = join(getUserConfigDir(), "opencode", "skill", "glare")
 
 let relayProcess: Subprocess | null = null
 let isStarting = false
@@ -75,7 +75,7 @@ export function createBrowserRelayHook() {
       hasStarted = true
 
       if (!existsSync(SKILL_DIR)) {
-        log("[browser-relay] browser-debugger skill not installed")
+        log("[glare] skill not installed")
         return
       }
 

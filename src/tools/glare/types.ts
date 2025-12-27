@@ -1,4 +1,4 @@
-export interface BrowserDebuggerArgs {
+export interface GlareArgs {
   action: "screenshot" | "navigate" | "snapshot" | "info" | "start" | "console" | "styles" | "network" | "eval" | "source" | "click"
   url?: string
   page_name?: string

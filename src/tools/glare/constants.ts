@@ -1,4 +1,4 @@
-export const BROWSER_DEBUGGER_DESCRIPTION = `Capture screenshots and interact with browser pages via the dev-browser relay.
+export const GLARE_DESCRIPTION = `Capture screenshots and interact with browser pages via the glare relay.
 
 Actions:
 - start: Start the relay server
@@ -13,6 +13,6 @@ Actions:
 - source: Get page HTML source (for copying website designs)
 - click: Click an element (requires selector)
 
-Requires browser-debugger skill installed and relay running.`
+Requires glare skill installed and relay running.`
 
 export const RELAY_URL = "http://localhost:9222"
