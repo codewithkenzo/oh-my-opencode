@@ -109,17 +109,15 @@ export async function executeDynamicContextPruning(
       config.notification === "detailed"
         ? `Pruned ${totalPruned} tool outputs (~${Math.round(tokensSaved / 1000)}k tokens). Dedup: ${dedupCount}, Supersede: ${supersedeCount}, Purge: ${purgeCount}`
         : `Pruned ${totalPruned} tool outputs (~${Math.round(tokensSaved / 1000)}k tokens)`
-    
-    await client.tui
-      .showToast({
-        body: {
-          title: "Dynamic Context Pruning",
-          message,
-          variant: "success",
-          duration: 3000,
-        },
-      })
-      .catch(() => {})
+
+    await client.tui.showToast({
+      body: {
+        title: "Dynamic Context Pruning",
+        message,
+        variant: "success",
+        duration: 3000,
+      },
+    }).catch(() => {});
   }
   
   return result

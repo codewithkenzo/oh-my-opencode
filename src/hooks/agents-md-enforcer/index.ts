@@ -3,6 +3,7 @@ import type { AgentsMdEnforcerState } from "./types";
 import { AGENTS_MD_FILENAME, CREATION_REMINDER, MKDIR_REMINDER, ENFORCED_PATTERNS, SKIP_PATTERNS } from "./constants";
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { showToast } from "../../shared";
 
 interface ToolExecuteInput {
   tool: string;
@@ -107,17 +108,6 @@ export function createAgentsMdEnforcerHook(ctx: PluginInput) {
     state.reminderCount++;
   }
 
-  function showToast(title: string, message: string): void {
-    ctx.client.tui.showToast?.({
-      body: {
-        title,
-        message,
-        variant: "info",
-        duration: 4000,
-      },
-    }).catch(() => {});
-  }
-
   const toolExecuteAfter = async (
     input: ToolExecuteInput,
     output: ToolExecuteOutput
@@ -175,8 +165,11 @@ export function createAgentsMdEnforcerHook(ctx: PluginInput) {
       recordReminder(state, resolvedDir);
 
       showToast(
-        "New Directory Created",
-        `Consider adding AGENTS.md to ${resolvedDir}`
+        ctx,
+        {
+          title: "New Directory Created",
+          message: `Consider adding AGENTS.md to ${resolvedDir}`
+        }
       );
 
       return;
@@ -212,8 +205,11 @@ export function createAgentsMdEnforcerHook(ctx: PluginInput) {
     recordReminder(state, directory);
 
     showToast(
-      "AGENTS.md Recommended",
-      `Directory ${directory} lacks AGENTS.md - adding one improves context`
+      ctx,
+      {
+        title: "AGENTS.md Recommended",
+        message: `Directory ${directory} lacks AGENTS.md - adding one improves context`
+      }
     );
   };
 

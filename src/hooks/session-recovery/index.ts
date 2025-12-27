@@ -1,6 +1,7 @@
 import type { PluginInput } from "@opencode-ai/plugin"
 import type { createOpencodeClient } from "@opencode-ai/sdk"
 import type { ExperimentalConfig } from "../../config"
+import { showToast } from "../../shared/toast"
 import {
   findEmptyMessages,
   findEmptyMessageByIndex,
@@ -376,16 +377,12 @@ export function createSessionRecoveryHook(ctx: PluginInput, options?: SessionRec
         thinking_disabled_violation: "Stripping thinking blocks...",
       }
 
-      await ctx.client.tui
-        .showToast({
-          body: {
-            title: toastTitles[errorType],
-            message: toastMessages[errorType],
-            variant: "warning",
-            duration: 3000,
-          },
-        })
-        .catch(() => {})
+      showToast(ctx, {
+        title: toastTitles[errorType],
+        message: toastMessages[errorType],
+        variant: "warning",
+        duration: 3000,
+      })
 
       let success = false
 

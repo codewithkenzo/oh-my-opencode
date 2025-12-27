@@ -4,6 +4,7 @@ import { invalidatePackage } from "./cache"
 import { PACKAGE_NAME } from "./constants"
 import { log } from "../../shared/logger"
 import { getConfigLoadErrors, clearConfigLoadErrors } from "../../shared/config-errors"
+import { showToast } from "../../shared/toast"
 import type { AutoUpdateCheckerOptions } from "./types"
 
 const SISYPHUS_SPINNER = ["·", "•", "●", "○", "◌", "◦", " "]
@@ -118,16 +119,12 @@ async function showConfigErrorsIfAny(ctx: PluginInput): Promise<void> {
   if (errors.length === 0) return
 
   const errorMessages = errors.map(e => `${e.path}: ${e.error}`).join("\n")
-  await ctx.client.tui
-    .showToast({
-      body: {
-        title: "Config Load Error",
-        message: `Failed to load config:\n${errorMessages}`,
-        variant: "error" as const,
-        duration: 10000,
-      },
-    })
-    .catch(() => {})
+  showToast(ctx, {
+    title: "Config Load Error",
+    message: `Failed to load config:\n${errorMessages}`,
+    variant: "error",
+    duration: 10000,
+  })
 
   log(`[auto-update-checker] Config load errors shown: ${errors.length} error(s)`)
   clearConfigLoadErrors()
@@ -146,16 +143,12 @@ async function showSpinnerToast(ctx: PluginInput, version: string, message: stri
 
   for (let i = 0; i < totalFrames; i++) {
     const spinner = SISYPHUS_SPINNER[i % SISYPHUS_SPINNER.length]
-    await ctx.client.tui
-      .showToast({
-        body: {
-          title: `${spinner} OhMyOpenCode ${version}`,
-          message,
-          variant: "info" as const,
-          duration: frameInterval + 50,
-        },
-      })
-      .catch(() => { })
+    showToast(ctx, {
+      title: `${spinner} OhMyOpenCode ${version}`,
+      message,
+      variant: "info",
+      duration: frameInterval + 50,
+    })
     await new Promise(resolve => setTimeout(resolve, frameInterval))
   }
 }
@@ -165,30 +158,22 @@ async function showUpdateAvailableToast(
   latestVersion: string,
   getToastMessage: (isUpdate: boolean, latestVersion?: string) => string
 ): Promise<void> {
-  await ctx.client.tui
-    .showToast({
-      body: {
-        title: `OhMyOpenCode ${latestVersion}`,
-        message: getToastMessage(true, latestVersion),
-        variant: "info" as const,
-        duration: 8000,
-      },
-    })
-    .catch(() => {})
+  showToast(ctx, {
+    title: `OhMyOpenCode ${latestVersion}`,
+    message: getToastMessage(true, latestVersion),
+    variant: "info",
+    duration: 8000,
+  })
   log(`[auto-update-checker] Update available toast shown: v${latestVersion}`)
 }
 
 async function showAutoUpdatedToast(ctx: PluginInput, oldVersion: string, newVersion: string): Promise<void> {
-  await ctx.client.tui
-    .showToast({
-      body: {
-        title: `OhMyOpenCode Updated!`,
-        message: `v${oldVersion} → v${newVersion}\nRestart OpenCode to apply.`,
-        variant: "success" as const,
-        duration: 8000,
-      },
-    })
-    .catch(() => {})
+  showToast(ctx, {
+    title: `OhMyOpenCode Updated!`,
+    message: `v${oldVersion} → v${newVersion}\nRestart OpenCode to apply.`,
+    variant: "success",
+    duration: 8000,
+  })
   log(`[auto-update-checker] Auto-updated toast shown: v${oldVersion} → v${newVersion}`)
 }
 
