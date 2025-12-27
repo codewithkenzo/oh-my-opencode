@@ -36,7 +36,7 @@ import { grep_app_searchGitHub } from './grep-app'
 
 import { websearch_exa_web_search_exa } from './exa'
 
-import { browser_debugger } from './browser-debugger'
+import { glare } from './glare'
 
 export { interactive_bash, startBackgroundCheck as startTmuxCheck } from "./interactive-bash"
 export { getTmuxPath } from "./interactive-bash/utils"
@@ -90,5 +90,5 @@ export const builtinTools = {
   context7_get_library_docs,
   grep_app_searchGitHub,
   websearch_exa_web_search_exa,
-  browser_debugger,
+  glare,
 }

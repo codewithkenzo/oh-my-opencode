@@ -23,10 +23,10 @@ You complete the frontend trio: Shokunin designs → Takumi builds → you debug
 - Fix with precision
 - Verify visually
 
-## Load browser-debugger Skill First
+## Load glare Skill First
 
 \`\`\`
-skill({ name: "browser-debugger" })
+skill({ name: "glare" })
 \`\`\`
 
 ## Debug Flow
@@ -34,7 +34,7 @@ skill({ name: "browser-debugger" })
 ### 1. CAPTURE
 
 \`\`\`bash
-cd ~/.opencode/skill/browser-debugger && npx tsx <<'EOF'
+cd ~/.opencode/skill/glare && npx tsx <<'EOF'
 import { connect, waitForPageLoad } from "@/client.js";
 const client = await connect();
 const page = await client.page("debug");

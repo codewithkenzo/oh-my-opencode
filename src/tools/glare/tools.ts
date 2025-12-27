@@ -3,12 +3,12 @@ import { existsSync, mkdirSync, writeFileSync } from "fs"
 import { dirname, join } from "path"
 import { spawn } from "bun"
 import { z } from "zod"
-import { BROWSER_DEBUGGER_DESCRIPTION, RELAY_URL } from "./constants"
-import type { BrowserDebuggerArgs } from "./types"
+import { GLARE_DESCRIPTION, RELAY_URL } from "./constants"
+import type { GlareArgs } from "./types"
 import { log } from "../../shared/logger"
 import { getUserConfigDir } from "../../shared/config-path"
 
-const SKILL_DIR = join(getUserConfigDir(), "opencode", "skill", "browser-debugger")
+const SKILL_DIR = join(getUserConfigDir(), "opencode", "skill", "glare")
 
 const RelayInfoSchema = z.object({
   mode: z.string(),
@@ -51,7 +51,7 @@ async function fetchRelayTyped<T>(path: string, schema: z.ZodType<T>, options?: 
   
   const result = schema.safeParse(data)
   if (!result.success) {
-    log("[browser-debugger] Schema validation failed:", result.error.issues)
+    log("[glare] Schema validation failed:", result.error.issues)
     throw new Error(`Invalid relay response: ${result.error.issues.map(i => `${i.path.join(".")}: ${i.message}`).join(", ")}`)
   }
   
@@ -78,10 +78,10 @@ async function startRelayServer(): Promise<string> {
 
   const scriptPath = join(SKILL_DIR, "scripts", "start-relay.ts")
   if (!existsSync(scriptPath)) {
-    return `Error: browser-debugger skill not installed at ${SKILL_DIR}`
+    return `Error: glare skill not installed at ${SKILL_DIR}`
   }
 
-  log("[browser-debugger] Starting relay server...")
+  log("[glare] Starting relay server...")
 
   spawn({
     cmd: ["npx", "tsx", scriptPath],
@@ -103,7 +103,7 @@ async function startRelayServer(): Promise<string> {
 Connect your browser extension to ws://localhost:9222/cdp`
   }
 
-  return "Error: Failed to start relay server. Check that browser-debugger skill is properly installed."
+  return "Error: Failed to start relay server. Check that glare skill is properly installed."
 }
 
 async function relayPost(path: string, body: Record<string, unknown> = {}): Promise<unknown> {
@@ -135,8 +135,8 @@ async function relayGet(path: string): Promise<string> {
   return response.text()
 }
 
-export const browser_debugger = tool({
-  description: BROWSER_DEBUGGER_DESCRIPTION,
+export const glare = tool({
+  description: GLARE_DESCRIPTION,
   args: {
     action: tool.schema
       .enum(["screenshot", "navigate", "snapshot", "info", "start", "console", "styles", "network", "eval", "source", "click"])
@@ -146,8 +146,8 @@ export const browser_debugger = tool({
     selector: tool.schema.string().optional().describe("CSS selector"),
     script: tool.schema.string().optional().describe("JavaScript to execute"),
   },
-  async execute(args: BrowserDebuggerArgs) {
-    log(`[browser-debugger] Action: ${args.action}`)
+  async execute(args: GlareArgs) {
+    log(`[glare] Action: ${args.action}`)
 
     if (args.action === "start") {
       return await startRelayServer()

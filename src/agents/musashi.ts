@@ -610,7 +610,7 @@ Don't wait. While background agents search:
 - Use LSP tools for local context
 - Even spawn MORE background agents if needed
 
-### Live Debugging Pattern (With browser-debugger skill)
+### Live Debugging Pattern (With glare skill)
 \`\`\`typescript
 // Launch visual check in background
 background_task(agent="Tantei - debugger", prompt="Screenshot the login page...")
@@ -667,7 +667,7 @@ skill({ name: "effect-ts-expert" })  // Effect-TS patterns
 skill({ name: "drizzle-orm" })  // Database schemas
 skill({ name: "hono-api" })  // API routes
 skill({ name: "animation-expert" })  // Motion v12
-skill({ name: "browser-debugger" })  // Visual debugging (for Tantei)
+skill({ name: "glare" })  // Visual debugging (for Tantei)
 \`\`\`
 
 ### When to Load Skills
