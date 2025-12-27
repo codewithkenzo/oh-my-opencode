@@ -219,7 +219,7 @@ export const browser_debugger = tool({
         case "styles": {
           if (!args.selector) return "Error: selector parameter required"
 
-          const script = `
+          const script = `(() => {
             const el = document.querySelector("${args.selector}");
             if (!el) return { error: "Element not found" };
             const s = window.getComputedStyle(el);
@@ -231,40 +231,40 @@ export const browser_debugger = tool({
               fontSize: s.fontSize, flexDirection: s.flexDirection,
               border: s.border, borderRadius: s.borderRadius
             };
-          `
-          const result = await relayPost("/evaluate", { expression: script })
-          return JSON.stringify(result, null, 2)
+          })()`
+          const result = await relayPost("/evaluate", { expression: script }) as { result: { result: { value: unknown } } }
+          return JSON.stringify(result.result?.result?.value ?? result, null, 2)
         }
 
         case "click": {
           if (!args.selector) return "Error: selector parameter required"
 
-          const script = `
+          const script = `(() => {
             const el = document.querySelector("${args.selector}");
             if (!el) return { error: "Element not found" };
             el.click();
             return { clicked: "${args.selector}" };
-          `
-          const result = await relayPost("/evaluate", { expression: script })
-          return JSON.stringify(result, null, 2)
+          })()`
+          const result = await relayPost("/evaluate", { expression: script }) as { result: { result: { value: unknown } } }
+          return JSON.stringify(result.result?.result?.value ?? result, null, 2)
         }
 
         case "console": {
-          const script = `
+          const script = `(() => {
             if (!window.__devBrowserLogs) window.__devBrowserLogs = [];
             return window.__devBrowserLogs.slice(-50);
-          `
-          const result = await relayPost("/evaluate", { expression: script })
-          return JSON.stringify(result, null, 2)
+          })()`
+          const result = await relayPost("/evaluate", { expression: script }) as { result: { result: { value: unknown } } }
+          return JSON.stringify(result.result?.result?.value ?? result, null, 2)
         }
 
         case "network": {
-          const script = `
+          const script = `(() => {
             if (!window.__devBrowserRequests) window.__devBrowserRequests = [];
             return window.__devBrowserRequests.slice(-20);
-          `
-          const result = await relayPost("/evaluate", { expression: script })
-          return JSON.stringify(result, null, 2)
+          })()`
+          const result = await relayPost("/evaluate", { expression: script }) as { result: { result: { value: unknown } } }
+          return JSON.stringify(result.result?.result?.value ?? result, null, 2)
         }
 
         default:
