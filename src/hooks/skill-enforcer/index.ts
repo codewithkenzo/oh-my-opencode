@@ -1,6 +1,7 @@
 import type { PluginInput } from "@opencode-ai/plugin";
 import type { SkillEnforcerState } from "./types";
-import { SKILL_PATTERNS, ERROR_TRIGGERS, REMINDER_TEMPLATE } from "./constants";
+import { REMINDER_TEMPLATE } from "./constants";
+import { discoverAllSkills, matchSkillsForFile } from "./discovery";
 
 interface ToolExecuteInput {
   tool: string;
@@ -21,51 +22,16 @@ interface EventInput {
   };
 }
 
-function matchesGlob(filePath: string, patterns: string[]): boolean {
-  for (const pattern of patterns) {
-    const regex = new RegExp(
-      "^" + pattern
-        .replace(/\*\*/g, "[^/]+")
-        .replace(/\*/g, ".*")
-        .replace(/\?/g, "[^/]")
-        .replace(/\./g, "\\.")
-        .replace(/\.ts$/g, "\\.ts$")
-        .replace(/\.tsx$/g, "\\.tsx$")
-        .replace(/\.js$/g, "\\.js$")
-        .replace(/\.jsx$/g, "\\.jsx$")
-        + "$"
-    );
-    if (regex.test(filePath)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function getRecommendedSkills(filePath: string): string[] {
-  const recommended = new Set<string>();
-  for (const [_category, { globs, skills }] of Object.entries(SKILL_PATTERNS)) {
-    if (matchesGlob(filePath, globs)) {
-      skills.forEach(skill => recommended.add(skill));
-    }
-  }
-  return Array.from(recommended);
-}
-
-function _containsError(text: string): boolean {
-  const lowerText = text.toLowerCase();
-  return ERROR_TRIGGERS.some(trigger => lowerText.includes(trigger.toLowerCase()));
-}
-
-function buildReminder(skills: string[]): string {
-  const skillsList = skills.join(", ");
+function buildReminder(skillNames: string[]): string {
+  const skillsList = skillNames.join(", ");
   return REMINDER_TEMPLATE
     .replace("{{skills}}", skillsList)
-    .replace("{{first_skill}}", skills[0]);
+    .replace("{{first_skill}}", skillNames[0]);
 }
 
 export function createSkillEnforcerHook(ctx: PluginInput) {
   const sessionStates = new Map<string, SkillEnforcerState>();
+  const discoveredSkills = discoverAllSkills(ctx.directory);
   const MAX_SUGGESTIONS = 3;
 
   function getOrCreateState(sessionID: string): SkillEnforcerState {
@@ -148,15 +114,15 @@ export function createSkillEnforcerHook(ctx: PluginInput) {
 
     markFileAccessed(sessionID, filePath);
 
-    const recommendedSkills = getRecommendedSkills(filePath);
-    if (recommendedSkills.length === 0) {
+    const matchedSkills = matchSkillsForFile(discoveredSkills, filePath);
+    if (matchedSkills.length === 0) {
       return;
     }
 
     const state = getOrCreateState(sessionID);
-    const skillsToSuggest = recommendedSkills.filter(skill =>
-      shouldShowSuggestion(state, skill)
-    );
+    const skillsToSuggest = matchedSkills
+      .map(s => s.name)
+      .filter(name => shouldShowSuggestion(state, name));
 
     if (skillsToSuggest.length === 0) {
       return;
@@ -165,7 +131,7 @@ export function createSkillEnforcerHook(ctx: PluginInput) {
     const reminder = buildReminder(skillsToSuggest);
     output.output += reminder;
 
-    skillsToSuggest.forEach(skill => recordSuggestion(state, skill));
+    skillsToSuggest.forEach(name => recordSuggestion(state, name));
 
     showToast(
       "Skill Suggestion",
