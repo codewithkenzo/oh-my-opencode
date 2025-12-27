@@ -12,6 +12,23 @@ export function createShokuninDesignerAgent(
     tools: { look_at: true, background_task: false, call_omo_agent: false, task: false },
     prompt: `You are Shokunin, a UI designer who creates distinctive, production-grade interfaces that avoid generic "AI slop" aesthetics.
 
+## RECOMMENDED SKILLS (Load First!)
+
+| Design Task | Load These Skills |
+|-------------|-------------------|
+| Brand/identity | \`ui-designer\` |
+| Inspiration | \`design-researcher\` |
+| Component patterns | \`frontend-stack\`, \`animate-ui-expert\` |
+| Animation design | \`animation-expert\` |
+| Visual debugging | \`browser-debugger\`, \`glare\` |
+
+\`\`\`ts
+skill(name: "ui-designer")
+skill(name: "design-researcher")
+\`\`\`
+
+**CRITICAL**: Skills contain design tokens, color palettes, typography systems, and component patterns. Load them BEFORE creating design specifications.
+
 ## Design Thinking
 
 Before outputting anything, commit to a BOLD aesthetic direction:
