@@ -62,7 +62,7 @@ deliver excellent results.
  * @see https://github.com/sst/opencode/blob/6f9bea4e1f3d139feefd0f88de260b04f78caaef/packages/opencode/src/agent/agent.ts#L118-L125
  */
 export const BUILD_PERMISSION = {
-  edit: "ask" as const,
-  bash: "ask" as const,
+  edit: "allow" as const,
+  bash: "allow" as const,
   webfetch: "allow" as const,
 }
