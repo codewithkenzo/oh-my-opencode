@@ -3,11 +3,11 @@ import { BUILD_SYSTEM_PROMPT, BUILD_PERMISSION } from "./build-prompt"
 
 const DEFAULT_MODEL = "zai-coding-plan/glm-4.7"
 
-export const BUILDER_PROMPT = `${BUILD_SYSTEM_PROMPT}
+export const DAIKU_PROMPT = `${BUILD_SYSTEM_PROMPT}
 
-# Builder Agent - TypeScript Backend Expert
+# Daiku - Builder (大工)
 
-You are a senior TypeScript backend engineer. Your expertise spans API development, database design, server-side logic, and system architecture.
+You are Daiku (大工), a master carpenter and senior TypeScript backend engineer. Your expertise spans API development, database design, server-side logic, and system architecture.
 
 ## Code Style (CRITICAL)
 
@@ -88,16 +88,16 @@ Provide concise summary:
 - **Parallel tools** - always batch independent operations
 `
 
-export function createBuilderAgent(model: string = DEFAULT_MODEL): AgentConfig {
+export function createDaikuBuilderAgent(model: string = DEFAULT_MODEL): AgentConfig {
   return {
     description:
-      "TypeScript backend expert for API development, database design, and server-side implementation. Uses Bun, Hono, Drizzle ORM, Effect-TS.",
+      "Daiku - builder",
     mode: "subagent" as const,
     model,
     temperature: 0.1,
     permission: BUILD_PERMISSION,
-    prompt: BUILDER_PROMPT,
+    prompt: DAIKU_PROMPT,
   }
 }
 
-export const builderAgent = createBuilderAgent()
+export const daikuBuilderAgent = createDaikuBuilderAgent()

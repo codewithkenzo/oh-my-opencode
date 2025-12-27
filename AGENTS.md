@@ -23,7 +23,7 @@ This fork includes enhancements beyond upstream:
 ```
 oh-my-opencode/
 ├── src/
-│   ├── agents/        # AI agents (9): Musashi, Kenja, Shisho, Ninja, Shokunin, Takumi, Tantei, Sakka, Miru
+│   ├── agents/        # AI agents (10): Musashi, Kenja, Shisho, Ninja, Daiku, Shokunin, Takumi, Hayai, Tantei, Sakka, Miru
 │   ├── hooks/         # 21 lifecycle hooks - see src/hooks/AGENTS.md
 │   ├── tools/         # LSP, AST-Grep, Grep, Glob, etc. - see src/tools/AGENTS.md
 │   ├── mcp/           # MCP servers: context7, websearch_exa, grep_app
@@ -93,18 +93,30 @@ oh-my-opencode/
 | Kenja - advisor | zai-coding-plan/glm-4.7 | Strategic advisor, code review |
 | Shisho - researcher | opencode/kimi-k2 | Multi-repo analysis, docs |
 | Ninja - explorer | opencode/grok-code | Fast codebase exploration |
-| Shokunin - designer | minimax/MiniMax-M2.1 | UI orchestrator, leads frontend team |
-| Takumi - builder | minimax/MiniMax-M2.1 | Primary UI component builder |
+| Daiku - builder | zai-coding-plan/glm-4.7 | General/backend builder - APIs, databases, TypeScript |
+| Shokunin - designer | google/gemini-3-pro-high | UI design language, visual systems, multimodal |
+| Takumi - builder | minimax/MiniMax-M2.1 | Frontend components only - React, Tailwind, Motion |
+| Hayai - builder | opencode/grok-code | Fast bulk edits, renames, simple changes |
 | Tantei - debugger | google/gemini-3-flash | Visual debugging with multimodal |
 | Sakka - writer | google/gemini-3-flash | Technical docs |
 | Miru - observer | google/gemini-3-flash | PDF/image analysis |
 
+### Builder Agent Routing
+
+| Work Type | Use Agent | Why |
+|-----------|-----------|-----|
+| Backend/APIs/DB | Daiku - builder | GLM 4.7, high rate limits |
+| Shell commands/config | Daiku - builder | Preserves MiniMax quota |
+| Frontend components | Takumi - builder | MiniMax M2.1 for UI generation |
+| Bulk file edits | Hayai - builder | Grok, fastest for repetitive |
+| Design language | Shokunin - designer | Gemini Pro High, multimodal |
+
 ### Frontend Agent Hierarchy
 
 ```
-Shokunin - designer (MiniMax M2.1) - Orchestrator
-├── Takumi - builder (MiniMax M2.1) - Primary component builder
-└── Tantei - debugger (Gemini Flash) - Visual debugging loops
+Shokunin - designer (Gemini Pro High) - Design language, visual direction
+Takumi - builder (MiniMax M2.1) - Component implementation  
+Tantei - debugger (Gemini Flash) - Visual debugging
 ```
 
 ## COMMANDS

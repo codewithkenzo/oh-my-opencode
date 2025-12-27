@@ -215,9 +215,9 @@ export function generateOmoConfig(installConfig: InstallConfig): Record<string, 
 
   if (!installConfig.hasClaude) {
     agents["Sisyphus"] = { model: "opencode/big-pickle" }
-    agents["librarian"] = { model: "opencode/big-pickle" }
+    agents["Shisho - researcher"] = { model: "opencode/big-pickle" }
   } else if (!installConfig.isMax20) {
-    agents["librarian"] = { model: "opencode/big-pickle" }
+    agents["Shisho - researcher"] = { model: "opencode/big-pickle" }
   }
 
   if (!installConfig.hasChatGPT) {
@@ -227,14 +227,14 @@ export function generateOmoConfig(installConfig: InstallConfig): Record<string, 
   }
 
   if (installConfig.hasGemini) {
-    agents["frontend-ui-ux-engineer"] = { model: "google/gemini-3-pro-high" }
-    agents["document-writer"] = { model: "google/gemini-3-flash" }
-    agents["multimodal-looker"] = { model: "google/gemini-3-flash" }
+    agents["Shokunin - designer"] = { model: "google/gemini-3-pro-high" }
+    agents["Sakka - writer"] = { model: "google/gemini-3-flash" }
+    agents["Miru - observer"] = { model: "google/gemini-3-flash" }
   } else {
     const fallbackModel = installConfig.hasClaude ? "anthropic/claude-opus-4-5" : "opencode/big-pickle"
-    agents["frontend-ui-ux-engineer"] = { model: fallbackModel }
-    agents["document-writer"] = { model: fallbackModel }
-    agents["multimodal-looker"] = { model: fallbackModel }
+    agents["Shokunin - designer"] = { model: fallbackModel }
+    agents["Sakka - writer"] = { model: fallbackModel }
+    agents["Miru - observer"] = { model: fallbackModel }
   }
 
   if (Object.keys(agents).length > 0) {
@@ -491,7 +491,7 @@ export function detectCurrentConfig(): DetectedConfig {
     if (agents["Sisyphus"]?.model === "opencode/big-pickle") {
       result.hasClaude = false
       result.isMax20 = false
-    } else if (agents["librarian"]?.model === "opencode/big-pickle") {
+    } else if (agents["Shisho - researcher"]?.model === "opencode/big-pickle") {
       result.hasClaude = true
       result.isMax20 = false
     }
