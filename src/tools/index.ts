@@ -30,13 +30,19 @@ import {
 
 import { memory, memory_tools } from './memory'
 
-import { context7_resolve_library_id, context7_get_library_docs } from './context7'
+import { context7_resolve_library_id, context7_get_library_docs, context7_query_docs } from './context7'
 
 import { grep_app_searchGitHub } from './grep-app'
 
-import { websearch_exa_web_search_exa } from './exa'
+import { websearch } from './exa'
 
 import { glare } from './glare'
+
+import { codesearch } from './codesearch'
+
+import { webfetch } from './webfetch'
+
+import { multiedit } from './multiedit'
 
 export { interactive_bash, startBackgroundCheck as startTmuxCheck } from "./interactive-bash"
 export { getTmuxPath } from "./interactive-bash/utils"
@@ -88,7 +94,11 @@ export const builtinTools = {
   memory_tools,
   context7_resolve_library_id,
   context7_get_library_docs,
+  context7_query_docs,
   grep_app_searchGitHub,
-  websearch_exa_web_search_exa,
+  websearch,
   glare,
+  codesearch,
+  webfetch,
+  multiedit,
 }
