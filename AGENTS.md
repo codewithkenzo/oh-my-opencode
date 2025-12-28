@@ -12,11 +12,13 @@ OpenCode plugin implementing Claude Code/AmpCode features. Multi-model agent orc
 
 This fork includes enhancements beyond upstream:
 
-- **Memory hooks**: memory-capture and memory-injector for persistent context across sessions (requires Ollama with mxbai-embed-large)
+- **Supermemory integration**: Persistent memory via opencode-supermemory plugin (cloud-based, replaces local memory hooks)
 - **Antigravity context tracking**: All google/* models now track Antigravity context for multi-account load balancing
 - **Sisyphus enhancements**: Async/parallel task execution improvements, skill-awareness for detecting and using custom skills
 - **Context notifications**: Notifies at 20/40/60/80% context window usage
 - **UX improvements**: Fixed compaction toast display issues
+
+Note: Old memory hooks (memory-capture, memory-injector) are deprecated. Use supermemory tool instead.
 
 ## STRUCTURE
 

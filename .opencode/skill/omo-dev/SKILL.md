@@ -10,7 +10,7 @@ description: oh-my-opencode plugin development. Use when adding hooks, tools, ag
 This is kenzo's fork of oh-my-opencode at `/home/kenzo/dev/oh-my-opencode-fork`.
 
 ### Fork-Specific Enhancements
-- **Memory hooks**: memory-capture (stores) + memory-injector (auto-injects context)
+- **Supermemory integration**: Cloud-based persistent memory via opencode-supermemory plugin (replaces local memory hooks)
 - **Antigravity tracking**: All `google/*` models tracked, not just Claude
 - **Sisyphus improvements**: Async mastery, skill awareness, direct intervention
 - **Context notifications**: 20/40/60/80% milestones with contextual messages
@@ -19,9 +19,7 @@ This is kenzo's fork of oh-my-opencode at `/home/kenzo/dev/oh-my-opencode-fork`.
 ### Key Files Modified from Upstream
 - `src/hooks/preemptive-compaction/index.ts` - Context tracking, notifications
 - `src/hooks/context-window-monitor.ts` - Antigravity provider support
-- `src/hooks/memory-capture/index.ts` - Semantic memory storage
-- `src/hooks/memory-injector/index.ts` - Auto context injection
-- `src/agents/sisyphus.ts` - Orchestrator enhancements
+- `src/agents/musashi.ts` - Orchestrator with supermemory integration
 - `src/agents/frontend-ui-ux-engineer.ts` - MiniMax M2.1 model
 
 ## Git Workflow
@@ -36,7 +34,7 @@ git fetch upstream
 git rebase upstream/master
 
 # Resolve conflicts, keeping fork-specific changes
-# Key files to preserve: memory hooks, sisyphus enhancements, antigravity tracking
+# Key files to preserve: musashi, antigravity tracking, context notifications
 ```
 
 ### Before Rebasing
@@ -62,12 +60,11 @@ git rebase upstream/master
 **Cause**: Anthropic API strict ordering requirement
 **Fix**: Use `reorderTextAndToolBlocks` before sending
 
-### Memory Hooks Not Running
+### Supermemory Not Working
 **Check**:
-1. Ollama running: `curl localhost:11434/api/tags`
-2. Model installed: `ollama pull mxbai-embed-large`
-3. Hook enabled: Not in `disabled_hooks` array
-4. CLI exists: `~/.config/opencode/lib/memory-cli.ts`
+1. Plugin: `"opencode-supermemory"` in opencode.json plugins
+2. API key: `SUPERMEMORY_API_KEY` set
+3. Test: `supermemory({ mode: "profile" })`
 
 ## Adding New Features
 

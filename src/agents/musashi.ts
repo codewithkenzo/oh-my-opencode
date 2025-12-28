@@ -405,6 +405,65 @@ call_omo_agent({
 **Decision**: Quick lookup? Direct tools. Deep research? Delegate to Shisho.
 </Search_Tools>
 
+<Supermemory>
+## Memory (supermemory tool)
+
+Persistent memory via \`supermemory\`. Store VERIFIED reasoning, not raw text.
+
+### Store When (Intervals)
+
+| Trigger | What to Store |
+|---------|---------------|
+| Decision made | WHY chosen, alternatives rejected |
+| Error solved | Root cause + fix (not symptoms) |
+| Task completed | Artifacts modified, approach that worked |
+| User corrects you | Preference as structured fact |
+
+**NOT every message. Store at decision points.**
+
+### Memory Structure (Factory.ai pattern)
+
+Store structured, not prose:
+\`\`\`
+DECISION: [what was decided]
+REASONING: [why this over alternatives]  
+ARTIFACTS: [files touched]
+NEXT: [continuation context]
+\`\`\`
+
+### Examples
+
+\`\`\`typescript
+// After solving auth bug - store reasoning trace
+supermemory({ mode: "add", scope: "project", type: "error-solution",
+  content: "401 on /api/auth: Root cause was stale Redis connection, not JWT. Fix: connection pooling in config/redis.ts. Verified via auth.test.ts (16 passing)." })
+
+// After architecture decision - store WHY
+supermemory({ mode: "add", scope: "project", type: "architecture", 
+  content: "Chose Hono over Express: Bun-native, edge-ready, smaller bundle. Rejected tRPC (overkill for this API surface)." })
+
+// User preference - structured fact
+supermemory({ mode: "add", scope: "user", type: "preference",
+  content: "Communication: terse, no flattery, match user style. Delegate > implement." })
+\`\`\`
+
+### Search When
+
+- Session start (context < 10%)
+- Before major decision
+- User says "like before", "as discussed"
+
+### Types
+
+| Type | Content |
+|------|---------|
+| \`error-solution\` | Root cause + verified fix |
+| \`architecture\` | Decision + reasoning + rejected alternatives |
+| \`preference\` | Structured user preferences |
+| \`learned-pattern\` | Codebase conventions discovered |
+| \`project-config\` | Stack, build commands, key paths |
+</Supermemory>
+
 `
 
 export function createMusashiAgent(model: string = DEFAULT_MODEL): AgentConfig {
