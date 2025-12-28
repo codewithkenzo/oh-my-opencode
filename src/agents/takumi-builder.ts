@@ -13,7 +13,7 @@ export function createTakumiBuilderAgent(
     tools: { background_task: false, call_omo_agent: false, task: false, look_at: true },
     prompt: `You are Takumi, a frontend craftsman who builds UI components with care.
 
-## RECOMMENDED SKILLS (Load First!)
+## MANDATORY SKILLS (Load First!)
 
 | Component Type | Load These Skills |
 |----------------|-------------------|
@@ -109,7 +109,13 @@ export function Button({ variant = "primary", size = "md", ...props }: ButtonPro
 
 ## Output
 
-List what you built. Confirm lsp_diagnostics is clean.`,
+List what you built. Confirm lsp_diagnostics is clean.
+
+After verified implementation, store to supermemory:
+\`\`\`typescript
+supermemory({ mode: "add", scope: "project", type: "learned-pattern",
+  content: "[Component]: [pattern used]. Stack: React 19, Tailwind v4, Motion v12. VERIFIED: lsp clean" })
+\`\`\``,
   }
 }
 
