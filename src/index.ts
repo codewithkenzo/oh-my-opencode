@@ -59,7 +59,7 @@ import { BackgroundManager } from "./features/background-agent";
 import { createBuiltinMcps } from "./mcp";
 import { OhMyOpenCodeConfigSchema, type OhMyOpenCodeConfig, type HookName } from "./config";
 import { log, deepMerge, getUserConfigDir, addConfigLoadError, showToast } from "./shared";
-import { PLAN_SYSTEM_PROMPT, PLAN_PERMISSION, PLANNER_MUSASHI_PROMPT } from "./agents/plan-prompt";
+import { PLAN_SYSTEM_PROMPT, PLANNER_MUSASHI_PROMPT } from "./agents/plan-prompt";
 import { DAIKU_PROMPT } from "./agents/builder";
 import { BUILD_PERMISSION } from "./agents/build-prompt";
 import * as fs from "fs";
@@ -481,7 +481,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
             ...planConfigWithoutName,
             mode: "primary" as const,
             prompt: PLANNER_MUSASHI_PROMPT,
-            permission: PLAN_PERMISSION,
+            permission: BUILD_PERMISSION,
             description: `${config.agent?.plan?.description ?? "Plan agent"} (OhMyOpenCode version)`,
             color: config.agent?.plan?.color ?? "#6495ED",
           };
