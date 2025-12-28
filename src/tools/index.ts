@@ -44,6 +44,16 @@ import { webfetch } from './webfetch'
 
 import { multiedit } from './multiedit'
 
+import {
+  ripple_collections,
+  ripple_search,
+  ripple_get,
+  ripple_create,
+  ripple_tags,
+  ripple_tag_add,
+  ripple_tag_remove,
+} from './raindrop'
+
 export { interactive_bash, startBackgroundCheck as startTmuxCheck } from "./interactive-bash"
 export { getTmuxPath } from "./interactive-bash/utils"
 
@@ -101,4 +111,11 @@ export const builtinTools = {
   exa_codesearch,
   webfetch,
   multiedit,
+  ripple_collections,
+  ripple_search,
+  ripple_get,
+  ripple_create,
+  ripple_tags,
+  ripple_tag_add,
+  ripple_tag_remove,
 }
