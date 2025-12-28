@@ -1,6 +1,7 @@
 import type { SummarizeContext } from "../preemptive-compaction"
 import { injectHookMessage } from "../../features/hook-message-injector"
 import { log } from "../../shared/logger"
+import { clearAllSignatures } from "../../auth/antigravity/thought-signature-store"
 
 const SUMMARIZE_CONTEXT_PROMPT = `[COMPACTION CONTEXT INJECTION]
 
@@ -37,6 +38,9 @@ This context is critical for maintaining continuity after compaction.
 export function createCompactionContextInjector() {
   return async (ctx: SummarizeContext): Promise<void> => {
     log("[compaction-context-injector] injecting context", { sessionID: ctx.sessionID })
+
+    clearAllSignatures()
+    log("[compaction-context-injector] cleared Antigravity thought signatures")
 
     const success = injectHookMessage(ctx.sessionID, SUMMARIZE_CONTEXT_PROMPT, {
       agent: "Musashi",
