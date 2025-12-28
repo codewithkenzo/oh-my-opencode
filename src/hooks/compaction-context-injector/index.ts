@@ -39,7 +39,7 @@ export function createCompactionContextInjector() {
     log("[compaction-context-injector] injecting context", { sessionID: ctx.sessionID })
 
     const success = injectHookMessage(ctx.sessionID, SUMMARIZE_CONTEXT_PROMPT, {
-      agent: "general",
+      agent: "Musashi",
       model: { providerID: ctx.providerID, modelID: ctx.modelID },
       path: { cwd: ctx.directory },
     })
