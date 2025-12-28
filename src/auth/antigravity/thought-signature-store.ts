@@ -95,3 +95,13 @@ export function clearFetchInstanceData(fetchInstanceId: string): void {
   signatureStore.delete(fetchInstanceId)
   sessionIdStore.delete(fetchInstanceId)
 }
+
+/**
+ * Clear ALL thought signatures and session IDs from memory.
+ * Used when session is compacted/summarized to prevent stale signatures
+ * from causing "invalid model response" errors with Gemini API.
+ */
+export function clearAllSignatures(): void {
+  signatureStore.clear()
+  sessionIdStore.clear()
+}
