@@ -1943,6 +1943,23 @@
         }
       }
     },
+    "skills": {
+      "type": "object",
+      "properties": {
+        "workspace_loader": {
+          "default": true,
+          "type": "boolean"
+        },
+        "default_max_size": {
+          "default": 2048,
+          "type": "number"
+        },
+        "max_total_size": {
+          "default": 32768,
+          "type": "number"
+        }
+      }
+    },
     "experimental": {
       "type": "object",
       "properties": {
