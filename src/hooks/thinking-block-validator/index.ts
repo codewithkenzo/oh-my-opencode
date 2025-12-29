@@ -73,6 +73,11 @@ function startsWithThinkingBlock(parts: Part[]): boolean {
   return type === "thinking" || type === "reasoning"
 }
 
+function hasSyntheticThinkingBlock(parts: Part[]): boolean {
+  if (!parts || parts.length === 0) return false
+  return parts.some((p: Part) => (p as any).synthetic === true)
+}
+
 /**
  * Find the most recent thinking content from previous assistant messages
  */
@@ -112,10 +117,10 @@ function prependThinkingBlock(
     message.parts = []
   }
 
-  // Create synthetic thinking part
+  // Create synthetic thinking part with unique ID per message
   const thinkingPart = {
     type: "thinking" as const,
-    id: `prt_0000000000_synthetic_thinking`,
+    id: `prt_${message.info.id}_synthetic`,
     sessionID: (message.info as any).sessionID || "",
     messageID: message.info.id,
     thinking: thinkingContent,
@@ -156,7 +161,8 @@ export function createThinkingBlockValidatorHook(): MessagesTransformHook {
 
         // Check if message doesn't start with thinking (fixes both tool_use AND text errors)
         // Claude API requires ALL assistant messages to start with thinking when enabled
-        if (msg.parts && msg.parts.length > 0 && !startsWithThinkingBlock(msg.parts)) {
+        // Skip if already has synthetic block to prevent loops
+        if (msg.parts && msg.parts.length > 0 && !startsWithThinkingBlock(msg.parts) && !hasSyntheticThinkingBlock(msg.parts)) {
           // Find thinking content from previous turns
           const previousThinking = findPreviousThinkingContent(messages, i)
 

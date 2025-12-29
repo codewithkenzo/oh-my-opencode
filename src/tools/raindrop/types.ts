@@ -15,10 +15,10 @@ export const CollectionSchema = z.object({
   sort: z.number().optional(),
   public: z.boolean().optional(),
   expanded: z.boolean().optional(),
-  creatorRef: z.number().optional(),
+  creatorRef: z.union([z.number(), z.object({})]).optional(),
   lastUpdate: z.string().optional(),
   created: z.string().optional(),
-  parent: z.object({ $id: z.number() }).optional(),
+  parent: z.object({ $id: z.number() }).nullable().optional(),
 });
 
 export type Collection = z.infer<typeof CollectionSchema>;
@@ -53,7 +53,7 @@ export const RaindropSchema = z.object({
   created: z.string(),
   lastUpdate: z.string().optional(),
   domain: z.string().optional(),
-  creatorRef: z.number().optional(),
+  creatorRef: z.union([z.number(), z.object({}).passthrough()]).optional(),
   sort: z.number().optional(),
   highlights: z.array(z.object({
     _id: z.string(),

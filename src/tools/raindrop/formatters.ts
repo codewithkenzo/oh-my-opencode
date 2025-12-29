@@ -47,6 +47,7 @@ export function formatRaindrops(
 
   for (const r of raindrops) {
     md += `### ${r.title}\n`;
+    md += `- **ID**: ${r._id}\n`;
     md += `- **URL**: ${r.link}\n`;
     if (r.tags.length) md += `- **Tags**: ${r.tags.join(", ")}\n`;
     if (r.excerpt) md += `- **Excerpt**: ${r.excerpt}\n`;
