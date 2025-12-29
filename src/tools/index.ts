@@ -52,6 +52,11 @@ import {
   ripple_tags,
   ripple_tag_add,
   ripple_tag_remove,
+  ripple_bulk_create,
+  ripple_bulk_update,
+  ripple_delete,
+  ripple_bulk_delete,
+  ripple_suggest,
 } from './raindrop'
 
 export { interactive_bash, startBackgroundCheck as startTmuxCheck } from "./interactive-bash"
@@ -118,4 +123,9 @@ export const builtinTools = {
   ripple_tags,
   ripple_tag_add,
   ripple_tag_remove,
+  ripple_bulk_create,
+  ripple_bulk_update,
+  ripple_delete,
+  ripple_bulk_delete,
+  ripple_suggest,
 }

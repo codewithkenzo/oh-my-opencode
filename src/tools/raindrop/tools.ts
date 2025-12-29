@@ -220,6 +220,136 @@ export const ripple_tag_remove = tool({
   },
 });
 
+// === ripple_bulk_create ===
+export const ripple_bulk_create = tool({
+  description: "Create multiple bookmarks at once (up to 100). URLs are auto-parsed for metadata.",
+  args: {
+    urls: tool.schema.array(tool.schema.string()).describe("Array of URLs to bookmark"),
+    tags: tool.schema.array(tool.schema.string()).optional().describe("Tags to apply to all bookmarks"),
+    collection: tool.schema.number().optional().describe("Collection ID for all bookmarks"),
+    ...formatArg,
+  },
+  async execute({ urls, tags, collection, format: fmt = "markdown" }) {
+    try {
+      const items = urls.map(url => ({
+        link: url,
+        tags,
+        collection,
+        pleaseParse: {},
+      }));
+      const created = await api.createManyRaindrops(items);
+      const result = format.formatRaindrops(created, fmt as OutputFormat, `${urls.length} URLs`);
+      return `✓ Created ${created.length} bookmarks\n\n${result}`;
+    } catch (e) {
+      if (e instanceof RaindropAPIError) return `Error: ${e.message}`;
+      return `Error: ${e instanceof Error ? e.message : String(e)}`;
+    }
+  },
+});
+
+// === ripple_bulk_update ===
+export const ripple_bulk_update = tool({
+  description: "Update multiple bookmarks at once. Filter by collection, search query, or specific IDs.",
+  args: {
+    collection: tool.schema.number().describe("Collection ID to update from"),
+    ids: tool.schema.array(tool.schema.number()).optional().describe("Specific bookmark IDs to update"),
+    search: tool.schema.string().optional().describe("Search filter for bookmarks to update"),
+    nested: tool.schema.boolean().optional().describe("Include nested collections"),
+    tags: tool.schema.array(tool.schema.string()).optional().describe("Tags to append (empty array removes all)"),
+    important: tool.schema.boolean().optional().describe("Set favorite status"),
+    move_to: tool.schema.number().optional().describe("Move to this collection ID"),
+  },
+  async execute({ collection, ids, search, nested, tags, important, move_to }) {
+    try {
+      const modified = await api.updateManyRaindrops({
+        collectionId: collection,
+        ids,
+        search,
+        nested,
+        tags,
+        important,
+        collection: move_to,
+      });
+      return `✓ Updated ${modified} bookmarks`;
+    } catch (e) {
+      if (e instanceof RaindropAPIError) return `Error: ${e.message}`;
+      return `Error: ${e instanceof Error ? e.message : String(e)}`;
+    }
+  },
+});
+
+// === ripple_delete ===
+export const ripple_delete = tool({
+  description: "Delete a single bookmark (moves to Trash, or permanently if already in Trash).",
+  args: {
+    id: tool.schema.number().describe("Bookmark ID to delete"),
+  },
+  async execute({ id }) {
+    try {
+      await api.deleteRaindrop(id);
+      return `✓ Deleted bookmark ${id}`;
+    } catch (e) {
+      if (e instanceof RaindropAPIError) return `Error: ${e.message}`;
+      return `Error: ${e instanceof Error ? e.message : String(e)}`;
+    }
+  },
+});
+
+// === ripple_bulk_delete ===
+export const ripple_bulk_delete = tool({
+  description: "Delete multiple bookmarks. Filter by IDs or search. Use collection -99 to permanently delete from Trash.",
+  args: {
+    collection: tool.schema.number().describe("Collection ID (-99 for permanent delete from Trash)"),
+    ids: tool.schema.array(tool.schema.number()).optional().describe("Specific bookmark IDs"),
+    search: tool.schema.string().optional().describe("Search filter"),
+    nested: tool.schema.boolean().optional().describe("Include nested collections"),
+  },
+  async execute({ collection, ids, search, nested }) {
+    try {
+      const deleted = await api.deleteManyRaindrops(collection, { ids, search, nested });
+      const action = collection === -99 ? "permanently deleted" : "moved to Trash";
+      return `✓ ${deleted} bookmarks ${action}`;
+    } catch (e) {
+      if (e instanceof RaindropAPIError) return `Error: ${e.message}`;
+      return `Error: ${e instanceof Error ? e.message : String(e)}`;
+    }
+  },
+});
+
+// === ripple_suggest ===
+export const ripple_suggest = tool({
+  description: "Get AI-suggested collections and tags for a URL or existing bookmark.",
+  args: {
+    url: tool.schema.string().optional().describe("URL to get suggestions for"),
+    id: tool.schema.number().optional().describe("Existing bookmark ID to get suggestions for"),
+    ...formatArg,
+  },
+  async execute({ url, id, format: fmt = "markdown" }) {
+    try {
+      if (!url && !id) return "Error: Provide either url or id";
+      
+      const result = url 
+        ? await api.suggestForUrl(url)
+        : await api.suggestForRaindrop(id!);
+      
+      if (fmt === "json") {
+        return JSON.stringify(result, null, 2);
+      }
+      if (fmt === "compact") {
+        return `Collections: ${result.collections.join(", ")} | Tags: ${result.tags.join(", ")}`;
+      }
+      
+      let md = "## Suggestions\n\n";
+      md += `**Collections**: ${result.collections.join(", ") || "none"}\n`;
+      md += `**Tags**: ${result.tags.join(", ") || "none"}\n`;
+      return md;
+    } catch (e) {
+      if (e instanceof RaindropAPIError) return `Error: ${e.message}`;
+      return `Error: ${e instanceof Error ? e.message : String(e)}`;
+    }
+  },
+});
+
 // === Export all tools ===
 export const rippleTools = {
   ripple_collections,
@@ -229,4 +359,9 @@ export const rippleTools = {
   ripple_tags,
   ripple_tag_add,
   ripple_tag_remove,
+  ripple_bulk_create,
+  ripple_bulk_update,
+  ripple_delete,
+  ripple_bulk_delete,
+  ripple_suggest,
 };
