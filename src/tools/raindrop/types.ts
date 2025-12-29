@@ -135,3 +135,48 @@ export class RaindropAPIError extends Error {
     this.name = "RaindropAPIError";
   }
 }
+
+// === Bulk Operations ===
+export const BulkUpdateInputSchema = z.object({
+  collectionId: z.number(),
+  ids: z.array(z.number()).optional(),
+  search: z.string().optional(),
+  nested: z.boolean().optional(),
+  important: z.boolean().optional(),
+  tags: z.array(z.string()).optional(),
+  collection: z.number().optional(),
+  cover: z.string().optional(),
+});
+
+export type BulkUpdateInput = z.infer<typeof BulkUpdateInputSchema>;
+
+export const BulkCreateInputSchema = z.object({
+  items: z.array(CreateRaindropInputSchema).max(100),
+});
+
+export type BulkCreateInput = z.infer<typeof BulkCreateInputSchema>;
+
+export const BulkResultSchema = z.object({
+  result: z.boolean(),
+  modified: z.number().optional(),
+  items: z.array(RaindropSchema).optional(),
+});
+
+export type BulkResult = z.infer<typeof BulkResultSchema>;
+
+export const SuggestResponseSchema = z.object({
+  result: z.boolean(),
+  item: z.object({
+    collections: z.array(z.object({ $id: z.number() })),
+    tags: z.array(z.string()),
+  }),
+});
+
+export type SuggestResponse = z.infer<typeof SuggestResponseSchema>;
+
+// Extended search params with nested
+export const ExtendedSearchParamsSchema = SearchParamsSchema.extend({
+  nested: z.boolean().optional(),
+});
+
+export type ExtendedSearchParams = z.infer<typeof ExtendedSearchParamsSchema>;
