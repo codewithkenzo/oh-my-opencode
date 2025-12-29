@@ -7,6 +7,9 @@ import { resolveSymlink } from "../../shared/file-utils"
 import { getClaudeConfigDir } from "../../shared"
 import type { CommandDefinition } from "../claude-code-command-loader/types"
 import type { SkillScope, SkillMetadata, LoadedSkillAsCommand } from "./types"
+import { parseWorkspaceManifest } from "./workspace-parser"
+import { scanWorkspace } from "./workspace-scanner"
+import { formatWorkspaceContext } from "./workspace-formatter"
 
 function loadSkillsFromDir(skillsDir: string, scope: SkillScope): LoadedSkillAsCommand[] {
   if (!existsSync(skillsDir)) {
@@ -36,11 +39,16 @@ function loadSkillsFromDir(skillsDir: string, scope: SkillScope): LoadedSkillAsC
       const originalDescription = data.description || ""
       const formattedDescription = `(${scope} - Skill) ${originalDescription}`
 
+      const manifest = parseWorkspaceManifest(resolvedPath)
+      const workspaceContext = scanWorkspace(resolvedPath, manifest)
+      const workspaceSection = formatWorkspaceContext(workspaceContext)
+
       const wrappedTemplate = `<skill-instruction>
 Base directory for this skill: ${resolvedPath}/
 File references (@path) in this skill are relative to this directory.
 
 ${body.trim()}
+${workspaceSection}
 </skill-instruction>
 
 <user-request>
