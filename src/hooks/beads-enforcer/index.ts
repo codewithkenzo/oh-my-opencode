@@ -1,10 +1,14 @@
 import type { PluginInput } from "@opencode-ai/plugin";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { exec } from "node:child_process";
 import { log } from "../../shared/logger";
 import { BEADS_DIR, HOOK_NAME } from "./constants";
 import type { BdReadyOutput } from "./types";
+import {
+  findNearestMessageWithFields,
+  MESSAGE_STORAGE,
+} from "../../features/hook-message-injector";
 
 const promisifiedExec = (command: string): Promise<{ stdout: string; stderr: string }> =>
   new Promise((resolve, reject) => {
@@ -23,6 +27,20 @@ function parseBdJson(output: string): BdReadyOutput | null {
   } catch {
     return null;
   }
+}
+
+function getMessageDir(sessionID: string): string | null {
+  if (!existsSync(MESSAGE_STORAGE)) return null;
+
+  const directPath = join(MESSAGE_STORAGE, sessionID);
+  if (existsSync(directPath)) return directPath;
+
+  for (const dir of readdirSync(MESSAGE_STORAGE)) {
+    const sessionPath = join(MESSAGE_STORAGE, dir, sessionID);
+    if (existsSync(sessionPath)) return sessionPath;
+  }
+
+  return null;
 }
 
 export function createBeadsEnforcerHook(ctx: PluginInput) {
@@ -94,14 +112,19 @@ export function createBeadsEnforcerHook(ctx: PluginInput) {
         "[BEADS REMINDER] Before ending: Run `bd sync` and create issues for any remaining work discovered.";
 
       try {
+        // Get previous message's agent info to respect agent mode
+        const messageDir = getMessageDir(input.sessionID);
+        const prevMessage = messageDir ? findNearestMessageWithFields(messageDir) : null;
+
         await ctx.client.session.prompt({
           path: { id: input.sessionID },
           body: {
+            agent: prevMessage?.agent,
             parts: [{ type: "text", text: reminderMsg }],
           },
           query: { directory: ctx.directory },
         });
-        log(`[${HOOK_NAME}] Reminder injected`, { sessionID: input.sessionID });
+        log(`[${HOOK_NAME}] Reminder injected`, { sessionID: input.sessionID, agent: prevMessage?.agent });
       } catch (error) {
         log(`[${HOOK_NAME}] Failed to inject reminder`, { sessionID: input.sessionID, error: String(error) });
       }
