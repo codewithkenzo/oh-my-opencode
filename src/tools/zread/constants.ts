@@ -11,3 +11,4 @@ export const TOOL_DESCRIPTION_STRUCTURE = "Get directory tree structure of a Git
 export const TOOL_DESCRIPTION_FILE = "Read single file contents from a GitHub repo using ZAI's Zread API.\n\nAPI endpoint: https://api.z.ai/api/mcp/zread/mcp\nAuth: ZAI_API_KEY environment variable\n\nRead specific files from a repo without cloning the entire repository.\nUseful for examining specific implementation files, configs, or documentation.\n\nParams:\n- repo: GitHub repository in \"owner/repo\" format (required)\n- path: File path within the repo (required)\n\nExample: Read \"src/utils/api.ts\" from \"facebook/react\""
 
 export const API_URL = "https://api.z.ai/api/mcp/zread/mcp"
+export const API_URL_SSE = "https://api.z.ai/api/mcp/zread/sse"
