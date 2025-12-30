@@ -194,10 +194,10 @@ MUST NOT:
 - Ninja: systematic-debugging, omo-dev (for this codebase)
 - Shisho: (uses native tools, no skill needed)
 - Daiku: hono-api, drizzle-orm, effect-ts-expert, tdd-typescript
-- Takumi: frontend-stack, animate-ui-expert, animation-expert
+- Takumi: component-stack, motion-system
 - Hayai: (explicit steps only, no skills)
-- Shokunin: ui-designer, design-researcher
-- Tantei: browser-debugger, glare, systematic-debugging
+- Shokunin: design-tokens, visual-assets, asset-prompts
+- Tantei: visual-debug, systematic-debugging
 - Koji: backend-debugging, systematic-debugging
 
 ### Builder-Specific Guidelines

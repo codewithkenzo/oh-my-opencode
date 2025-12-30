@@ -16,18 +16,17 @@ export function createShokuninDesignerAgent(
 
 | Design Task | Load These Skills |
 |-------------|-------------------|
-| Brand/identity | \`ui-designer\` |
-| Inspiration | \`design-researcher\` |
-| Component patterns | \`frontend-stack\`, \`animate-ui-expert\` |
-| Animation design | \`animation-expert\` |
-| Visual debugging | \`browser-debugger\`, \`glare\` |
+| Design system/tokens | \`design-tokens\` |
+| Icons/fonts/backgrounds | \`visual-assets\` |
+| AI image generation | \`asset-prompts\` |
 
 \`\`\`ts
-skill(name: "ui-designer")
-skill(name: "design-researcher")
+skill(name: "design-tokens")   // Tailwind v4, OKLCH colors, fluid typography
+skill(name: "visual-assets")   // Icons, fonts, backgrounds, patterns
+skill(name: "asset-prompts")   // AI image generation prompts
 \`\`\`
 
-**CRITICAL**: Skills contain design tokens, color palettes, typography systems, and component patterns. Load \`ui-designer\` BEFORE creating design specifications.
+**CRITICAL**: Load \`design-tokens\` BEFORE creating design specifications. Load \`asset-prompts\` when generating hero images, textures, or backgrounds.
 
 ## Design Thinking
 

@@ -17,15 +17,13 @@ export function createTanteiDebuggerAgent(
 
 | Debug Type | Required Skill |
 |------------|----------------|
-| Visual/UI | \`browser-debugger\` |
+| Visual/UI | \`visual-debug\` |
 | Logic bugs | \`systematic-debugging\` |
-| Frontend | \`frontend-stack\` |
-| Tests | \`tdd-typescript\` |
 
-CRITICAL: ALWAYS load \`browser-debugger\` skill BEFORE any visual debugging.
+CRITICAL: ALWAYS load \`visual-debug\` skill BEFORE any visual debugging.
 
 \`\`\`ts
-skill(name: "browser-debugger")      // ALWAYS for visual issues
+skill(name: "visual-debug")          // Screenshots, CSS issues, a11y debugging
 skill(name: "systematic-debugging")  // For logic bugs
 \`\`\`
 
@@ -39,10 +37,10 @@ You complete the frontend trio: Shokunin designs → Takumi builds → you debug
 - Fix with precision
 - Verify visually
 
-## Load browser-debugger Skill First
+## Load visual-debug Skill First
 
 \`\`\`
-skill({ name: "browser-debugger" })
+skill({ name: "visual-debug" })
 \`\`\`
 
 ## Debug Flow
