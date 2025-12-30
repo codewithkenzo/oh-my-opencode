@@ -56,20 +56,29 @@ interface MessagePart {
 
 const RECOVERY_RESUME_TEXT = "[session recovered - continuing previous task]"
 
-function findLastUserMessage(messages: MessageData[]): MessageData | undefined {
+function findMessageWithAgentInfo(messages: MessageData[]): MessageData | undefined {
+  // First try to find the most recent message with agent/model info
   for (let i = messages.length - 1; i >= 0; i--) {
-    if (messages[i].info?.role === "user") {
-      return messages[i]
+    const msg = messages[i]
+    if (msg.info?.agent || msg.info?.model) {
+      return msg
+    }
+  }
+  // Fallback to first assistant message (usually has agent info)
+  for (const msg of messages) {
+    if (msg.info?.role === "assistant") {
+      return msg
     }
   }
   return undefined
 }
 
-function extractResumeConfig(userMessage: MessageData | undefined, sessionID: string): ResumeConfig {
+function extractResumeConfig(messages: MessageData[], sessionID: string): ResumeConfig {
+  const msgWithAgent = findMessageWithAgentInfo(messages)
   return {
     sessionID,
-    agent: userMessage?.info?.agent,
-    model: userMessage?.info?.model,
+    agent: msgWithAgent?.info?.agent,
+    model: msgWithAgent?.info?.model,
   }
 }
 
@@ -391,15 +400,13 @@ export function createSessionRecoveryHook(ctx: PluginInput, options?: SessionRec
       } else if (errorType === "thinking_block_order") {
         success = await recoverThinkingBlockOrder(ctx.client, sessionID, failedMsg, ctx.directory, info.error)
         if (success && experimental?.auto_resume) {
-          const lastUser = findLastUserMessage(msgs ?? [])
-          const resumeConfig = extractResumeConfig(lastUser, sessionID)
+          const resumeConfig = extractResumeConfig(msgs ?? [], sessionID)
           await resumeSession(ctx.client, resumeConfig)
         }
       } else if (errorType === "thinking_disabled_violation") {
         success = await recoverThinkingDisabledViolation(ctx.client, sessionID, failedMsg)
         if (success && experimental?.auto_resume) {
-          const lastUser = findLastUserMessage(msgs ?? [])
-          const resumeConfig = extractResumeConfig(lastUser, sessionID)
+          const resumeConfig = extractResumeConfig(msgs ?? [], sessionID)
           await resumeSession(ctx.client, resumeConfig)
         }
       }

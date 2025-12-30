@@ -69,6 +69,12 @@ import {
 
 import { wslNotify } from './wsl-notify'
 
+import {
+  civitai_search,
+  civitai_get,
+  civitai_tags,
+} from './civitai'
+
 export { interactive_bash, startBackgroundCheck as startTmuxCheck } from "./interactive-bash"
 export { getTmuxPath } from "./interactive-bash/utils"
 
@@ -144,4 +150,7 @@ export const builtinTools = {
   ripple_bulk_delete,
   ripple_suggest,
   wsl_notify: wslNotify,
+  civitai_search,
+  civitai_get,
+  civitai_tags,
 }

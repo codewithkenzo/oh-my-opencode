@@ -12,13 +12,17 @@ export type BuiltinAgentName =
   | "Shisho - researcher"
   | "Ninja - explorer"
   | "Shokunin - designer"
-  | "Daiku - builder"
   | "Takumi - builder"
+  | "Daiku - builder"
   | "Hayai - builder"
   | "Tantei - debugger"
   | "Koji - debugger"
   | "Sakka - writer"
   | "Miru - observer"
+  | "Senshi - distributor"
+  | "Seichou - growth"
+  | "Bunshi - writer"
+  | "Tsunagi - networker"
 
 export type OverridableAgentName =
   | "build"
