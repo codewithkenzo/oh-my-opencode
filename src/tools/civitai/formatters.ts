@@ -12,7 +12,8 @@ export function formatModel(model: Model): string {
   
   if (model.stats) {
     const { downloadCount, favoriteCount, rating } = model.stats
-    lines.push(`**Stats**: ${downloadCount.toLocaleString()} downloads | ${favoriteCount.toLocaleString()} favorites | ${rating.toFixed(1)} rating`)
+    const ratingStr = rating != null ? ` | ${rating.toFixed(1)} rating` : ""
+    lines.push(`**Stats**: ${(downloadCount ?? 0).toLocaleString()} downloads | ${(favoriteCount ?? 0).toLocaleString()} favorites${ratingStr}`)
   }
   
   if (model.tags && model.tags.length > 0) {
@@ -68,7 +69,8 @@ export function formatModelsResponse(response: ModelsResponse): string {
     lines.push(`ID: ${model.id} | Type: ${model.type}`)
     
     if (model.stats) {
-      lines.push(`Downloads: ${model.stats.downloadCount.toLocaleString()} | Rating: ${model.stats.rating.toFixed(1)}`)
+      const ratingStr = model.stats.rating != null ? ` | Rating: ${model.stats.rating.toFixed(1)}` : ""
+      lines.push(`Downloads: ${(model.stats.downloadCount ?? 0).toLocaleString()}${ratingStr}`)
     }
     
     if (model.tags && model.tags.length > 0) {
@@ -96,7 +98,8 @@ export function formatTagsResponse(response: TagsResponse): string {
   lines.push("|-----|--------|")
   
   for (const tag of response.items) {
-    lines.push(`| ${tag.name} | ${tag.modelCount.toLocaleString()} |`)
+    const count = tag.modelCount ?? 0
+    lines.push(`| ${tag.name} | ${count.toLocaleString()} |`)
   }
   
   return lines.join("\n")
