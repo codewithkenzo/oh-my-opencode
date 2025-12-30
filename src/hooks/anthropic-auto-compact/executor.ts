@@ -19,6 +19,12 @@ import {
   replaceEmptyTextParts,
 } from "../session-recovery/storage";
 import { log } from "../../shared/logger";
+import {
+  findNearestMessageWithFields,
+  MESSAGE_STORAGE,
+} from "../../features/hook-message-injector";
+import { existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 
 type Client = {
   session: {
@@ -38,7 +44,7 @@ type Client = {
     }) => Promise<unknown>;
     prompt_async: (opts: {
       path: { sessionID: string };
-      body: { parts: Array<{ type: string; text: string }> };
+      body: { agent?: string; parts: Array<{ type: string; text: string }> };
       query: { directory: string };
     }) => Promise<unknown>;
   };
@@ -146,6 +152,27 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes}B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
+function getMessageDir(sessionID: string): string | null {
+  if (!existsSync(MESSAGE_STORAGE)) return null;
+
+  const directPath = join(MESSAGE_STORAGE, sessionID);
+  if (existsSync(directPath)) return directPath;
+
+  for (const dir of readdirSync(MESSAGE_STORAGE)) {
+    const sessionPath = join(MESSAGE_STORAGE, dir, sessionID);
+    if (existsSync(sessionPath)) return sessionPath;
+  }
+
+  return null;
+}
+
+function getStoredAgent(sessionID: string): string | undefined {
+  const messageDir = getMessageDir(sessionID);
+  if (!messageDir) return undefined;
+  const storedMessage = findNearestMessageWithFields(messageDir);
+  return storedMessage?.agent;
 }
 
 export async function getLastAssistant(
@@ -352,7 +379,7 @@ export async function executeCompact(
             try {
               await (client as Client).session.prompt_async({
                 path: { sessionID },
-                body: { parts: [{ type: "text", text: "Continue" }] },
+                body: { agent: getStoredAgent(sessionID), parts: [{ type: "text", text: "Continue" }] },
                 query: { directory },
               });
             } catch {}
@@ -391,7 +418,7 @@ export async function executeCompact(
             try {
               await (client as Client).session.prompt_async({
                 path: { sessionID },
-                body: { parts: [{ type: "text", text: "Continue" }] },
+                body: { agent: getStoredAgent(sessionID), parts: [{ type: "text", text: "Continue" }] },
                 query: { directory },
               });
             } catch {}
@@ -435,7 +462,7 @@ export async function executeCompact(
             try {
               await (client as Client).session.prompt_async({
                 path: { sessionID },
-                body: { parts: [{ type: "text", text: "Continue" }] },
+                body: { agent: getStoredAgent(sessionID), parts: [{ type: "text", text: "Continue" }] },
                 query: { directory },
               });
             } catch {}
@@ -551,7 +578,7 @@ export async function executeCompact(
             try {
               await (client as Client).session.prompt_async({
                 path: { sessionID },
-                body: { parts: [{ type: "text", text: "Continue" }] },
+                body: { agent: getStoredAgent(sessionID), parts: [{ type: "text", text: "Continue" }] },
                 query: { directory },
               });
             } catch {}
@@ -632,7 +659,7 @@ export async function executeCompact(
             try {
               await (client as Client).session.prompt_async({
                 path: { sessionID },
-                body: { parts: [{ type: "text", text: "Continue" }] },
+                body: { agent: getStoredAgent(sessionID), parts: [{ type: "text", text: "Continue" }] },
                 query: { directory },
               });
             } catch {}
