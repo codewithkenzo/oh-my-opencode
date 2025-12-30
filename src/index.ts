@@ -30,6 +30,7 @@ import {
   createSkillEnforcerHook,
   createAgentsMdEnforcerHook,
   createRunwareNotificationHook,
+  createBeadsEnforcerHook,
 } from "./hooks";
 import { createGoogleAntigravityAuthPlugin } from "./auth/antigravity";
 import {
@@ -350,6 +351,9 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
   const agentsMdEnforcer = isHookEnabled("agents-md-enforcer")
     ? createAgentsMdEnforcerHook(ctx)
     : null;
+  const beadsEnforcer = isHookEnabled("beads-enforcer")
+    ? createBeadsEnforcerHook(ctx)
+    : null;
 
   const backgroundManager = new BackgroundManager(ctx);
 
@@ -400,6 +404,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       input: { sessionID: string },
       output: { parts: Array<{ type: string; text?: string }> }
     ) => {
+      await beadsEnforcer?.["prompt.submit"]?.(input, output);
       await memoryInjector?.["prompt.submit"]?.(input, output);
     },
 
@@ -616,6 +621,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await browserRelay?.event(input);
       await skillEnforcer?.event(input);
       await agentsMdEnforcer?.event(input);
+      await beadsEnforcer?.event(input);
 
       const { event } = input;
       const props = event.properties as Record<string, unknown> | undefined;

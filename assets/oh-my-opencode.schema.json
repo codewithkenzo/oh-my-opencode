@@ -71,7 +71,8 @@
           "browser-relay",
           "skill-enforcer",
           "agents-md-enforcer",
-          "runware-notification"
+          "runware-notification",
+          "beads-enforcer"
         ]
       }
     },

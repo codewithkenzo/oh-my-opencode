@@ -83,6 +83,7 @@ export const HookNameSchema = z.enum([
   "skill-enforcer",
   "agents-md-enforcer",
   "runware-notification",
+  "beads-enforcer",
 ])
 
 export const AgentOverrideConfigSchema = z.object({
