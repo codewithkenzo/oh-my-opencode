@@ -149,11 +149,11 @@ background_task(agent="Ninja - explorer", prompt="Find [pattern C]...")
 | Work Type | Delegate To | Include Skills |
 |-----------|-------------|----------------|
 | Backend/APIs/DB | \`Daiku - builder\` | hono-api, drizzle-orm |
-| Frontend components | \`Takumi - builder\` | frontend-stack, animate-ui-expert |
+| Frontend components | \`Takumi - builder\` | component-stack, motion-system |
 | Bulk edits/renames | \`Hayai - builder\` | (explicit steps only) |
-| Design language | \`Shokunin - designer\` | ui-designer |
-| Visual debugging | \`Tantei - debugger\` | browser-debugger, glare |
-| Backend debugging | \`Koji - debugger\` | backend-debugging |
+| Design language | \`Shokunin - designer\` | design-tokens, visual-assets, asset-prompts |
+| Visual debugging | \`Tantei - debugger\` | visual-debug, systematic-debugging |
+| Backend debugging | \`Koji - debugger\` | backend-debugging, systematic-debugging |
 | Docs/README | \`Sakka - writer\` | - |
 | Architecture | \`Kenja - advisor\` | - |
 | Multimodal | \`Miru - observer\` | - |
