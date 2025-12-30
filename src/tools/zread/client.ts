@@ -140,21 +140,27 @@ async function callMCPTool<T>(
 export async function searchRepo(
   repo: string,
   query: string,
-  path?: string,
+  language?: string,
 ): Promise<ZreadSearchResult> {
-  return callMCPTool<ZreadSearchResult>("search_doc", { repo, query, path })
+  return callMCPTool<ZreadSearchResult>("search_doc", { 
+    repo_name: repo, 
+    query,
+    language: language ?? "en",
+  })
 }
 
 export async function getRepoStructure(
   repo: string,
   path?: string,
 ): Promise<ZreadStructureResult> {
-  return callMCPTool<ZreadStructureResult>("get_repo_structure", { repo, path })
+  const args: Record<string, string> = { repo_name: repo }
+  if (path) args.dir_path = path
+  return callMCPTool<ZreadStructureResult>("get_repo_structure", args)
 }
 
 export async function readFile(
   repo: string,
   path: string,
 ): Promise<ZreadFileResult> {
-  return callMCPTool<ZreadFileResult>("read_file", { repo, path })
+  return callMCPTool<ZreadFileResult>("read_file", { repo_name: repo, file_path: path })
 }
