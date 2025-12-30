@@ -32,6 +32,14 @@ import { memory, memory_tools } from './memory'
 
 import { context7_resolve_library_id, context7_get_library_docs, context7_query_docs } from './context7'
 
+import {
+  runwareGenerate,
+  runwareRemoveBg,
+  runwareUpscale,
+  runwareModelSearch,
+  runwareImg2Img,
+} from './runware'
+
 import { grep_app_searchGitHub } from './grep-app'
 
 import { websearch as exa_websearch } from './exa'
@@ -58,6 +66,8 @@ import {
   ripple_bulk_delete,
   ripple_suggest,
 } from './raindrop'
+
+import { wslNotify } from './wsl-notify'
 
 export { interactive_bash, startBackgroundCheck as startTmuxCheck } from "./interactive-bash"
 export { getTmuxPath } from "./interactive-bash/utils"
@@ -110,6 +120,11 @@ export const builtinTools = {
   context7_resolve_library_id,
   context7_get_library_docs,
   context7_query_docs,
+  runware_generate: runwareGenerate,
+  runware_remove_bg: runwareRemoveBg,
+  runware_upscale: runwareUpscale,
+  runware_model_search: runwareModelSearch,
+  runware_img2img: runwareImg2Img,
   grep_app_searchGitHub,
   exa_websearch,
   glare,
@@ -128,4 +143,5 @@ export const builtinTools = {
   ripple_delete,
   ripple_bulk_delete,
   ripple_suggest,
+  wsl_notify: wslNotify,
 }

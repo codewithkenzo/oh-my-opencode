@@ -70,7 +70,8 @@
           "memory-injector",
           "browser-relay",
           "skill-enforcer",
-          "agents-md-enforcer"
+          "agents-md-enforcer",
+          "runware-notification"
         ]
       }
     },
