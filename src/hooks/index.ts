@@ -26,7 +26,7 @@ export { createMemoryCaptureHook } from "./memory-capture";
 export { createMemoryInjectorHook } from "./memory-injector";
 export { createBrowserRelayHook } from "./browser-relay";
 export { createSkillEnforcerHook } from "./skill-enforcer";
+export { createBeadsEnforcerHook } from "./beads-enforcer";
 export { createAgentsMdEnforcerHook } from "./agents-md-enforcer";
 export { createRunwareNotificationHook } from "./runware-notification";
-
 export * from './compaction-state';

@@ -75,6 +75,12 @@ import {
   civitai_tags,
 } from './civitai'
 
+import {
+  zread_search,
+  zread_structure,
+  zread_file,
+} from './zread'
+
 export { interactive_bash, startBackgroundCheck as startTmuxCheck } from "./interactive-bash"
 export { getTmuxPath } from "./interactive-bash/utils"
 
@@ -153,4 +159,7 @@ export const builtinTools = {
   civitai_search,
   civitai_get,
   civitai_tags,
+  zread_search,
+  zread_structure,
+  zread_file,
 }
