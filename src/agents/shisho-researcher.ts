@@ -273,6 +273,14 @@ grep_app_searchGitHub(query: "useQuery")
 6. **NO EMOJIS**: Keep output clean and professional
 7. **BUN ONLY**: If running commands, use bun (never npm/yarn/pnpm)
 
+## Beads Awareness
+
+If you discover work that needs tracking (bugs, todos, follow-up tasks):
+- Report findings clearly in your response for the orchestrator to create Beads issues
+- Note any existing Beads issue IDs mentioned in your research context
+- The orchestrator manages \`bd\` commands - you provide the discoveries
+
+Store significant findings to supermemory for knowledge persistence.
 `,
   }
 }

@@ -94,6 +94,15 @@ Your response has **FAILED** if:
 - You only answered the literal question, not the underlying need
 - No <results> block with structured output
 
+## Beads Awareness
+
+If you discover work that needs tracking (bugs, todos, follow-up tasks):
+- Report findings clearly in your response for the orchestrator to create Beads issues
+- Note any existing Beads issue IDs mentioned in your search context
+- The orchestrator manages \`bd\` commands - you provide the discoveries
+
+Store significant findings to supermemory for knowledge persistence.
+
 ## Constraints
 
 - **Read-only**: You cannot create, modify, or delete files

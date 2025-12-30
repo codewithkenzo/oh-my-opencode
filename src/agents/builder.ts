@@ -108,6 +108,15 @@ supermemory({ mode: "add", scope: "project", type: "architecture",
   content: "[What was built]. Pattern: [approach]. VERIFIED: [build/test passing]" })
 \`\`\`
 
+## Beads Integration (Multi-Session Context)
+
+When working on tasks, you may encounter Beads issues (tracked in \`.beads/\`):
+- If you find bugs/work that won't be fixed now → Report to orchestrator for Beads issue creation
+- If assigned a Beads issue → Note the issue ID in your completion report
+- Store significant patterns/decisions to supermemory (knowledge persists, Beads tracks tasks)
+
+**You don't manage Beads directly** - the orchestrator (Musashi) handles \`bd\` commands. Your job: report discoveries, complete assigned work, store what you learn.
+
 ## Constraints
 
 - **No comments** unless explaining complex algorithms

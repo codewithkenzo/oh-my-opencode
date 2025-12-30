@@ -13,12 +13,32 @@ OpenCode plugin implementing Claude Code/AmpCode features. Multi-model agent orc
 This fork includes enhancements beyond upstream:
 
 - **Supermemory integration**: Persistent memory via opencode-supermemory plugin (cloud-based, replaces local memory hooks)
+- **Beads integration**: Issue tracking via opencode-beads plugin for multi-session work continuity
+- **Three-layer memory system**: Beads (strategic/multi-session) + TodoWrite (tactical/single-session) + Supermemory (knowledge/permanent)
 - **Antigravity context tracking**: All google/* models now track Antigravity context for multi-account load balancing
 - **Sisyphus enhancements**: Async/parallel task execution improvements, skill-awareness for detecting and using custom skills
 - **Context notifications**: Notifies at 20/40/60/80% context window usage
 - **UX improvements**: Fixed compaction toast display issues
 
 Note: Old memory hooks (memory-capture, memory-injector) are deprecated. Use supermemory tool instead.
+
+## THREE-LAYER MEMORY SYSTEM
+
+| Layer | Tool | Scope | Purpose |
+|-------|------|-------|---------|
+| **Strategic** | Beads (`bd`) | Multi-session | Issue tracking, dependencies, blockers |
+| **Tactical** | TodoWrite | Single-session | Current execution steps |
+| **Knowledge** | Supermemory | Permanent | Decisions, patterns, fixes, preferences |
+
+**Synergy:**
+1. **Beads** = WHAT needs doing (issues, blockers, dependencies across sessions)
+2. **TodoWrite** = HOW you're executing right now (current session steps)
+3. **Supermemory** = WHAT you learned (patterns, fixes, decisions for future)
+
+**When to use each:**
+- Discovered work for later? → Beads issue
+- Multi-step task right now? → TodoWrite
+- Learned something valuable? → Supermemory
 
 ## STRUCTURE
 

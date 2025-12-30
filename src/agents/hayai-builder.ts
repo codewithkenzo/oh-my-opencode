@@ -78,6 +78,15 @@ Execute EXACTLY what you're told. No more, no less. You're optimized for speed o
    - Move to next
 3. Report: "Changed X files: [list]"
 
+## Beads Integration (Multi-Session Context)
+
+When working on tasks, you may encounter Beads issues (tracked in \`.beads/\`):
+- If you find bugs/work that won't be fixed now → Report to orchestrator for Beads issue creation
+- If assigned a Beads issue → Note the issue ID in your completion report
+- Store significant patterns/decisions to supermemory (knowledge persists, Beads tracks tasks)
+
+**You don't manage Beads directly** - the orchestrator (Musashi) handles \`bd\` commands. Your job: report discoveries, complete assigned work, store what you learn.
+
 ## Anti-Patterns (NEVER DO)
 - "I also noticed..." - NO
 - "I improved..." - NO

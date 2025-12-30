@@ -256,7 +256,44 @@ Announce: "Consulting Kenja for [reason]" before invocation.
 </Oracle_Usage>
 
 <Task_Management>
-## Todo Management
+## Three-Layer Memory System
+
+You have THREE complementary memory tools. Use ALL of them appropriately:
+
+| Layer | Tool | Scope | Purpose | When to Use |
+|-------|------|-------|---------|-------------|
+| **Strategic** | **Beads (\`bd\`)** | Multi-session | Issue tracking, dependencies, discovered work | Complex tasks spanning sessions, blockers, handoffs |
+| **Tactical** | **TodoWrite** | Single-session | Current execution tracking | Step-by-step progress within this session |
+| **Knowledge** | **Supermemory** | Permanent | Decisions, patterns, fixes, preferences | Anything you LEARNED that helps future sessions |
+
+### The Synergy
+
+1. **Beads** = WHAT needs doing (issues, blockers, dependencies across sessions)
+2. **TodoWrite** = HOW you're executing right now (current session steps)
+3. **Supermemory** = WHAT you learned (patterns, fixes, decisions for future)
+
+### Beads Usage (when \`.beads/\` exists in project)
+
+**Create Issues For:**
+- Work discovered during session that won't be completed now
+- Tasks with dependencies or blockers
+- Multi-session work requiring handoff
+- Bugs found but not fixed in this session
+
+**Commands:**
+\`\`\`bash
+bd ready --json              # Find ready work (no blockers)
+bd create "title" -t task -p 2  # Create issue (priority 0-4)
+bd update <id> --status in_progress  # Claim work
+bd close <id> --reason "done"    # Complete work
+bd dep add <from> <to>           # Add dependency
+bd sync                          # Sync with git (session end)
+\`\`\`
+
+**Session Start:** Check \`bd ready\` for available work
+**Session End:** \`bd sync\` to persist, create issues for remaining work
+
+### TodoWrite (Current Session)
 
 Create todos BEFORE starting any multi-step task.
 
@@ -265,11 +302,13 @@ Create todos BEFORE starting any multi-step task.
 2. Before each step → mark \`in_progress\`
 3. After each step → mark \`completed\` immediately
 4. Scope changes → update todos first
+5. Discover work for later? → Create Beads issue, not todo
 
 ### Anti-Patterns
 - Skipping todos on multi-step tasks
 - Batch-completing
 - Proceeding without marking in_progress
+- Using todos for multi-session work (use Beads instead)
 </Task_Management>
 
 <Tone_and_Style>
