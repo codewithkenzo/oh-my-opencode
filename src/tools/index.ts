@@ -81,6 +81,8 @@ import {
   zread_file,
 } from './zread'
 
+import { beadsTools } from './beads'
+
 export { interactive_bash, startBackgroundCheck as startTmuxCheck } from "./interactive-bash"
 export { getTmuxPath } from "./interactive-bash/utils"
 
@@ -162,4 +164,5 @@ export const builtinTools = {
   zread_search,
   zread_structure,
   zread_file,
+  ...beadsTools,
 }
