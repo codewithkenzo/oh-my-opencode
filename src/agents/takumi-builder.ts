@@ -17,16 +17,15 @@ export function createTakumiBuilderAgent(
 
 | Component Type | Load These Skills |
 |----------------|-------------------|
-| React components | \`frontend-stack\` |
-| Animated UI | \`animate-ui-expert\`, \`animation-expert\` |
-| Forms/validation | \`frontend-stack\` |
+| React components | \`component-stack\` |
+| Animations | \`motion-system\` |
 
 \`\`\`ts
-skill(name: "frontend-stack")
-skill(name: "animate-ui-expert")
+skill(name: "component-stack")  // TanStack, React 19, Tailwind v4, shadcn, Magic UI
+skill(name: "motion-system")    // Motion v12 variants, springs, gestures
 \`\`\`
 
-**CRITICAL**: Skills contain project patterns, component conventions, and styling guidelines. Load them BEFORE writing any code.
+**CRITICAL**: Skills contain project patterns, component conventions, and animation presets. Load them BEFORE writing any code.
 
 ## Scope
 
