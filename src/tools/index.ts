@@ -28,6 +28,7 @@ import {
   session_info,
 } from "./session-manager"
 
+import { beadsTools } from './beads'
 
 import { context7_resolve_library_id, context7_get_library_docs, context7_query_docs } from './context7'
 
@@ -125,4 +126,5 @@ export const builtinTools = {
   ripple_delete,
   ripple_bulk_delete,
   ripple_suggest,
+  ...beadsTools,
 }
