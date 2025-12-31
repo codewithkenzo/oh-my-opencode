@@ -14,6 +14,7 @@
         "@opencode-ai/sdk": "^1.0.162",
         "commander": "^14.0.2",
         "hono": "^4.10.4",
+        "opencode-antigravity-auth": "1.2.6",
         "picocolors": "^1.1.1",
         "picomatch": "^4.0.2",
         "turndown": "^7.2.0",
@@ -117,6 +118,8 @@
 
     "jose": ["jose@5.9.6", "", {}, "sha512-AMlnetc9+CV9asI19zHmrgS/WYsWUwCn2R7RzlbJWD7F9eWYUTGyBmU9o6PxngtLGOiDGPRu+Uc4fhKzbpteZQ=="],
 
+    "opencode-antigravity-auth": ["opencode-antigravity-auth@1.2.6", "", { "dependencies": { "@openauthjs/openauth": "^0.4.3", "xdg-basedir": "^5.1.0", "zod": "^3.24.0" }, "peerDependencies": { "typescript": "^5" } }, "sha512-XV9ClpkuH5N9JjyAujG5w6HOjlTDJ08AoUxlCCOC5QjbLzTVJSsCFWIY+FQi3yxKQ9rUU/VGcfT+3xMDOgWq/g=="],
+
     "picocolors": ["picocolors@1.1.1", "", {}, "sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA=="],
 
     "picomatch": ["picomatch@4.0.3", "", {}, "sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q=="],
@@ -136,5 +139,7 @@
     "zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
 
     "@oslojs/jwt/@oslojs/encoding": ["@oslojs/encoding@0.4.1", "", {}, "sha512-hkjo6MuIK/kQR5CrGNdAPZhS01ZCXuWDRJ187zh6qqF2+yMHZpD9fAYpX8q2bOO6Ryhl3XpCT6kUX76N8hhm4Q=="],
+
+    "opencode-antigravity-auth/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
   }
 }

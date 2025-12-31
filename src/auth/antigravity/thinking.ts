@@ -100,7 +100,7 @@ export const DEFAULT_THINKING_BUDGET = 16000
  * Examples:
  * - `gemini-3-pro-high` → true
  * - `gemini-2.5-pro-high` → true
- * - `gemini-3-pro-preview` → false
+ * - `gemini-3-pro-preview` → false (DEPRECATED: This model does not exist)
  * - `gemini-2.5-pro` → false
  *
  * @param model - Model identifier string
