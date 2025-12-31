@@ -59,6 +59,7 @@
     "@opencode-ai/sdk": "^1.0.162",
     "commander": "^14.0.2",
     "hono": "^4.10.4",
+    "opencode-antigravity-auth": "1.2.6",
     "picocolors": "^1.1.1",
     "picomatch": "^4.0.2",
     "turndown": "^7.2.0",
