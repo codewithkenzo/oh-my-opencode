@@ -31,6 +31,20 @@ import {
 import { beadsTools } from './beads'
 import { system_notify } from './system-notify'
 
+import {
+  runwareGenerate,
+  runwareRemoveBg,
+  runwareUpscale,
+  runwareModelSearch,
+  runwareImg2Img,
+} from './runware'
+
+import {
+  civitai_search,
+  civitai_get,
+  civitai_tags,
+} from './civitai'
+
 import { context7_resolve_library_id, context7_get_library_docs, context7_query_docs } from './context7'
 
 import { grep_app_searchGitHub } from './grep-app'
@@ -129,4 +143,12 @@ export const builtinTools = {
   ripple_suggest,
   ...beadsTools,
   system_notify,
+  runwareGenerate,
+  runwareRemoveBg,
+  runwareUpscale,
+  runwareModelSearch,
+  runwareImg2Img,
+  civitai_search,
+  civitai_get,
+  civitai_tags,
 }
