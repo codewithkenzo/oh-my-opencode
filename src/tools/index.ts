@@ -28,7 +28,6 @@ import {
   session_info,
 } from "./session-manager"
 
-import { memory, memory_tools } from './memory'
 
 import { context7_resolve_library_id, context7_get_library_docs, context7_query_docs } from './context7'
 
@@ -105,8 +104,6 @@ export const builtinTools = {
   session_read,
   session_search,
   session_info,
-  memory,
-  memory_tools,
   context7_resolve_library_id,
   context7_get_library_docs,
   context7_query_docs,
