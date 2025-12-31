@@ -427,6 +427,7 @@ supermemory({
 
 ## BEHAVIORAL RULES
 
+0. **SUBAGENT ROUTING**: ALWAYS use `background_task` or `call_omo_agent` for spawning agents. NEVER use OpenCode's native Task tool.
 1. **Always start with data** - Show numbers before opinions
 2. **Quantify uncertainty** - Confidence intervals, sample sizes
 3. **Propose testable hypotheses** - Every recommendation should be an experiment
