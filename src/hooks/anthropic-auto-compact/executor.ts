@@ -348,15 +348,6 @@ export async function executeCompact(
         log("[auto-compact] aggressive truncation completed", aggressiveResult);
 
         if (aggressiveResult.sufficient) {
-          setTimeout(async () => {
-            try {
-              await (client as Client).session.prompt_async({
-                path: { sessionID },
-                body: { parts: [{ type: "text", text: "Continue" }] },
-                query: { directory },
-              });
-            } catch {}
-          }, 500);
           return;
         }
         } else {
@@ -387,15 +378,6 @@ export async function executeCompact(
             tokensSaved: pruningResult.totalTokensSaved,
           });
           
-          setTimeout(async () => {
-            try {
-              await (client as Client).session.prompt_async({
-                path: { sessionID },
-                body: { parts: [{ type: "text", text: "Continue" }] },
-                query: { directory },
-              });
-            } catch {}
-          }, 500);
           return;
         }
       } catch (error) {
@@ -431,15 +413,6 @@ export async function executeCompact(
             })
             .catch(() => {});
 
-          setTimeout(async () => {
-            try {
-              await (client as Client).session.prompt_async({
-                path: { sessionID },
-                body: { parts: [{ type: "text", text: "Continue" }] },
-                query: { directory },
-              });
-            } catch {}
-          }, 500);
           return;
         }
       } else if (
@@ -547,15 +520,6 @@ export async function executeCompact(
             query: { directory },
           });
 
-          setTimeout(async () => {
-            try {
-              await (client as Client).session.prompt_async({
-                path: { sessionID },
-                body: { parts: [{ type: "text", text: "Continue" }] },
-                query: { directory },
-              });
-            } catch {}
-          }, 500);
           return;
         } catch {
           const delay =
@@ -626,17 +590,6 @@ export async function executeCompact(
 
           // Clear all state after successful revert - don't recurse
           clearSessionState(autoCompactState, sessionID);
-
-          // Send "Continue" prompt to resume session
-          setTimeout(async () => {
-            try {
-              await (client as Client).session.prompt_async({
-                path: { sessionID },
-                body: { parts: [{ type: "text", text: "Continue" }] },
-                query: { directory },
-              });
-            } catch {}
-          }, 500);
           return;
         } catch {}
         } else {

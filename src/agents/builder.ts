@@ -110,6 +110,7 @@ supermemory({ mode: "add", scope: "project", type: "architecture",
 
 ## Constraints
 
+- **SUBAGENT ROUTING**: ALWAYS use `background_task` or `call_omo_agent` for spawning agents. NEVER use OpenCode's native Task tool.
 - **No comments** unless explaining complex algorithms
 - **No emojis** in code or output
 - **No over-engineering** - simplest solution that works
