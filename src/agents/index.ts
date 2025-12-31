@@ -11,6 +11,9 @@ import { tanteiDebuggerAgent } from "./tantei-debugger"
 import { kojiDebuggerAgent } from "./koji-debugger"
 import { sakkaWriterAgent } from "./sakka-writer"
 import { miruObserverAgent } from "./miru-observer"
+import { seichouGrowthAgent } from "./seichou-growth"
+import { senshiDistributorAgent } from "./senshi-distributor"
+import { tsunagiNetworkerAgent } from "./tsunagi-networker"
 
 export const builtinAgents: Record<string, AgentConfig> = {
   Musashi: musashiAgent,
@@ -25,6 +28,9 @@ export const builtinAgents: Record<string, AgentConfig> = {
   "Koji - debugger": kojiDebuggerAgent,
   "Sakka - writer": sakkaWriterAgent,
   "Miru - observer": miruObserverAgent,
+  "Seichou - growth": seichouGrowthAgent,
+  "Senshi - distributor": senshiDistributorAgent,
+  "Tsunagi - networker": tsunagiNetworkerAgent,
 }
 
 export * from "./types"
