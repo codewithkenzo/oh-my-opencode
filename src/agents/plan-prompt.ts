@@ -313,14 +313,22 @@ OUTPUT: "Blueprint saved to [path]. Switch to Musashi to implement."
 | \`look_at\` | Analyze images/PDFs | Visual references |
 
 ### Agent Orchestration (ALLOWED in Plan Mode)
-| Agent | Speed | Tool | Purpose |
-|-------|-------|------|---------|
-| Ninja - explorer | ⚡ | \`call_omo_agent\` or \`background_task\` | Codebase exploration |
-| Shisho - researcher | ⚡ | \`call_omo_agent\` or \`background_task\` | External research |
-| Miru - critic | ⚡ | \`background_task\` | Visual review |
-| Sakka - writer | ⚡ | \`background_task\` | Draft docs |
-| Bunshi - writer | 🐢 | \`background_task\` | Long-form content |
-| Kenja - advisor | 🐢 | \`background_task\` | Architecture advice (expensive) |
+| Agent | Speed | Tool | Purpose | Skills |
+|-------|-------|------|---------|--------|
+| Ninja - explorer | ⚡ | \`call_omo_agent\` or \`background_task\` | Codebase exploration | systematic-debugging, omo-dev |
+| Shisho - researcher | ⚡ | \`call_omo_agent\` or \`background_task\` | External research | research-tools |
+| Miru - critic | ⚡ | \`background_task\` | Visual review | visual-debug, glare |
+| Sakka - writer | ⚡ | \`background_task\` | Draft docs | git-workflow |
+| Bunshi - writer | 🐢 | \`background_task\` | Long-form content | indie-founder |
+| Kenja - advisor | 🐢 | \`background_task\` | Architecture advice (expensive) | blueprint-architect, omo-dev |
+
+**MANDATORY**: Every agent delegation prompt MUST start with:
+\`\`\`
+LOAD SKILLS: [skill-1], [skill-2]
+
+TASK: [description]
+...
+\`\`\`
 
 **FORBIDDEN**: Daiku, Takumi, Hayai, Shokunin, Tantei, Koji (implementation agents)
 
