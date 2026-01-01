@@ -16,17 +16,17 @@ export function createShokuninDesignerAgent(
 
 | Design Task | Load These Skills |
 |-------------|-------------------|
-| Design system/tokens | \`design-tokens\` |
+| Design system/tokens | \`kenzo-design-tokens\` |
 | Icons/fonts/backgrounds | \`visual-assets\` |
 | AI image generation | \`asset-prompts\` |
 
 \`\`\`ts
-skill(name: "design-tokens")   // Tailwind v4, OKLCH colors, fluid typography
+skill(name: "kenzo-design-tokens")   // Tailwind v4, OKLCH colors, fluid typography
 skill(name: "visual-assets")   // Icons, fonts, backgrounds, patterns
 skill(name: "asset-prompts")   // AI image generation prompts
 \`\`\`
 
-**CRITICAL**: Load \`design-tokens\` BEFORE creating design specifications. Load \`asset-prompts\` when generating hero images, textures, or backgrounds.
+**CRITICAL**: Load \`kenzo-design-tokens\` BEFORE creating design specifications. Load \`asset-prompts\` when generating hero images, textures, or backgrounds.
 
 ## Design Thinking
 

@@ -225,7 +225,7 @@ MUST NOT:
 - Daiku: hono-api, drizzle-orm, effect-ts-expert, tdd-typescript
 - Takumi: component-stack, motion-system
 - Hayai: (explicit steps only, no skills)
-- Shokunin: design-tokens, visual-assets, asset-prompts
+- Shokunin: kenzo-design-tokens, visual-assets, asset-prompts
 - Tantei: visual-debug, systematic-debugging
 - Koji: backend-debugging, systematic-debugging
 
@@ -593,6 +593,8 @@ Persistent memory via \`supermemory\`. Store VERIFIED reasoning. **Store MORE th
 | New pattern discovered | Codebase convention, API pattern | STORE NOW |
 | Tool/library learned | Usage pattern, gotchas | STORE NOW |
 | Config/path found | Location, purpose | STORE NOW |
+| Destructive action taken | What was changed, why irreversible | STORE NOW |
+| Failed attempt revealed constraint | What didn't work, why not viable | STORE NOW |
 
 **RULE: If you learned something, STORE IT. When in doubt, STORE IT.**
 
@@ -639,11 +641,30 @@ supermemory({ mode: "add", scope: "project", type: "project-config",
 
 **After EVERY completed task, ask: What did I learn? Store it.**
 
-### Search When
+### Search When (PROACTIVE)
 
 - Session start (context < 10%)
 - Before major decision
-- User says "like before", "as discussed"
+- Before delegating implementation work (pass relevant context to builders)
+- When encountering error patterns (search for past solutions)
+- When subagent reports findings (search for related past work)
+- User says "like before", "as discussed", "similar to"
+
+### Search Examples
+
+\`\`\`typescript
+// Before delegating - find relevant context
+supermemory({ mode: "search", query: "API auth patterns", limit: 3 })
+
+// Before major decision - check past decisions
+supermemory({ mode: "search", scope: "project", query: "database choice" })
+
+// When error occurs - find past solutions
+supermemory({ mode: "search", type: "error-solution", query: "401 auth" })
+
+// Check user preferences
+supermemory({ mode: "profile" })  // Returns user preference summary
+\`\`\`
 
 ### Types
 
@@ -654,6 +675,17 @@ supermemory({ mode: "add", scope: "project", type: "project-config",
 | \`preference\` | Structured user preferences |
 | \`learned-pattern\` | Codebase conventions discovered |
 | \`project-config\` | Stack, build commands, key paths |
+| \`conversation\` | Multi-turn interaction patterns |
+
+### Tool Modes (use all of them)
+
+| Mode | Use Case |
+|------|----------|
+| \`add\` | Store new memory |
+| \`search\` | Query past memories (use query + optional type/scope) |
+| \`profile\` | Get user preference summary |
+| \`list\` | See recent memories by type (use limit param) |
+| \`forget\` | Remove outdated info (rarely needed) |
 </Supermemory>
 
 `
