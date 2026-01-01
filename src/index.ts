@@ -550,21 +550,11 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
         external_directory: "allow",
       }
 
-      const mcpResult = (pluginConfig.claude_code?.mcp ?? true)
-        ? await loadMcpConfigs()
-        : { servers: {} };
-      
-      const disabledMcpNames = pluginConfig.disabled_mcps ?? [];
-      const filteredMcpServers = Object.fromEntries(
-        Object.entries(mcpResult.servers).filter(([name]) => 
-          !disabledMcpNames.includes(name as McpName)
-        )
-      );
+      const mcpResult = { servers: {} };
       
       config.mcp = {
         ...config.mcp,
         ...createBuiltinMcps(pluginConfig.disabled_mcps),
-        ...filteredMcpServers,
       };
 
       const userCommands = (pluginConfig.claude_code?.commands ?? true) ? loadUserCommands() : {};
