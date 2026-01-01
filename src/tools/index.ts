@@ -45,6 +45,8 @@ import {
   civitai_tags,
 } from './civitai'
 
+import { syncthingTools } from './syncthing'
+
 import { context7_resolve_library_id, context7_get_library_docs, context7_query_docs } from './context7'
 
 import { grep_app_searchGitHub } from './grep-app'
@@ -152,4 +154,5 @@ export const builtinTools = {
   civitai_search,
   civitai_get,
   civitai_tags,
+  ...syncthingTools,
 }
