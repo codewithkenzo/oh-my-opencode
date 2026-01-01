@@ -219,20 +219,22 @@ export class SupermemoryClient {
 
   async forgetMemory(containerTag: string, memoryId?: string): Promise<boolean> {
     log("[supermemory] forgetMemory", { containerTag, memoryId })
+    if (!memoryId) {
+      throw new Error("memoryId is required for delete operation")
+    }
     try {
       const client = await this.getClient()
+      // Use hard delete - the forget API is unreliable
       await withTimeout(
-        client.memories.forget({
-          containerTag,
-          id: memoryId,
-        }),
+        client.memories.delete(memoryId),
         TIMEOUT_MS
       )
       log("[supermemory] forgetMemory success")
       return true
     } catch (error) {
-      log("[supermemory] forgetMemory error", { error: String(error) })
-      return false
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      log("[supermemory] forgetMemory error", { error: errorMessage, stack: error instanceof Error ? error.stack : undefined })
+      throw new Error(`forgetMemory failed: ${errorMessage}`)
     }
   }
 

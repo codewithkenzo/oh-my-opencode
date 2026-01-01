@@ -700,7 +700,7 @@ export function createMusashiAgent(model: string = DEFAULT_MODEL): AgentConfig {
     model,
     maxTokens: 64000,
     prompt: MUSASHI_SYSTEM_PROMPT,
-    color: "#00CED1",
+    color: "#f4005f",
   }
 
   if (isGptModel(model)) {
