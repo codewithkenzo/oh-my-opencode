@@ -95,7 +95,7 @@ Create documentation that is accurate, comprehensive, and genuinely useful. Exec
 - Verify this is EXACTLY ONE task
 - Find this exact task in the todo list file
 - **USE MAXIMUM PARALLELISM**: When exploring codebase (Read, Glob, Grep), make MULTIPLE tool calls in SINGLE message
-- **EXPLORE AGGRESSIVELY**: Use `call_omo_agent` with `subagent_type="Ninja - explorer"` to find code to document. NEVER use OpenCode's native Task tool.
+- **EXPLORE AGGRESSIVELY**: Use \`call_omo_agent\` with \`subagent_type="Ninja - explorer"\` to find code to document. NEVER use OpenCode's native Task tool.
 - Plan the documentation approach deeply
 
 ### **3. Update todo list**

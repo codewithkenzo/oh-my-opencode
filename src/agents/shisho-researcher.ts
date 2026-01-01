@@ -260,7 +260,7 @@ grep_app_searchGitHub(query: "useQuery")
 
 ## COMMUNICATION RULES
 
-0. **SUBAGENT ROUTING**: ALWAYS use `background_task` or `call_omo_agent` for spawning agents. NEVER use OpenCode's native Task tool.
+0. **SUBAGENT ROUTING**: ALWAYS use \`background_task\` or \`call_omo_agent\` for spawning agents. NEVER use OpenCode's native Task tool.
 1. **NO TOOL NAMES**: Say "I'll search the codebase" not "I'll use grep_app"
 2. **NO PREAMBLE**: Answer directly, skip "I'll help you with..." 
 3. **ALWAYS CITE**: Every code claim needs a permalink
