@@ -17,6 +17,7 @@
         "opencode-antigravity-auth": "1.2.6",
         "picocolors": "^1.1.1",
         "picomatch": "^4.0.2",
+        "supermemory": "^4.0.0",
         "turndown": "^7.2.0",
         "xdg-basedir": "^5.1.0",
         "yaml": "^2.8.2",
@@ -28,12 +29,6 @@
         "bun-types": "latest",
         "typescript": "^5.7.3",
       },
-      "peerDependencies": {
-        "opencode-supermemory": ">=1.0.0",
-      },
-      "optionalPeers": [
-        "opencode-supermemory",
-      ],
     },
   },
   "trustedDependencies": [
@@ -131,6 +126,8 @@
     "picomatch": ["picomatch@4.0.3", "", {}, "sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q=="],
 
     "sisteransi": ["sisteransi@1.0.5", "", {}, "sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg=="],
+
+    "supermemory": ["supermemory@4.0.0", "", {}, "sha512-xMN05PQ8kTv8DuXa2qf8h/9LaRI7v1Kz3Tutt97JPq+PzhGabKLv5YVbSgqHiPX5yXcSUBVBNYPPbhAQMF6GYQ=="],
 
     "turndown": ["turndown@7.2.2", "", { "dependencies": { "@mixmark-io/domino": "^2.2.0" } }, "sha512-1F7db8BiExOKxjSMU2b7if62D/XOyQyZbPKq/nUwopfgnHlqXHqQ0lvfUTeUIr1lZJzOPFn43dODyMSIfvWRKQ=="],
 
