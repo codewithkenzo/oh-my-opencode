@@ -22,8 +22,7 @@ export { createNonInteractiveEnvHook } from "./non-interactive-env";
 export { createInteractiveBashSessionHook } from "./interactive-bash-session";
 export { createEmptyMessageSanitizerHook } from "./empty-message-sanitizer";
 export { createThinkingBlockValidatorHook } from "./thinking-block-validator";
-export { createMemoryCaptureHook } from "./memory-capture";
-export { createMemoryInjectorHook } from "./memory-injector";
+
 export { createBrowserRelayHook } from "./browser-relay";
 export { createSkillEnforcerHook } from "./skill-enforcer";
 export { createAgentsMdEnforcerHook } from "./agents-md-enforcer";

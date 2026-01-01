@@ -12,6 +12,9 @@ import { createTanteiDebuggerAgent } from "./tantei-debugger"
 import { createKojiDebuggerAgent } from "./koji-debugger"
 import { createSakkaWriterAgent } from "./sakka-writer"
 import { createMiruObserverAgent } from "./miru-observer"
+import { createSenshiDistributorAgent } from "./senshi-distributor"
+import { createSeichouGrowthAgent } from "./seichou-growth"
+import { createTsunagiNetworkerAgent } from "./tsunagi-networker"
 import { deepMerge } from "../shared"
 
 type AgentSource = AgentFactory | AgentConfig
@@ -29,6 +32,9 @@ const agentSources: Record<BuiltinAgentName, AgentSource> = {
   "Koji - debugger": createKojiDebuggerAgent,
   "Sakka - writer": createSakkaWriterAgent,
   "Miru - observer": createMiruObserverAgent,
+  "Senshi - distributor": createSenshiDistributorAgent,
+  "Seichou - growth": createSeichouGrowthAgent,
+  "Tsunagi - networker": createTsunagiNetworkerAgent,
 }
 
 function isFactory(source: AgentSource): source is AgentFactory {

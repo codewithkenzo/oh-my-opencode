@@ -24,8 +24,6 @@ import {
   createInteractiveBashSessionHook,
   createEmptyMessageSanitizerHook,
   createThinkingBlockValidatorHook,
-  createMemoryCaptureHook,
-  createMemoryInjectorHook,
   createBrowserRelayHook,
   createSkillEnforcerHook,
   createAgentsMdEnforcerHook,
@@ -334,12 +332,6 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
   const thinkingBlockValidator = isHookEnabled("thinking-block-validator")
     ? createThinkingBlockValidatorHook()
     : null;
-  const memoryCapture = isHookEnabled("memory-capture")
-    ? createMemoryCaptureHook(ctx)
-    : null;
-  const memoryInjector = isHookEnabled("memory-injector")
-    ? createMemoryInjectorHook(ctx)
-    : null;
   const browserRelay = isHookEnabled("browser-relay")
     ? createBrowserRelayHook()
     : null;
@@ -389,14 +381,12 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     "chat.message": async (input, output) => {
       await claudeCodeHooks["chat.message"]?.(input, output);
       await keywordDetector?.["chat.message"]?.(input, output);
-      await memoryCapture?.["chat.message"]?.(input, output);
     },
 
     "prompt.submit": async (
       input: { sessionID: string },
       output: { parts: Array<{ type: string; text?: string }> }
     ) => {
-      await memoryInjector?.["prompt.submit"]?.(input, output);
     },
 
     "experimental.chat.messages.transform": async (
@@ -607,8 +597,6 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await preemptiveCompaction?.event(input);
       await agentUsageReminder?.event(input);
       await interactiveBashSession?.event(input);
-      await memoryCapture?.event(input);
-      await memoryInjector?.event(input);
       await browserRelay?.event(input);
       await skillEnforcer?.event(input);
       await agentsMdEnforcer?.event(input);
@@ -693,7 +681,6 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await interactiveBashSession?.["tool.execute.after"](input, output);
       await skillEnforcer?.["tool.execute.after"](input, output);
       await agentsMdEnforcer?.["tool.execute.after"](input, output);
-      await memoryCapture?.["tool.execute.after"]?.(input, output);
     },
   };
 };
