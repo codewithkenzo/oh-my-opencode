@@ -47,7 +47,6 @@ import {
   loadOpenCodeGlobalAgents,
   loadOpenCodeProjectAgents,
 } from "./features/claude-code-agent-loader";
-import { loadMcpConfigs } from "./features/claude-code-mcp-loader";
 import {
   setMainSession,
   getMainSessionID,
@@ -550,11 +549,12 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
         external_directory: "allow",
       }
 
-      const mcpResult = { servers: {} };
+      const disabledMcps = pluginConfig.disabled_mcps ?? [];
+      const builtinMcps = createBuiltinMcps(disabledMcps);
       
       config.mcp = {
         ...config.mcp,
-        ...createBuiltinMcps(pluginConfig.disabled_mcps),
+        ...builtinMcps,
       };
 
       const userCommands = (pluginConfig.claude_code?.commands ?? true) ? loadUserCommands() : {};

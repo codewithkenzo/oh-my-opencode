@@ -11,70 +11,19 @@
     "disabled_mcps": {
       "type": "array",
       "items": {
-        "type": "string",
-        "enum": [
-          "websearch_exa",
-          "context7",
-          "grep_app"
-        ]
+        "type": "string"
       }
     },
     "disabled_agents": {
       "type": "array",
       "items": {
-        "type": "string",
-        "enum": [
-          "Musashi",
-          "Kenja - advisor",
-          "Shisho - researcher",
-          "Ninja - explorer",
-          "Shokunin - designer",
-          "Takumi - builder",
-          "Daiku - builder",
-          "Hayai - builder",
-          "Tantei - debugger",
-          "Koji - debugger",
-          "Sakka - writer",
-          "Miru - observer",
-          "Senshi - distributor",
-          "Seichou - growth",
-          "Tsunagi - networker"
-        ]
+        "type": "string"
       }
     },
     "disabled_hooks": {
       "type": "array",
       "items": {
-        "type": "string",
-        "enum": [
-          "todo-continuation-enforcer",
-          "context-window-monitor",
-          "session-recovery",
-          "session-notification",
-          "comment-checker",
-          "tool-output-truncator",
-          "directory-agents-injector",
-          "directory-readme-injector",
-          "empty-task-response-detector",
-          "think-mode",
-          "anthropic-auto-compact",
-          "preemptive-compaction",
-          "compaction-context-injector",
-          "rules-injector",
-          "background-notification",
-          "auto-update-checker",
-          "startup-toast",
-          "keyword-detector",
-          "agent-usage-reminder",
-          "non-interactive-env",
-          "interactive-bash-session",
-          "empty-message-sanitizer",
-          "thinking-block-validator",
-          "claude-code-hooks",
-          "browser-relay",
-          "skill-enforcer",
-          "agents-md-enforcer"
-        ]
+        "type": "string"
       }
     },
     "agents": {

@@ -199,11 +199,17 @@ export const ExperimentalConfigSchema = z.object({
   dynamic_context_pruning: DynamicContextPruningConfigSchema.optional(),
 })
 
+// Lenient schemas for disabled_* arrays - accept any string for backward compatibility
+// with deprecated/removed hooks, agents, and mcps. Unknown values are silently ignored.
+const DisabledMcpsSchema = z.array(z.string()).optional()
+const DisabledAgentsSchema = z.array(z.string()).optional()
+const DisabledHooksSchema = z.array(z.string()).optional()
+
 export const OhMyOpenCodeConfigSchema = z.object({
   $schema: z.string().optional(),
-  disabled_mcps: z.array(McpNameSchema).optional(),
-  disabled_agents: z.array(BuiltinAgentNameSchema).optional(),
-  disabled_hooks: z.array(HookNameSchema).optional(),
+  disabled_mcps: DisabledMcpsSchema,
+  disabled_agents: DisabledAgentsSchema,
+  disabled_hooks: DisabledHooksSchema,
   agents: AgentOverridesSchema.optional(),
   claude_code: ClaudeCodeConfigSchema.optional(),
   google_auth: z.boolean().optional(),
