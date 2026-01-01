@@ -50,7 +50,7 @@ describe("executeCompact lock management", () => {
   })
 
   test("clears lock when summarize throws exception", async () => {
-    // #given: Summarize will fail
+    // #given: Summarize will fail, retry attempts exhausted to skip retry delays
     mockClient.session.summarize = mock(() =>
       Promise.reject(new Error("Network timeout")),
     )
@@ -58,6 +58,11 @@ describe("executeCompact lock management", () => {
       errorType: "token_limit",
       currentTokens: 100000,
       maxTokens: 200000,
+    })
+    // Pre-exhaust retry attempts to avoid retry delays in test
+    autoCompactState.retryStateBySession.set(sessionID, {
+      attempt: 2,
+      lastAttemptTime: Date.now(),
     })
 
     // #when: Execute compaction

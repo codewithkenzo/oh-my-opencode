@@ -460,17 +460,18 @@ export async function executeCompact(
           errorData.messageIndex,
         );
         if (fixed) {
-          setTimeout(() => {
-            executeCompact(
-              sessionID,
-              msg,
-              autoCompactState,
-              client,
-              directory,
-              experimental,
-            );
-          }, 500);
-          return;
+          return new Promise((resolve) => {
+            setTimeout(() => {
+              executeCompact(
+                sessionID,
+                msg,
+                autoCompactState,
+                client,
+                directory,
+                experimental,
+              ).then(resolve);
+            }, 500);
+          });
         }
       } else {
         await (client as Client).tui
@@ -521,23 +522,37 @@ export async function executeCompact(
           });
 
           return;
-        } catch {
+        } catch (err) {
+          const errMsg = String(err).toLowerCase();
+          if (
+            errMsg.includes("abort") ||
+            errMsg.includes("cancel") ||
+            errMsg.includes("interrupt") ||
+            errMsg.includes("499")
+          ) {
+            log("[auto-compact] summarization cancelled by user, skipping retry", {
+              sessionID,
+            });
+            return;
+          }
+
           const delay =
             RETRY_CONFIG.initialDelayMs *
             Math.pow(RETRY_CONFIG.backoffFactor, retryState.attempt - 1);
           const cappedDelay = Math.min(delay, RETRY_CONFIG.maxDelayMs);
 
-          setTimeout(() => {
-            executeCompact(
-              sessionID,
-              msg,
-              autoCompactState,
-              client,
-              directory,
-              experimental,
-            );
-          }, cappedDelay);
-          return;
+          return new Promise((resolve) => {
+            setTimeout(() => {
+              executeCompact(
+                sessionID,
+                msg,
+                autoCompactState,
+                client,
+                directory,
+                experimental,
+              ).then(resolve);
+            }, cappedDelay);
+          });
         }
         } else {
           await (client as Client).tui.showToast({

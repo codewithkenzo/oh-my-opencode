@@ -250,6 +250,7 @@ export function createPreemptiveCompactionHook(
     } catch (err) {
       log("[preemptive-compaction] compaction failed", { sessionID, error: err })
     } finally {
+      markCompactionEnd(sessionID)
       state.compactionInProgress.delete(sessionID)
     }
   }
@@ -277,7 +278,12 @@ export function createPreemptiveCompactionHook(
       const sessionID = info.sessionID
       if (!sessionID) return
 
-      await checkAndTriggerCompaction(sessionID, info)
+      // Non-blocking: trigger compaction in next tick to avoid blocking event loop
+      setTimeout(() => {
+        checkAndTriggerCompaction(sessionID, info).catch((err) => {
+          log("[preemptive-compaction] background compaction failed", { sessionID, error: err })
+        })
+      }, 0)
       return
     }
 
@@ -314,7 +320,12 @@ export function createPreemptiveCompactionHook(
           }
         }
 
-        await checkAndTriggerCompaction(sessionID, lastAssistant)
+        // Non-blocking: trigger compaction in next tick
+        setTimeout(() => {
+          checkAndTriggerCompaction(sessionID, lastAssistant).catch((err) => {
+            log("[preemptive-compaction] background idle compaction failed", { sessionID, error: err })
+          })
+        }, 0)
       } catch {}
     }
   }
