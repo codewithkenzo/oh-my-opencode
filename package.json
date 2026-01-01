@@ -67,6 +67,14 @@
     "yaml": "^2.8.2",
     "zod": "^4.1.8"
   },
+  "peerDependencies": {
+    "opencode-supermemory": ">=1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "opencode-supermemory": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@types/picomatch": "^3.0.2",
     "@types/turndown": "^5.0.5",

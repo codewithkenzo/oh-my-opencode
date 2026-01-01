@@ -11,6 +11,7 @@ import {
 import {
   findNearestMessageWithFields,
   MESSAGE_STORAGE,
+  injectHookMessage,
 } from "../../features/hook-message-injector"
 import { log } from "../../shared/logger"
 import { showToast } from "../../shared/toast"
@@ -21,6 +22,7 @@ import {
   markPendingContinue,
   cleanupSession
 } from '../compaction-state'
+import { getSupermemoryIntegration, createMemoryInjectionPrompt } from './supermemory'
 
 export interface SummarizeContext {
   sessionID: string
@@ -204,6 +206,25 @@ export function createPreemptiveCompactionHook(
           usageRatio,
           directory: ctx.directory,
         })
+      }
+
+      // Inject supermemory context if available and enabled
+      const injectMemory = experimental?.inject_supermemory_context !== false
+      if (injectMemory) {
+        const supermemory = await getSupermemoryIntegration()
+        if (supermemory?.isConfigured()) {
+          try {
+            const tags = supermemory.getTags(ctx.directory)
+            const memories = await supermemory.fetchProjectMemories(tags.project, 10)
+            if (memories.length > 0) {
+              const prompt = createMemoryInjectionPrompt(memories)
+              injectHookMessage(sessionID, prompt, { model: { providerID, modelID } })
+              log("[preemptive-compaction] memory context injected", { memoriesCount: memories.length })
+            }
+          } catch (err) {
+            log("[preemptive-compaction] failed to inject memory context", { error: String(err) })
+          }
+        }
       }
 
       await ctx.client.session.summarize({

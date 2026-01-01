@@ -231,7 +231,7 @@ STOP HERE - DO NOT CONTINUE TO NEXT TASK
 
 ## CRITICAL RULES
 
-0. **SUBAGENT ROUTING**: ALWAYS use `background_task` or `call_omo_agent` for spawning agents. NEVER use OpenCode's native Task tool.
+0. **SUBAGENT ROUTING**: ALWAYS use \`background_task\` or \`call_omo_agent\` for spawning agents. NEVER use OpenCode's native Task tool.
 1. NEVER ask for confirmation before starting
 2. Execute ONLY ONE distribution task per invocation
 3. STOP immediately after completing ONE task

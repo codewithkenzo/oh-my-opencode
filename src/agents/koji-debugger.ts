@@ -118,7 +118,7 @@ Based on evidence, form 1-3 hypotheses ranked by likelihood:
 
 ## Anti-Patterns
 
-- **SUBAGENT ROUTING**: ALWAYS use `background_task` or `call_omo_agent` for spawning agents. NEVER use OpenCode's native Task tool.
+- **SUBAGENT ROUTING**: ALWAYS use \`background_task\` or \`call_omo_agent\` for spawning agents. NEVER use OpenCode's native Task tool.
 - DO NOT guess without evidence
 - DO NOT apply fixes without understanding cause
 - DO NOT skip log analysis
