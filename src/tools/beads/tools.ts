@@ -28,7 +28,7 @@ export const beads_ready = tool({
 export const beads_list = tool({
   description: "List all Beads issues. Supports filtering by status, priority, type, and search.",
   args: {
-    status: tool.schema.string().optional().describe("Filter by status (e.g., todo, in_progress, done, blocked)"),
+    status: tool.schema.string().optional().describe("Filter by status: open, in_progress, blocked, deferred, closed"),
     priority: tool.schema.number().optional().describe("Filter by priority (0-4)"),
     type: tool.schema.string().optional().describe("Filter by type (e.g., task, bug, feature)"),
     search: tool.schema.string().optional().describe("Search in title/description"),
@@ -67,7 +67,7 @@ export const beads_create = tool({
   description: "Create a new Beads issue. Priority: 0=critical, 1=high, 2=medium, 3=low, 4=nice-to-have.",
   args: {
     title: tool.schema.string().describe("Issue title (required)"),
-    type: tool.schema.string().optional().describe("Issue type: task, bug, feature, question"),
+    type: tool.schema.string().optional().describe("Issue type: task, bug, feature, epic, chore (default: task)"),
     priority: tool.schema.number().min(0).max(4).optional().describe("Priority (0-4, default: 2)"),
     status: tool.schema.string().optional().describe("Initial status (default: todo)"),
     description: tool.schema.string().optional().describe("Issue description"),
@@ -90,7 +90,7 @@ export const beads_update = tool({
   description: "Update an existing Beads issue status or fields.",
   args: {
     id: tool.schema.string().describe("Issue ID"),
-    status: tool.schema.string().optional().describe("New status: todo, in_progress, done, blocked"),
+    status: tool.schema.string().optional().describe("New status: open, in_progress, blocked, deferred, closed"),
     title: tool.schema.string().optional().describe("New title"),
     description: tool.schema.string().optional().describe("New description"),
     priority: tool.schema.number().min(0).max(4).optional().describe("New priority (0-4)"),
