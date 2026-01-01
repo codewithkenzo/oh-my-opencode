@@ -581,23 +581,25 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     },
 
     event: async (input) => {
-      await autoUpdateChecker?.event(input);
-      await claudeCodeHooks.event(input);
-      await backgroundNotificationHook?.event(input);
-      await sessionNotification?.(input);
-      await todoContinuationEnforcer?.handler(input);
-      await contextWindowMonitor?.event(input);
-      await directoryAgentsInjector?.event(input);
-      await directoryReadmeInjector?.event(input);
-      await rulesInjector?.event(input);
-      await thinkMode?.event(input);
-      await anthropicAutoCompact?.event(input);
-      await preemptiveCompaction?.event(input);
-      await agentUsageReminder?.event(input);
-      await interactiveBashSession?.event(input);
-      await browserRelay?.event(input);
-      await skillEnforcer?.event(input);
-      await agentsMdEnforcer?.event(input);
+      await Promise.allSettled([
+        autoUpdateChecker?.event(input),
+        claudeCodeHooks.event(input),
+        backgroundNotificationHook?.event(input),
+        sessionNotification?.(input),
+        todoContinuationEnforcer?.handler(input),
+        contextWindowMonitor?.event(input),
+        directoryAgentsInjector?.event(input),
+        directoryReadmeInjector?.event(input),
+        rulesInjector?.event(input),
+        thinkMode?.event(input),
+        anthropicAutoCompact?.event(input),
+        preemptiveCompaction?.event(input),
+        agentUsageReminder?.event(input),
+        interactiveBashSession?.event(input),
+        browserRelay?.event(input),
+        skillEnforcer?.event(input),
+        agentsMdEnforcer?.event(input),
+      ]);
 
       const { event } = input;
       const props = event.properties as Record<string, unknown> | undefined;
