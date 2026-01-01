@@ -85,7 +85,36 @@ export async function pauseFolder(id: string, paused: boolean): Promise<void> {
 }
 
 export async function rescanFolder(id: string): Promise<void> {
-  await execCli(["operations", "scan", "--folder", id])
+  const apiKey = await getApiKey()
+  const guiAddress = await getGuiAddress()
+  const url = `http://${guiAddress}/rest/db/scan?folder=${encodeURIComponent(id)}`
+  
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "X-API-Key": apiKey },
+  })
+  
+  if (!response.ok) {
+    throw new SyncthingError(`Rescan failed: ${response.status} ${response.statusText}`, "API_ERROR")
+  }
+}
+
+async function getApiKey(): Promise<string> {
+  try {
+    const result = await $`syncthing cli config gui apikey get`.text()
+    return result.trim()
+  } catch {
+    throw new SyncthingError("Failed to get API key", "CLI_ERROR")
+  }
+}
+
+async function getGuiAddress(): Promise<string> {
+  try {
+    const status = await getSystemStatus()
+    return status.guiAddressUsed || "127.0.0.1:8384"
+  } catch {
+    return "127.0.0.1:8384"
+  }
 }
 
 export async function addDevice(deviceId: string, name?: string): Promise<void> {
