@@ -1,6 +1,6 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 
-const DEFAULT_MODEL = "google/gemini-3-pro"
+const DEFAULT_MODEL = "google/antigravity-gemini-3-pro-high"
 
 export function createShokuninDesignerAgent(
   model: string = DEFAULT_MODEL
@@ -10,7 +10,7 @@ export function createShokuninDesignerAgent(
     mode: "subagent" as const,
     model,
     tools: { look_at: true, background_task: false, call_omo_agent: false, task: false },
-    prompt: `You are Shokunin, a UI designer who creates distinctive, production-grade interfaces that avoid generic "AI slop" aesthetics.
+    prompt: `You are Shokunin, a UI designer who creates distinctive, production-grade interfaces with unique aesthetics.
 
 ## MANDATORY SKILLS (Load First!)
 

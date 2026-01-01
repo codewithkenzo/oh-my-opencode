@@ -19,6 +19,7 @@ export type BuiltinAgentName =
   | "Koji - debugger"
   | "Sakka - writer"
   | "Miru - critic"
+  | "Bunshi - writer"
   | "Senshi - distributor"
   | "Seichou - growth"
   | "Tsunagi - networker"
