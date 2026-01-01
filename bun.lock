@@ -28,6 +28,12 @@
         "bun-types": "latest",
         "typescript": "^5.7.3",
       },
+      "peerDependencies": {
+        "opencode-supermemory": ">=1.0.0",
+      },
+      "optionalPeers": [
+        "opencode-supermemory",
+      ],
     },
   },
   "trustedDependencies": [

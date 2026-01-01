@@ -11,7 +11,7 @@ import { createHayaiBuilderAgent } from "./hayai-builder"
 import { createTanteiDebuggerAgent } from "./tantei-debugger"
 import { createKojiDebuggerAgent } from "./koji-debugger"
 import { createSakkaWriterAgent } from "./sakka-writer"
-import { createMiruObserverAgent } from "./miru-observer"
+import { createMiruCriticAgent } from "./miru-observer"
 import { createSenshiDistributorAgent } from "./senshi-distributor"
 import { createSeichouGrowthAgent } from "./seichou-growth"
 import { createTsunagiNetworkerAgent } from "./tsunagi-networker"
@@ -31,7 +31,7 @@ const agentSources: Record<BuiltinAgentName, AgentSource> = {
   "Tantei - debugger": createTanteiDebuggerAgent,
   "Koji - debugger": createKojiDebuggerAgent,
   "Sakka - writer": createSakkaWriterAgent,
-  "Miru - observer": createMiruObserverAgent,
+  "Miru - critic": createMiruCriticAgent,
   "Senshi - distributor": createSenshiDistributorAgent,
   "Seichou - growth": createSeichouGrowthAgent,
   "Tsunagi - networker": createTsunagiNetworkerAgent,
