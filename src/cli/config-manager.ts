@@ -229,12 +229,12 @@ export function generateOmoConfig(installConfig: InstallConfig): Record<string, 
   if (installConfig.hasGemini) {
     agents["Shokunin - designer"] = { model: "google/gemini-3-pro-high" }
     agents["Sakka - writer"] = { model: "google/gemini-3-flash" }
-    agents["Miru - observer"] = { model: "google/gemini-3-flash" }
+    agents["Miru - critic"] = { model: "google/gemini-3-flash" }
   } else {
     const fallbackModel = installConfig.hasClaude ? "anthropic/claude-opus-4-5" : "opencode/big-pickle"
     agents["Shokunin - designer"] = { model: fallbackModel }
     agents["Sakka - writer"] = { model: fallbackModel }
-    agents["Miru - observer"] = { model: fallbackModel }
+    agents["Miru - critic"] = { model: fallbackModel }
   }
 
   if (Object.keys(agents).length > 0) {

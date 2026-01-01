@@ -9,7 +9,7 @@ export const ALLOWED_AGENTS = [
   "Tantei - debugger",
   "Koji - debugger",
   "Sakka - writer",
-  "Miru - observer",
+  "Miru - critic",
   "Senshi - distributor",
   "Seichou - growth",
   "Tsunagi - networker",
@@ -29,7 +29,7 @@ Available: {agents}
 - **Tantei - debugger**: Visual/CSS debugging with screenshots
 - **Koji - debugger**: Backend/API debugging, logs, errors
 - **Sakka - writer**: Docs, README, technical writing
-- **Miru - observer**: Image/PDF analysis, visual review
+- **Miru - critic**: Image/PDF analysis, visual review
 - **Senshi - distributor**: Launch, social, distribution
 - **Seichou - growth**: Growth experiments, marketing
 - **Tsunagi - networker**: Outreach, community, networking

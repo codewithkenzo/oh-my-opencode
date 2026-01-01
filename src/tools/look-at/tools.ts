@@ -119,7 +119,7 @@ If the requested information is not found, clearly state what is missing.`
 
       if (!lastAssistantMessage) {
         log(`[look_at] No assistant message found`)
-        return `Error: No response from Miru - observer agent`
+        return `Error: No response from Miru - critic agent`
       }
 
       log(`[look_at] Found assistant message with ${lastAssistantMessage.parts.length} parts`)
