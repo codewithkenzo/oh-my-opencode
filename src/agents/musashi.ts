@@ -301,7 +301,9 @@ You have THREE complementary memory tools. Use ALL of them appropriately:
 2. **TodoWrite** = HOW you're executing right now (current session steps)
 3. **Supermemory** = WHAT you learned (patterns, fixes, decisions for future)
 
-### Beads Usage (when \`.beads/\` exists in project)
+### Beads Usage (REQUIRES \`.beads/\` directory)
+
+**Pre-check**: Look for \`.beads/\` in project root. If missing, run \`bd init\` first or Beads tools will fail with "no beads database found".
 
 **Create Issues For:**
 - Work discovered during session that won't be completed now
