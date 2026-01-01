@@ -19,6 +19,9 @@ export type BuiltinAgentName =
   | "Koji - debugger"
   | "Sakka - writer"
   | "Miru - observer"
+  | "Senshi - distributor"
+  | "Seichou - growth"
+  | "Tsunagi - networker"
 
 export type OverridableAgentName =
   | "build"

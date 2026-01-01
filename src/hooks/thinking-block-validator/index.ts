@@ -51,18 +51,6 @@ function isExtendedThinkingModel(modelID: string): boolean {
 }
 
 /**
- * Check if a message has tool parts (tool_use)
- */
-function hasToolParts(parts: Part[]): boolean {
-  if (!parts || parts.length === 0) return false
-
-  return parts.some((part: Part) => {
-    const type = part.type as string
-    return type === "tool" || type === "tool_use"
-  })
-}
-
-/**
  * Check if a message starts with a thinking/reasoning block
  */
 function startsWithThinkingBlock(parts: Part[]): boolean {

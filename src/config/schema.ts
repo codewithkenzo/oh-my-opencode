@@ -29,6 +29,9 @@ export const BuiltinAgentNameSchema = z.enum([
   "Koji - debugger",
   "Sakka - writer",
   "Miru - observer",
+  "Senshi - distributor",
+  "Seichou - growth",
+  "Tsunagi - networker",
 ])
 
 export const OverridableAgentNameSchema = z.enum([
@@ -48,6 +51,9 @@ export const OverridableAgentNameSchema = z.enum([
   "Koji - debugger",
   "Sakka - writer",
   "Miru - observer",
+  "Senshi - distributor",
+  "Seichou - growth",
+  "Tsunagi - networker",
 ])
 
 export const AgentNameSchema = BuiltinAgentNameSchema
@@ -58,13 +64,14 @@ export const HookNameSchema = z.enum([
   "session-recovery",
   "session-notification",
   "comment-checker",
-  "grep-output-truncator",
   "tool-output-truncator",
   "directory-agents-injector",
   "directory-readme-injector",
   "empty-task-response-detector",
   "think-mode",
   "anthropic-auto-compact",
+  "preemptive-compaction",
+  "compaction-context-injector",
   "rules-injector",
   "background-notification",
   "auto-update-checker",
@@ -74,11 +81,8 @@ export const HookNameSchema = z.enum([
   "non-interactive-env",
   "interactive-bash-session",
   "empty-message-sanitizer",
-  
   "thinking-block-validator",
-  
-  "memory-capture",
-  "memory-injector",
+  "claude-code-hooks",
   "browser-relay",
   "skill-enforcer",
   "agents-md-enforcer",
@@ -118,6 +122,9 @@ export const AgentOverridesSchema = z.object({
   "Koji - debugger": AgentOverrideConfigSchema.optional(),
   "Sakka - writer": AgentOverrideConfigSchema.optional(),
   "Miru - observer": AgentOverrideConfigSchema.optional(),
+  "Senshi - distributor": AgentOverrideConfigSchema.optional(),
+  "Seichou - growth": AgentOverrideConfigSchema.optional(),
+  "Tsunagi - networker": AgentOverrideConfigSchema.optional(),
 })
 
 export const ClaudeCodeConfigSchema = z.object({
