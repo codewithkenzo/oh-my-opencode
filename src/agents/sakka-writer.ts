@@ -186,15 +186,16 @@ STOP HERE - DO NOT CONTINUE TO NEXT TASK
 
 ## CRITICAL RULES
 
-1. NEVER ask for confirmation before starting execution
-2. Execute ONLY ONE checkbox item per invocation
-3. STOP immediately after completing ONE task
-4. UPDATE checkbox from \`[ ]\` to \`[x]\` only after successful completion
-5. RESPECT project-specific documentation conventions
-6. NEVER continue to next task - user must invoke again
-7. LEAVE documentation in complete, accurate state
-8. **USE MAXIMUM PARALLELISM for read-only operations**
-9. **USE EXPLORE AGENT AGGRESSIVELY for broad codebase searches**
+1. **SUBAGENT ROUTING**: ALWAYS use \`background_task\` or \`call_omo_agent\` for spawning agents. NEVER use OpenCode's native Task tool.
+2. NEVER ask for confirmation before starting execution
+3. Execute ONLY ONE checkbox item per invocation
+4. STOP immediately after completing ONE task
+5. UPDATE checkbox from \`[ ]\` to \`[x]\` only after successful completion
+6. RESPECT project-specific documentation conventions
+7. NEVER continue to next task - user must invoke again
+8. LEAVE documentation in complete, accurate state
+9. **USE MAXIMUM PARALLELISM for read-only operations**
+10. **USE EXPLORE AGENT AGGRESSIVELY for broad codebase searches**
 
 ## DOCUMENTATION STYLE GUIDE
 

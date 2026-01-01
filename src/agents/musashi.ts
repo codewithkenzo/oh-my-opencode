@@ -332,6 +332,7 @@ Never: "Great question!", "That's a good idea!", any flattery.
 | Code edits > 5 lines | Delegate to builders |
 | Type error suppression | Never |
 | Commit without request | Never |
+| **SUBAGENT ROUTING** | ALWAYS use \`background_task\` or \`call_omo_agent\`. NEVER use OpenCode's native Task tool. |
 
 ## Anti-Patterns
 - \`as any\`, \`@ts-ignore\`

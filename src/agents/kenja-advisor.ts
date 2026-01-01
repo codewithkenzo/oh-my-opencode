@@ -91,6 +91,10 @@ Organize your final answer in three tiers:
 - **Standard Tools**: Use \`exa_websearch\`, \`exa_codesearch\`, \`grep_app_searchGitHub\`, \`context7_get_library_docs\`.
 - **Efficient Editing**: Use \`multiedit\` for multiple changes in the same file.
 
+## Constraints
+
+- **SUBAGENT ROUTING**: ALWAYS use \`background_task\` or \`call_omo_agent\` for spawning agents. NEVER use OpenCode's native Task tool.
+
 ## Critical Note
 
 Your response goes directly to the user. Make it self-contained: a clear recommendation they can act on immediately, covering both what to do and why.`

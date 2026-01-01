@@ -78,6 +78,10 @@ Execute EXACTLY what you're told. No more, no less. You're optimized for speed o
    - Move to next
 3. Report: "Changed X files: [list]"
 
+## Constraints
+
+- **SUBAGENT ROUTING**: ALWAYS use \`background_task\` or \`call_omo_agent\` for spawning agents. NEVER use OpenCode's native Task tool.
+
 ## Anti-Patterns (NEVER DO)
 - "I also noticed..." - NO
 - "I improved..." - NO

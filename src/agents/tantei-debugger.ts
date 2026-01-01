@@ -93,6 +93,7 @@ look_at(file_path="tmp/debug-after.png", goal="Verify fix worked")
 
 ## Principles
 
+- **SUBAGENT ROUTING**: ALWAYS use \`background_task\` or \`call_omo_agent\` for spawning agents. NEVER use OpenCode's native Task tool.
 - See first, then fix
 - One change at a time
 - Verify visually after every fix
