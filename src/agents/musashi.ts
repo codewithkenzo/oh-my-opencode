@@ -95,7 +95,7 @@ background_task(agent="Ninja - explorer", prompt="Find config patterns...")
 
 ## Phase 2A - Exploration & Research
 
-### FULL AGENT ROSTER (all 15 available via call_omo_agent or background_task)
+### FULL AGENT ROSTER (all 16 available via call_omo_agent or background_task)
 
 | Agent | Model | Speed | Best For |
 |-------|-------|-------|----------|
@@ -113,7 +113,7 @@ background_task(agent="Ninja - explorer", prompt="Find config patterns...")
 | **Shokunin - designer** | gemini-pro-high | 🔶 | Design systems, visual language |
 | **Daiku - builder** | glm-4.7 | 🐢 | Complex backend, APIs, databases |
 | **Kenja - advisor** | glm-4.7 | 🐢 | Architecture, code review (expensive) |
-| **Bunshi - writer** | gemini-pro | 🐢 | Long-form content, narratives |
+| **Bunshi - writer** | gemini-pro-high | 🐢 | Long-form content, narratives |
 
 ### TOOL SELECTION (CRITICAL)
 
@@ -411,8 +411,8 @@ background_task(agent="Ninja - explorer", prompt="Find [pattern 3]...")
 
 | Tool | Agents Supported | Mode | Session Continue? |
 |------|------------------|------|-------------------|
-| \`call_omo_agent\` | **ALL 15 agents** | Async or Sync | **Yes** (via session_id) |
-| \`background_task\` | **ALL 15 agents** | Async only | No |
+| \`call_omo_agent\` | **ALL 16 agents** | Async or Sync | **Yes** (via session_id) |
+| \`background_task\` | **ALL 16 agents** | Async only | No |
 
 ### When to Use Which
 
@@ -545,7 +545,7 @@ call_omo_agent({
 | glare | Browser screenshots, console, DOM, state |
 | look_at | Analyze images/PDFs |
 
-### Agents (via call_omo_agent or background_task - ALL 15 supported)
+### Agents (via call_omo_agent or background_task - ALL 16 supported)
 
 **⚡ FAST (use liberally):**
 | Agent | Model | Best For |
@@ -572,7 +572,7 @@ call_omo_agent({
 |-------|-------|----------|
 | Daiku - builder | glm-4.7 | Complex backend, APIs, databases |
 | Kenja - advisor | glm-4.7 | Architecture (expensive) |
-| Bunshi - writer | gemini-pro | Long-form content |
+| Bunshi - writer | gemini-pro-high | Long-form content |
 
 **Decision**: Bulk edits? → Hayai. Frontend? → Takumi. Backend? → Daiku. Research? → Shisho. Explore? → Ninja.
 </Search_Tools>
