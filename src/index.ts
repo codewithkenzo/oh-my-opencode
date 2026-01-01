@@ -474,7 +474,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
             prompt: PLANNER_MUSASHI_PROMPT,
             permission: BUILD_PERMISSION,
             description: `${config.agent?.plan?.description ?? "Plan agent"} (OhMyOpenCode version)`,
-            color: config.agent?.plan?.color ?? "#6495ED",
+            color: config.agent?.plan?.color ?? "#9d65ff",
           };
 
           agentConfig["Planner-Musashi"] = plannerMusashiOverride

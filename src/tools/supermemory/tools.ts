@@ -210,19 +210,18 @@ export function createSupermemoryTool(directory: string) {
             const scope = args.scope || "project"
             const containerTag = scope === "user" ? tags.user : tags.project
 
-            const success = await supermemoryClient.forgetMemory(containerTag, args.memoryId)
-
-            if (!success) {
+            try {
+              await supermemoryClient.forgetMemory(containerTag, args.memoryId)
+              return JSON.stringify({
+                success: true,
+                message: `Memory ${args.memoryId} removed from ${scope} scope`,
+              })
+            } catch (forgetError) {
               return JSON.stringify({
                 success: false,
-                error: "Failed to forget memory",
+                error: forgetError instanceof Error ? forgetError.message : "Failed to forget memory",
               })
             }
-
-            return JSON.stringify({
-              success: true,
-              message: `Memory ${args.memoryId} removed from ${scope} scope`,
-            })
           }
 
           default:
