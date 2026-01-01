@@ -90,6 +90,7 @@ type OpencodeClient = PluginInput["client"]
 
 export { createCallOmoAgent } from "./call-omo-agent"
 export { createLookAt } from "./look-at"
+export { createSupermemoryTool } from "./supermemory"
 
 export function createBackgroundTools(manager: BackgroundManager, client: OpencodeClient) {
   return {

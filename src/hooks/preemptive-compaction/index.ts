@@ -211,11 +211,11 @@ export function createPreemptiveCompactionHook(
       // Inject supermemory context if available and enabled
       const injectMemory = experimental?.inject_supermemory_context !== false
       if (injectMemory) {
-        const supermemory = await getSupermemoryIntegration()
-        if (supermemory?.isConfigured()) {
+        const supermemoryIntegration = getSupermemoryIntegration()
+        if (supermemoryIntegration?.isConfigured()) {
           try {
-            const tags = supermemory.getTags(ctx.directory)
-            const memories = await supermemory.fetchProjectMemories(tags.project, 10)
+            const tags = supermemoryIntegration.getTags(ctx.directory)
+            const memories = await supermemoryIntegration.fetchProjectMemories(tags.project, 10)
             if (memories.length > 0) {
               const prompt = createMemoryInjectionPrompt(memories)
               injectHookMessage(sessionID, prompt, { model: { providerID, modelID } })
