@@ -54,7 +54,7 @@ import {
 } from "./features/claude-code-session-state";
 import { builtinTools, createCallOmoAgent, createBackgroundTools, createLookAt, interactive_bash, getTmuxPath } from "./tools";
 import { BackgroundManager } from "./features/background-agent";
-import { createBuiltinMcps } from "./mcp";
+import { createBuiltinMcps, type McpName } from "./mcp";
 import { OhMyOpenCodeConfigSchema, type OhMyOpenCodeConfig, type HookName } from "./config";
 import { log, deepMerge, getUserConfigDir, addConfigLoadError, showToast } from "./shared";
 import { PLAN_SYSTEM_PROMPT, PLANNER_MUSASHI_PROMPT } from "./agents/plan-prompt";
@@ -553,10 +553,18 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       const mcpResult = (pluginConfig.claude_code?.mcp ?? true)
         ? await loadMcpConfigs()
         : { servers: {} };
+      
+      const disabledMcpNames = pluginConfig.disabled_mcps ?? [];
+      const filteredMcpServers = Object.fromEntries(
+        Object.entries(mcpResult.servers).filter(([name]) => 
+          !disabledMcpNames.includes(name as McpName)
+        )
+      );
+      
       config.mcp = {
         ...config.mcp,
         ...createBuiltinMcps(pluginConfig.disabled_mcps),
-        ...mcpResult.servers,
+        ...filteredMcpServers,
       };
 
       const userCommands = (pluginConfig.claude_code?.commands ?? true) ? loadUserCommands() : {};
