@@ -219,15 +219,24 @@ MUST NOT:
 - [Forbidden action 2]
 \`\`\`
 
-**Skill Selection by Agent:**
-- Ninja: systematic-debugging, omo-dev (for this codebase)
-- Shisho: (uses native tools, no skill needed)
-- Daiku: hono-api, drizzle-orm, effect-ts-expert, tdd-typescript
-- Takumi: component-stack, motion-system
-- Hayai: (explicit steps only, no skills)
-- Shokunin: kenzo-design-tokens, visual-assets, asset-prompts
-- Tantei: visual-debug, systematic-debugging
-- Koji: backend-debugging, systematic-debugging
+**Skill Selection by Agent (COMPLETE):**
+| Agent | Default Skills | Context-Specific |
+|-------|----------------|------------------|
+| Ninja - explorer | systematic-debugging | omo-dev (this repo), frontend-stack, backend-debugging |
+| Shisho - researcher | research-tools | (uses native MCP tools) |
+| Daiku - builder | hono-api, drizzle-sqlite | effect-ts-expert, zod-patterns, better-auth, trigger-jobs |
+| Takumi - builder | component-stack, motion-system | tanstack-ecosystem, zustand-state, frontend-stack |
+| Hayai - builder | (explicit steps only) | git-workflow for bulk renames |
+| Shokunin - designer | ui-designer, visual-assets | kenzo-design-tokens, asset-prompts, runware-assets |
+| Tantei - debugger | visual-debug, glare | systematic-debugging |
+| Koji - debugger | backend-debugging | systematic-debugging, hono-api |
+| Kenja - advisor | blueprint-architect | omo-dev, scaling-infra |
+| Sakka - writer | (native writing) | git-workflow for changelogs |
+| Miru - critic | visual-debug | glare for screenshots |
+| Bunshi - writer | (native writing) | indie-founder for narratives |
+| Senshi - distributor | product-launch | x-growth, discord-growth, reddit-growth |
+| Seichou - growth | x-growth, linkedin-outreach | email-marketing, freelance-positioning |
+| Tsunagi - networker | linkedin-outreach | email-marketing |
 
 ### Builder-Specific Guidelines
 

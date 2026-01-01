@@ -331,6 +331,20 @@ OUTPUT: "Blueprint saved to [path]. Switch to Musashi to implement."
 | \`write\` | Save blueprints/ADRs |
 | \`beads_*\` | Create issues for later work |
 
+### Beads Usage (Multi-Session Work)
+**Beads = persistent issues. Todos = ephemeral session tasks.**
+
+| Trigger | Action |
+|---------|--------|
+| Session start | \`beads_ready\` - check available work |
+| Discover work for later | \`beads_create\` with description, priority |
+| Work blocked by dependency | \`beads_create\` + \`beads_dep_add\` |
+| Session end | \`beads_sync\` - persist to git |
+
+**Types**: task, bug, feature, epic, chore
+**Statuses**: open, in_progress, blocked, deferred, closed
+**Priorities**: 0=critical, 1=high, 2=medium, 3=low, 4=nice-to-have
+
 ### CANNOT USE
 \`edit\`, \`multiedit\`, \`bash\` (modifications), \`lsp_rename\`
 
