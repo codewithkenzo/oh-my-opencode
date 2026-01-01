@@ -292,6 +292,15 @@ export function createTodoContinuationEnforcer(
             return
           }
 
+          // Plan mode agents only analyze and plan, not implement - skip todo continuation
+          const agentName = prevMessage?.agent?.toLowerCase() ?? ""
+          const isPlanModeAgent = agentName === "plan" || agentName === "planner-musashi" || agentName === "planner-sisyphus"
+          if (isPlanModeAgent) {
+            log(`[${HOOK_NAME}] Skipped: plan mode agent detected`, { sessionID, agent: prevMessage?.agent })
+            remindedSessions.delete(sessionID)
+            return
+          }
+
           const sessionFiles = changedFilesPerSession.get(sessionID) || new Set()
           let prompt = `${CONTINUATION_PROMPT}\n\n[Status: ${freshTodos.length - freshIncomplete.length}/${freshTodos.length} completed, ${freshIncomplete.length} remaining]`
 
@@ -417,6 +426,15 @@ export function createTodoContinuationEnforcer(
             try {
               const messageDir = getMessageDir(sessionID)
               const prevMessage = messageDir ? findNearestMessageWithFields(messageDir) : null
+
+              // Plan mode agents only analyze and plan, not implement - skip todo continuation
+              const preemptiveAgentName = prevMessage?.agent?.toLowerCase() ?? ""
+              const isPlanModeAgent = preemptiveAgentName === "plan" || preemptiveAgentName === "planner-musashi" || preemptiveAgentName === "planner-sisyphus"
+              if (isPlanModeAgent) {
+                log(`[${HOOK_NAME}] Skipped preemptive: plan mode agent detected`, { sessionID, agent: prevMessage?.agent })
+                preemptivelyInjectedSessions.delete(sessionID)
+                return
+              }
 
               const prompt = hasRunningBgTasks
                 ? "[SYSTEM] Background tasks are still running. Wait for their completion before proceeding."
