@@ -1,6 +1,6 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 
-const DEFAULT_MODEL = "google/gemini-3-pro-high"
+const DEFAULT_MODEL = "google/gemini-3-pro"
 
 export function createShokuninDesignerAgent(
   model: string = DEFAULT_MODEL
