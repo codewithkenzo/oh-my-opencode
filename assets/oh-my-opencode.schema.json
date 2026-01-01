@@ -1739,7 +1739,7 @@
             }
           }
         },
-        "Miru - observer": {
+        "Miru - critic": {
           "type": "object",
           "properties": {
             "model": {

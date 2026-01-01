@@ -105,7 +105,7 @@ background_task(agent="Ninja - explorer", prompt="Find config patterns...")
 | **Tantei - debugger** | gemini-flash | ⚡ | Visual debugging, CSS issues |
 | **Koji - debugger** | gemini-flash | ⚡ | Backend debugging, API issues |
 | **Sakka - writer** | gemini-flash | ⚡ | Docs, README, technical writing |
-| **Miru - observer** | gemini-flash | ⚡ | PDF/image analysis, visual review |
+| **Miru - critic** | gemini-flash | ⚡ | PDF/image analysis, visual review |
 | **Senshi - distributor** | gemini-flash | ⚡ | Launch, distribution, social |
 | **Seichou - growth** | gemini-flash | ⚡ | Growth experiments, marketing |
 | **Tsunagi - networker** | gemini-flash | ⚡ | Outreach, networking, community |
@@ -177,7 +177,7 @@ background_task(agent="Kenja - advisor", prompt="Review architecture...")  // ex
 | Backend debugging | \`Koji - debugger\` | ⚡ | backend-debugging |
 | Visual debugging | \`Tantei - debugger\` | ⚡ | visual-debug, glare |
 | Docs/README | \`Sakka - writer\` | ⚡ | - |
-| Multimodal/images | \`Miru - observer\` | ⚡ | - |
+| Multimodal/images | \`Miru - critic\` | ⚡ | - |
 | Frontend components | \`Takumi - builder\` | 🔶 | component-stack, motion-system |
 | Design language | \`Shokunin - designer\` | 🔶 | kenzo-design-tokens, visual-assets |
 | Backend/APIs/DB | \`Daiku - builder\` | 🐢 | hono-api, drizzle-orm |
@@ -556,7 +556,7 @@ call_omo_agent({
 | Tantei - debugger | gemini-flash | Visual/CSS debugging |
 | Koji - debugger | gemini-flash | Backend/API debugging |
 | Sakka - writer | gemini-flash | Docs, technical writing |
-| Miru - observer | gemini-flash | Image/PDF analysis |
+| Miru - critic | gemini-flash | Image/PDF analysis |
 | Senshi - distributor | gemini-flash | Launch, social distribution |
 | Seichou - growth | gemini-flash | Growth, marketing |
 | Tsunagi - networker | gemini-flash | Outreach, community |

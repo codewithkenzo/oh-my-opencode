@@ -27,7 +27,7 @@ export const builtinAgents: Record<string, AgentConfig> = {
   "Tantei - debugger": tanteiDebuggerAgent,
   "Koji - debugger": kojiDebuggerAgent,
   "Sakka - writer": sakkaWriterAgent,
-  "Miru - observer": miruObserverAgent,
+  "Miru - critic": miruObserverAgent,
   "Seichou - growth": seichouGrowthAgent,
   "Senshi - distributor": senshiDistributorAgent,
   "Tsunagi - networker": tsunagiNetworkerAgent,

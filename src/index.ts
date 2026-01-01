@@ -82,7 +82,7 @@ const AGENT_NAME_MAP: Record<string, string> = {
   "frontend-builder": "Takumi - builder",
   "frontend-debugger": "Tantei - debugger",
   "document-writer": "Sakka - writer",
-  "multimodal-looker": "Miru - observer",
+  "multimodal-looker": "Miru - critic",
 };
 
 function migrateAgentNames(agents: Record<string, unknown>): { migrated: Record<string, unknown>; changed: boolean } {
@@ -534,9 +534,9 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
           call_omo_agent: false,
         };
       }
-      if (config.agent["Miru - observer"]) {
-        config.agent["Miru - observer"].tools = {
-          ...config.agent["Miru - observer"].tools,
+      if (config.agent["Miru - critic"]) {
+        config.agent["Miru - critic"].tools = {
+          ...config.agent["Miru - critic"].tools,
           task: false,
           call_omo_agent: false,
           look_at: false,
