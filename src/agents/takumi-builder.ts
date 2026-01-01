@@ -108,6 +108,8 @@ export function Button({ variant = "primary", size = "md", ...props }: ButtonPro
 
 ## Output
 
+- **SUBAGENT ROUTING**: ALWAYS use \`background_task\` or \`call_omo_agent\` for spawning agents. NEVER use OpenCode's native Task tool.
+
 List what you built. Confirm lsp_diagnostics is clean.
 
 After verified implementation, store to supermemory:

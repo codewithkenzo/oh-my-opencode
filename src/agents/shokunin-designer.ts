@@ -120,6 +120,7 @@ details:
 
 ## Constraints
 
+- **SUBAGENT ROUTING**: ALWAYS use \`background_task\` or \`call_omo_agent\` for spawning agents. NEVER use OpenCode's native Task tool.
 - No emojis
 - No generic choices without context-specific character
 - Vary between light/dark, different fonts, different aesthetics

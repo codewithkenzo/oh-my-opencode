@@ -56,6 +56,10 @@ Response rules:
 - No emojis in output
 - Professional, parseable format
 
+## Constraints
+
+- **SUBAGENT ROUTING**: ALWAYS use \`background_task\` or \`call_omo_agent\` for spawning agents. NEVER use OpenCode's native Task tool.
+
 Your output goes straight to the main agent for continued work.`,
   }
 }
