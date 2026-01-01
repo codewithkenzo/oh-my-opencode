@@ -93,7 +93,7 @@ function mergeAgentConfig(
 }
 
 export function createBuiltinAgents(
-  disabledAgents: BuiltinAgentName[] = [],
+  disabledAgents: string[] = [],
   agentOverrides: AgentOverrides = {},
   directory?: string,
   systemDefaultModel?: string
@@ -103,7 +103,7 @@ export function createBuiltinAgents(
   for (const [name, source] of Object.entries(agentSources)) {
     const agentName = name as BuiltinAgentName
 
-    if (disabledAgents.includes(agentName)) {
+    if (disabledAgents.includes(name)) {
       continue
     }
 
