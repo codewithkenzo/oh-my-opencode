@@ -7,6 +7,8 @@ import {
   TOOL_DESCRIPTION_UPSCALE,
   TOOL_DESCRIPTION_MODEL_SEARCH,
   TOOL_DESCRIPTION_IMG2IMG,
+  TOOL_DESCRIPTION_VIDEO,
+  TOOL_DESCRIPTION_VIDEO_I2V,
 } from "./constants"
 import {
   generateImage,
@@ -14,6 +16,7 @@ import {
   upscaleImage,
   searchModels,
   img2img,
+  generateVideo,
 } from "./client"
 
 export const runwareGenerate = tool({
@@ -32,7 +35,6 @@ export const runwareGenerate = tool({
       let loraConfig: Array<{model: string, weight?: number}> | undefined
       if (args.lora) {
         try {
-          // Handle both string JSON and already-parsed arrays
           loraConfig = typeof args.lora === 'string' ? JSON.parse(args.lora) : args.lora
         } catch {
           return "Error: Invalid LoRA JSON format. Use: [{\"model\":\"civitai:ID@VERSION\",\"weight\":2}]"
@@ -192,6 +194,124 @@ export const runwareImg2Img = tool({
 
       const costInfo = result.cost ? ` (cost: $${result.cost.toFixed(4)})` : ""
       return `Image transformed and saved to: ${filename}${costInfo}\n\nURL: ${result.imageURL}`
+    } catch (error) {
+      return `Error: ${error instanceof Error ? error.message : "Unknown error"}`
+    }
+  },
+})
+
+export const runwareVideoGenerate = tool({
+  description: TOOL_DESCRIPTION_VIDEO,
+  args: {
+    prompt: tool.schema.string().describe("Video generation prompt (describe action, scene, camera movement)"),
+    negative_prompt: tool.schema.string().optional().describe("What to avoid - USE THIS for video quality"),
+    model: tool.schema.string().optional().describe("AIR model ID (default: alibaba:wan@2.6 WanVideo)"),
+    width: tool.schema.number().optional().describe("Width (default: 1280)"),
+    height: tool.schema.number().optional().describe("Height (default: 720)"),
+    duration: tool.schema.number().optional().describe("Duration 1-10 seconds (default: 5)"),
+    fps: tool.schema.number().optional().describe("Frame rate (model-specific, not all models support this)"),
+    lora: tool.schema.string().optional().describe("LoRA config JSON: [{\"model\":\"civitai:1307155@2073605\",\"weight\":1}]"),
+    seed: tool.schema.number().optional().describe("Seed for reproducibility"),
+    timeout_seconds: tool.schema.number().optional().describe("Max wait time (default: 300)"),
+    output_path: tool.schema.string().optional().describe("Save path (default: tmp/runware-video-{timestamp}.mp4)"),
+  },
+  async execute(args) {
+    try {
+      let loraConfig: Array<{model: string, weight?: number}> | undefined
+      if (args.lora) {
+        try {
+          loraConfig = typeof args.lora === 'string' ? JSON.parse(args.lora) : args.lora
+        } catch {
+          return "Error: Invalid LoRA JSON format. Use: [{\"model\":\"civitai:ID@VERSION\",\"weight\":1}]"
+        }
+      }
+
+      const result = await generateVideo({
+        prompt: args.prompt,
+        negativePrompt: args.negative_prompt,
+        model: args.model,
+        width: args.width,
+        height: args.height,
+        duration: args.duration,
+        fps: args.fps,
+        lora: loraConfig,
+        seed: args.seed,
+        timeoutMs: args.timeout_seconds ? args.timeout_seconds * 1000 : undefined,
+      })
+
+      const filename = args.output_path || `tmp/runware-video-${Date.now()}.mp4`
+
+      const dir = dirname(filename)
+      if (dir && !existsSync(dir)) {
+        mkdirSync(dir, { recursive: true })
+      }
+
+      const videoResponse = await fetch(result.videoURL)
+      const buffer = Buffer.from(await videoResponse.arrayBuffer())
+      writeFileSync(filename, buffer)
+
+      const costInfo = result.cost ? ` (cost: $${result.cost.toFixed(4)})` : ""
+      return `Video generated (${result.duration}s) and saved to: ${filename}${costInfo}\n\nURL: ${result.videoURL}`
+    } catch (error) {
+      return `Error: ${error instanceof Error ? error.message : "Unknown error"}`
+    }
+  },
+})
+
+export const runwareVideoFromImage = tool({
+  description: TOOL_DESCRIPTION_VIDEO_I2V,
+  args: {
+    prompt: tool.schema.string().describe("Animation prompt (describe motion, not just appearance)"),
+    input_image: tool.schema.string().describe("First frame image URL or base64"),
+    last_image: tool.schema.string().optional().describe("Optional last frame image URL for guided interpolation"),
+    negative_prompt: tool.schema.string().optional().describe("What to avoid"),
+    model: tool.schema.string().optional().describe("AIR model ID (default: alibaba:wan@2.6)"),
+    duration: tool.schema.number().optional().describe("Duration 1-10 seconds (default: 5)"),
+    lora: tool.schema.string().optional().describe("LoRA config JSON"),
+    timeout_seconds: tool.schema.number().optional().describe("Max wait time (default: 300)"),
+    output_path: tool.schema.string().optional().describe("Save path"),
+  },
+  async execute(args) {
+    try {
+      const frameImages: Array<{ inputImage: string; frame: "first" | "last" }> = [
+        { inputImage: args.input_image, frame: "first" }
+      ]
+      if (args.last_image) {
+        frameImages.push({ inputImage: args.last_image, frame: "last" })
+      }
+
+      let loraConfig: Array<{model: string, weight?: number}> | undefined
+      if (args.lora) {
+        try {
+          loraConfig = typeof args.lora === 'string' ? JSON.parse(args.lora) : args.lora
+        } catch {
+          return "Error: Invalid LoRA JSON format"
+        }
+      }
+
+      const result = await generateVideo({
+        prompt: args.prompt,
+        negativePrompt: args.negative_prompt,
+        model: args.model,
+        duration: args.duration,
+        frameImages,
+        lora: loraConfig,
+        timeoutMs: args.timeout_seconds ? args.timeout_seconds * 1000 : undefined,
+      })
+
+      const filename = args.output_path || `tmp/runware-video-i2v-${Date.now()}.mp4`
+
+      const dir = dirname(filename)
+      if (dir && !existsSync(dir)) {
+        mkdirSync(dir, { recursive: true })
+      }
+
+      const videoResponse = await fetch(result.videoURL)
+      const buffer = Buffer.from(await videoResponse.arrayBuffer())
+      writeFileSync(filename, buffer)
+
+      const costInfo = result.cost ? ` (cost: $${result.cost.toFixed(4)})` : ""
+      return `Video generated from image (${result.duration}s) saved to: ${filename}${costInfo}\n\nURL: ${result.videoURL}`
     } catch (error) {
       return `Error: ${error instanceof Error ? error.message : "Unknown error"}`
     }

@@ -37,6 +37,8 @@ import {
   runwareUpscale,
   runwareModelSearch,
   runwareImg2Img,
+  runwareVideoGenerate,
+  runwareVideoFromImage,
 } from './runware'
 
 import {
@@ -46,6 +48,7 @@ import {
 } from './civitai'
 
 import { syncthingTools } from './syncthing'
+import { birdTools } from './bird'
 
 import { context7_resolve_library_id, context7_get_library_docs, context7_query_docs } from './context7'
 
@@ -151,8 +154,11 @@ export const builtinTools = {
   runwareUpscale,
   runwareModelSearch,
   runwareImg2Img,
+  runwareVideoGenerate,
+  runwareVideoFromImage,
   civitai_search,
   civitai_get,
   civitai_tags,
   ...syncthingTools,
+  ...birdTools,
 }

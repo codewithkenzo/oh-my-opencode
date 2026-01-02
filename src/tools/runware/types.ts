@@ -66,3 +66,29 @@ export interface RunwareImg2ImgResult {
   imageURL: string
   cost?: number
 }
+
+export interface RunwareFrameImage {
+  inputImage: string
+  frame: "first" | "last" | number
+}
+
+export interface RunwareVideoParams {
+  prompt: string
+  negativePrompt?: string
+  model?: string
+  width?: number
+  height?: number
+  duration?: number
+  fps?: number
+  seed?: number
+  lora?: RunwareLoraConfig[]
+  frameImages?: RunwareFrameImage[]
+  timeoutMs?: number
+}
+
+export interface RunwareVideoResult {
+  videoURL: string
+  videoUUID: string
+  cost?: number
+  duration: number
+}
