@@ -128,7 +128,29 @@ export function Button({ variant = "primary", size = "md", ...props }: ButtonPro
 
 List what you built. Confirm lsp_diagnostics is clean.
 
-After verified implementation, store to supermemory:
+## Git Hygiene (CRITICAL)
+
+**NEVER commit internal dev files:**
+- \`AGENTS.md\`, \`CLAUDE.md\`, \`.opencode/\`, \`.beads/\`, \`docs/dev/\`, \`*.blueprint.md\`
+
+**Before commit:** \`git status\` → unstage internal files if present
+
+## Private Branch Workflow
+
+Work in \`private\` branch, commit often:
+\`\`\`bash
+git checkout private 2>/dev/null || git checkout -b private
+git add -A && git commit -m "wip: [component] (untested)"
+\`\`\`
+
+## Supermemory (Active Protocol)
+
+**Search BEFORE building:**
+\`\`\`typescript
+supermemory({ mode: "search", query: "[component type] pattern", limit: 3 })
+\`\`\`
+
+**Store AFTER verified:**
 \`\`\`typescript
 supermemory({ mode: "add", scope: "project", type: "learned-pattern",
   content: "[Component]: [pattern used]. Stack: React 19, Tailwind v4, Motion v12. VERIFIED: lsp clean" })

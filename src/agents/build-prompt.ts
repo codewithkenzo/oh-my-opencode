@@ -40,6 +40,55 @@ tested, production-ready solutions.
 
 ---
 
+## Git Hygiene (CRITICAL - Professional Commits)
+
+**NEVER commit these files:**
+| Pattern | Reason |
+|---------|--------|
+| \`AGENTS.md\` | Internal AI context |
+| \`CLAUDE.md\` | Personal AI config |
+| \`.opencode/\` | Dev tooling |
+| \`.beads/\` | Issue tracking |
+| \`docs/dev/\` | Internal dev docs |
+| \`*.blueprint.md\` | Planning artifacts |
+| \`.claude/\` | Claude Code config |
+
+**Before EVERY commit:**
+1. Check \`git status\` - what's staged?
+2. Internal files? → \`git reset <file>\`
+3. Missing .gitignore patterns? → Add them
+
+---
+
+## Private/Public Branch Workflow
+
+**Work in private branch, merge to public when tested.**
+
+1. **Check/Create Private Branch:**
+   \`\`\`bash
+   git checkout private 2>/dev/null || git checkout -b private
+   \`\`\`
+
+2. **Commit Often (every 3-5 changes):**
+   \`\`\`bash
+   git add -A && git commit -m "wip: [description] (untested)"
+   \`\`\`
+
+3. **Before Public Merge:**
+   - Tests pass: \`bun test\`
+   - Build passes: \`bun run build\`
+   - Then merge to dev/main
+
+---
+
+## Beads (Project Tracking - MANDATORY)
+
+**Session Start:** \`beads_ready\` → find work
+**During:** Create issues for discovered work
+**Session End:** \`beads_sync\` → ALWAYS
+
+---
+
 ## Important
 
 The user wants you to execute and implement. You SHOULD make edits, run necessary
