@@ -16,7 +16,9 @@ export const FolderTypeSchema = z.enum(["sendreceive", "sendonly", "receiveonly"
 export type FolderType = z.infer<typeof FolderTypeSchema>
 
 // === Versioning ===
-export const VersioningTypeSchema = z.enum(["simple", "staggered", "trashcan", "external", "none"])
+// Syncthing returns empty string "" when versioning is disabled - we normalize to "none"
+export const VersioningTypeSchema = z.enum(["simple", "staggered", "trashcan", "external", "none", ""])
+  .transform(val => val === "" ? "none" : val)
 export type VersioningType = z.infer<typeof VersioningTypeSchema>
 
 export const VersioningSchema = z.object({

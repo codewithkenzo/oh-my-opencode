@@ -57,6 +57,7 @@
     "@openauthjs/openauth": "^0.4.3",
     "@opencode-ai/plugin": "^1.0.162",
     "@opencode-ai/sdk": "^1.0.162",
+    "@steipete/bird": "^0.5.1",
     "commander": "^14.0.2",
     "hono": "^4.10.4",
     "opencode-antigravity-auth": "1.2.6",

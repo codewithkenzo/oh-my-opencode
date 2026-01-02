@@ -12,6 +12,7 @@
         "@openauthjs/openauth": "^0.4.3",
         "@opencode-ai/plugin": "^1.0.162",
         "@opencode-ai/sdk": "^1.0.162",
+        "@steipete/bird": "^0.5.1",
         "commander": "^14.0.2",
         "hono": "^4.10.4",
         "opencode-antigravity-auth": "1.2.6",
@@ -99,6 +100,10 @@
 
     "@standard-schema/spec": ["@standard-schema/spec@1.0.0-beta.3", "", {}, "sha512-0ifF3BjA1E8SY9C+nUew8RefNOIq0cDlYALPty4rhUm8Rrl6tCM8hBT4bhGhx7I7iXD0uAgt50lgo8dD73ACMw=="],
 
+    "@steipete/bird": ["@steipete/bird@0.5.1", "", { "dependencies": { "@steipete/sweet-cookie": "0.1.0", "commander": "^14.0.2", "json5": "^2.2.3", "kleur": "^4.1.5" }, "bin": { "bird": "dist/cli.js" } }, "sha512-zMp8yUmr5TxA1TwCdmTk3GDTFnyuk4hDvTF/OTsmh5aV/WRNc+oXwdyY+w4Y0B13ZwwSmewqTsxVH9sdd9e7Hw=="],
+
+    "@steipete/sweet-cookie": ["@steipete/sweet-cookie@0.1.0", "", {}, "sha512-cF8hS6rTohAFI1NAm2/HM9omBlw6V1DpwF6q5e9FB+l274HjtyirCgCc6QK2Rtuh7uDoqWHshFQZPsceyJuVgw=="],
+
     "@types/node": ["@types/node@24.10.1", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-GNWcUTRBgIRJD5zj+Tq0fKOJ5XZajIiBroOF0yvj2bSU1WvNdYS/dn9UxwsujGW4JX06dnHyjV2y9rRaybH0iQ=="],
 
     "@types/picomatch": ["@types/picomatch@3.0.2", "", {}, "sha512-n0i8TD3UDB7paoMMxA3Y65vUncFJXjcUf7lQY7YyKGl6031FNjfsLs6pdLFCy2GNFxItPJG8GvvpbZc2skH7WA=="],
@@ -118,6 +123,10 @@
     "hono": ["hono@4.10.8", "", {}, "sha512-DDT0A0r6wzhe8zCGoYOmMeuGu3dyTAE40HHjwUsWFTEy5WxK1x2WDSsBPlEXgPbRIFY6miDualuUDbasPogIww=="],
 
     "jose": ["jose@5.9.6", "", {}, "sha512-AMlnetc9+CV9asI19zHmrgS/WYsWUwCn2R7RzlbJWD7F9eWYUTGyBmU9o6PxngtLGOiDGPRu+Uc4fhKzbpteZQ=="],
+
+    "json5": ["json5@2.2.3", "", { "bin": { "json5": "lib/cli.js" } }, "sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg=="],
+
+    "kleur": ["kleur@4.1.5", "", {}, "sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ=="],
 
     "opencode-antigravity-auth": ["opencode-antigravity-auth@1.2.6", "", { "dependencies": { "@openauthjs/openauth": "^0.4.3", "xdg-basedir": "^5.1.0", "zod": "^3.24.0" }, "peerDependencies": { "typescript": "^5" } }, "sha512-XV9ClpkuH5N9JjyAujG5w6HOjlTDJ08AoUxlCCOC5QjbLzTVJSsCFWIY+FQi3yxKQ9rUU/VGcfT+3xMDOgWq/g=="],
 
