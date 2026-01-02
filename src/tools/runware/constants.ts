@@ -11,6 +11,9 @@ Common AIR model IDs:
 - runware:100@1 (FLUX.1 Pro)
 - runware:101@1 (FLUX.1 Dev)
 
+LoRA support: Pass lora array with model AIR IDs and weights.
+Example LoRA: civitai:298301@335071 (NSFW filter, weight=2)
+
 Output saved to tmp/ directory.`
 
 export const TOOL_DESCRIPTION_REMOVE_BG = `Remove background from images using Bria RMBG 2.0.

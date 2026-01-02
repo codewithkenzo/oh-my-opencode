@@ -1,3 +1,8 @@
+export interface RunwareLoraConfig {
+  model: string
+  weight?: number
+}
+
 export interface RunwareImageParams {
   prompt: string
   negativePrompt?: string
@@ -6,6 +11,7 @@ export interface RunwareImageParams {
   height?: number
   steps?: number
   outputFormat?: "jpg" | "png" | "webp"
+  lora?: RunwareLoraConfig[]
 }
 
 export interface RunwareImageResult {

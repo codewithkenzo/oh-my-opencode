@@ -35,6 +35,7 @@ export async function generateImage(params: RunwareImageParams): Promise<Runware
       outputFormat: params.outputFormat || "jpg",
       numberResults: 1,
       includeCost: true,
+      ...(params.lora && params.lora.length > 0 && { lora: params.lora }),
     }
   ]
 
