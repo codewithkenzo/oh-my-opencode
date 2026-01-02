@@ -237,8 +237,8 @@ export const syncthing_versioning = tool({
   args: {
     folder_id: tool.schema.string().describe("Folder ID"),
     type: tool.schema
-      .enum(["simple", "staggered", "trashcan", "external", ""])
-      .describe("Versioning type (simple, staggered, trashcan, external, or empty to disable)"),
+      .enum(["simple", "staggered", "trashcan", "external", "none"])
+      .describe("Versioning type (simple, staggered, trashcan, external, or none to disable)"),
     max_age: tool.schema.string().optional().describe("Max age in seconds (for staggered)"),
     clean_interval: tool.schema.string().optional().describe("Cleanup interval in seconds"),
   },
@@ -248,7 +248,7 @@ export const syncthing_versioning = tool({
       if (max_age) params.maxAge = max_age
       if (clean_interval) params.cleanInterval = clean_interval
       await client.setVersioning(folder_id, type, Object.keys(params).length > 0 ? params : undefined)
-      return `Versioning for '${folder_id}' set to '${type || "disabled"}'`
+      return `Versioning for '${folder_id}' set to '${type === "none" ? "disabled" : type}'`
     } catch (error) {
       if (error instanceof SyncthingError) return `Error: ${error.message}`
       return `Error: ${error instanceof Error ? error.message : String(error)}`

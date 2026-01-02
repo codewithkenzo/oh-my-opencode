@@ -183,7 +183,8 @@ export async function setVersioning(
   type: string,
   params?: Record<string, string>
 ): Promise<void> {
-  await execCli(["config", "folders", folderId, "versioning", "type", "set", type])
+  const cliType = type === "none" ? "" : type
+  await execCli(["config", "folders", folderId, "versioning", "type", "set", cliType])
   if (params) {
     for (const [key, value] of Object.entries(params)) {
       await execCli(["config", "folders", folderId, "versioning", "params", "set", key, value])
