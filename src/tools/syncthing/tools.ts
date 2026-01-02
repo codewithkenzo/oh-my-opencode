@@ -215,6 +215,23 @@ export const syncthing_ignores_get = tool({
   },
 })
 
+export const syncthing_ignores_set = tool({
+  description: constants.SYNCTHING_IGNORES_SET_DESCRIPTION,
+  args: {
+    folder_id: tool.schema.string().describe("Folder ID"),
+    patterns: tool.schema.array(tool.schema.string()).describe("Array of .stignore patterns (e.g., ['*.key', 'node_modules', '!important.txt'])"),
+  },
+  async execute({ folder_id, patterns }) {
+    try {
+      await client.setIgnores(folder_id, patterns)
+      return `Set ${patterns.length} ignore pattern(s) for folder '${folder_id}':\n${patterns.map(p => `  - ${p}`).join("\n")}`
+    } catch (error) {
+      if (error instanceof SyncthingError) return `Error: ${error.message}`
+      return `Error: ${error instanceof Error ? error.message : String(error)}`
+    }
+  },
+})
+
 export const syncthing_versioning = tool({
   description: constants.SYNCTHING_VERSIONING_DESCRIPTION,
   args: {
@@ -270,6 +287,7 @@ export const syncthingTools = {
   syncthing_share,
   syncthing_unshare,
   syncthing_ignores_get,
+  syncthing_ignores_set,
   syncthing_versioning,
   syncthing_connections,
 }

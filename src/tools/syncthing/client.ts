@@ -138,12 +138,44 @@ export async function unshareFolder(folderId: string, deviceId: string): Promise
 }
 
 export async function getIgnores(folderId: string): Promise<string[]> {
-  try {
-    const output = await execCli(["debug", "file", "--folder", folderId, ".stignore"])
-    return output.split("\n").filter((line) => line.trim() && !line.startsWith("//"))
-  } catch {
+  const config = await getConfig()
+  const folder = config.folders.find((f) => f.id === folderId)
+  if (!folder) {
     return []
   }
+
+  let folderPath = folder.path
+  if (folderPath.startsWith("~")) {
+    const home = process.env.HOME || process.env.USERPROFILE || ""
+    folderPath = folderPath.replace("~", home)
+  }
+
+  const stignorePath = `${folderPath}/.stignore`
+  const file = Bun.file(stignorePath)
+  if (!(await file.exists())) {
+    return []
+  }
+  
+  const content = await file.text()
+  return content.split("\n").filter((line) => line.trim() && !line.startsWith("//") && !line.startsWith("#"))
+}
+
+export async function setIgnores(folderId: string, patterns: string[]): Promise<void> {
+  const config = await getConfig()
+  const folder = config.folders.find((f) => f.id === folderId)
+  if (!folder) {
+    throw new SyncthingError(`Folder '${folderId}' not found`, "NOT_FOUND")
+  }
+
+  let folderPath = folder.path
+  if (folderPath.startsWith("~")) {
+    const home = process.env.HOME || process.env.USERPROFILE || ""
+    folderPath = folderPath.replace("~", home)
+  }
+
+  const stignorePath = `${folderPath}/.stignore`
+  const content = patterns.join("\n") + (patterns.length > 0 ? "\n" : "")
+  await Bun.write(stignorePath, content)
 }
 
 export async function setVersioning(
