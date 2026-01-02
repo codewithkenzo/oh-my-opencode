@@ -16,7 +16,7 @@ export const FolderTypeSchema = z.enum(["sendreceive", "sendonly", "receiveonly"
 export type FolderType = z.infer<typeof FolderTypeSchema>
 
 // === Versioning ===
-export const VersioningTypeSchema = z.enum(["simple", "staggered", "trashcan", "external", ""])
+export const VersioningTypeSchema = z.enum(["simple", "staggered", "trashcan", "external", "none"])
 export type VersioningType = z.infer<typeof VersioningTypeSchema>
 
 export const VersioningSchema = z.object({

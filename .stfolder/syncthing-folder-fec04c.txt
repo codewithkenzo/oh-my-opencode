@@ -1,0 +1,5 @@
+# This directory is a Syncthing folder marker.
+# Do not delete.
+
+folderID: oh-my-opencode
+created: 2026-01-01T23:08:50+01:00
