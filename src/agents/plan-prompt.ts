@@ -339,8 +339,23 @@ TASK: [description]
 | \`write\` | Save blueprints/ADRs |
 | \`beads_*\` | Create issues for later work |
 
-### Beads Usage (Multi-Session Work)
+### Beads Usage (MANDATORY - Project Tracking)
+
 **Beads = persistent issues. Todos = ephemeral session tasks.**
+
+**Session Start (MANDATORY):**
+1. Check \`.beads/\` exists → if missing: \`bd init\`
+2. \`beads_ready\` → find work you can start
+3. Claim: \`beads_update(id, status="in_progress")\`
+
+**During Planning:**
+- Multi-session work? → Create beads issue
+- Discovered future task? → \`beads_create\` immediately
+- Blocked by dependency? → \`beads_dep_add\`
+
+**Session End (MANDATORY):**
+- \`beads_sync\` → persist to git
+- All planned work? → Issues exist for everything
 
 | Trigger | Action |
 |---------|--------|
@@ -358,29 +373,47 @@ TASK: [description]
 
 ---
 
-## SUPERMEMORY (Store Planning Decisions)
+## SUPERMEMORY (Active Throughout Planning)
 
-**Planning generates knowledge. Store it.**
+**Search AND Store throughout the ENTIRE planning session.**
 
-### Store When (MANDATORY)
-| Trigger | What to Store |
-|---------|---------------|
-| Architecture decision made | Decision + reasoning + rejected alternatives |
-| User clarifies requirement | Preference as structured fact |
-| Research reveals insight | Key finding + source |
-| Risk identified | Risk + mitigation + rationale |
-| Blueprint approved | Summary + file path |
+### Search Protocol (MANDATORY)
 
-### Store Format
+**Search BEFORE:**
+| Trigger | Query | Why |
+|---------|-------|-----|
+| Any recommendation | \`"[topic] pattern"\` | Check past decisions |
+| Before research | \`"[feature] approach"\` | Don't duplicate work |
+| User says "like before" | \`"[referenced topic]"\` | Recall context |
+| Architecture decision | \`"[topic] architecture"\` | Check constraints |
+
 \`\`\`typescript
-supermemory({ mode: "add", scope: "project", type: "architecture",
-  content: "DECISION: [what]. REASONING: [why]. REJECTED: [alternatives]." })
+// Before recommending approach
+supermemory({ mode: "search", query: "auth pattern", limit: 3 })
+
+// Check past architecture decisions
+supermemory({ mode: "search", type: "architecture", query: "database" })
 \`\`\`
 
-### Search When
-- Session start → Check prior decisions on this feature
-- Before recommending → "Have we decided on X before?"
-- User says "like before" → Search past patterns
+### Store Protocol (MANDATORY)
+
+**Store AFTER:**
+| Trigger | Type | Content |
+|---------|------|---------|
+| Architecture decision | \`architecture\` | Decision + reasoning |
+| User clarifies requirement | \`preference\` | Structured preference |
+| Research reveals insight | \`learned-pattern\` | Key finding + source |
+| Blueprint approved | \`project-config\` | Summary + file path |
+
+\`\`\`typescript
+// After architecture decision
+supermemory({ mode: "add", scope: "project", type: "architecture",
+  content: "DECISION: [what]. REASONING: [why]. REJECTED: [alternatives]." })
+
+// After user clarifies
+supermemory({ mode: "add", scope: "user", type: "preference",
+  content: "User wants [specific preference]" })
+\`\`\`
 
 ---
 

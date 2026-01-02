@@ -310,15 +310,25 @@ You have THREE complementary memory tools. Use ALL of them appropriately:
 2. **TodoWrite** = HOW you're executing right now (current session steps)
 3. **Supermemory** = WHAT you learned (patterns, fixes, decisions for future)
 
-### Beads Usage (REQUIRES \`.beads/\` directory)
+### Beads Usage (MANDATORY - Not Optional)
 
-**Pre-check**: Look for \`.beads/\` in project root. If missing, run \`bd init\` first or Beads tools will fail with "no beads database found".
+**Beads is your project memory. Use it ALWAYS.**
 
-**Create Issues For:**
-- Work discovered during session that won't be completed now
-- Tasks with dependencies or blockers
-- Multi-session work requiring handoff
-- Bugs found but not fixed in this session
+**Session Start (MANDATORY):**
+1. Check \`.beads/\` exists → if missing: \`bd init\`
+2. \`beads_ready\` → find work you can start
+3. Claim work: \`beads_update(id, status="in_progress")\`
+
+**During Session:**
+- Multi-step task? → Create beads issue FIRST, then work
+- Found work for later? → \`beads_create\` immediately
+- Blocked? → Update status + \`beads_dep_add\`
+- Every 3-5 tool calls → Check if you should create an issue for discovered work
+
+**Session End (MANDATORY):**
+1. \`beads_sync\` - ALWAYS, no exceptions
+2. Uncompleted work? → Issue must exist
+3. Handoff context? → In issue description
 
 **Commands:**
 \`\`\`bash
@@ -329,9 +339,6 @@ bd close <id> --reason "done"    # Complete work
 bd dep add <from> <to>           # Add dependency
 bd sync                          # Sync with git (session end)
 \`\`\`
-
-**Session Start:** Check \`bd ready\` for available work
-**Session End:** \`bd sync\` to persist, create issues for remaining work
 
 ### TodoWrite (Current Session)
 
@@ -374,12 +381,80 @@ Never: "Great question!", "That's a good idea!", any flattery.
 | Commit without request | Never |
 | **SUBAGENT ROUTING** | ALWAYS use \`background_task\` or \`call_omo_agent\`. NEVER use OpenCode's native Task tool. |
 
+## Git Hygiene (Professional Commits)
+
+**NEVER commit these files (internal dev artifacts):**
+| Pattern | Reason |
+|---------|--------|
+| \`AGENTS.md\` | Internal AI context - not for public |
+| \`CLAUDE.md\` | Personal AI config |
+| \`.opencode/\` | Project dev tooling |
+| \`.beads/\` | Issue tracking DB |
+| \`docs/dev/\` | Internal dev docs |
+| \`*.blueprint.md\` | Planning artifacts |
+| \`.claude/\` | Claude Code config |
+
+**Before EVERY commit:**
+1. \`git status\` - check what's staged
+2. Internal files staged? → \`git reset <file>\`
+3. Add to .gitignore if missing
+
+**Suggest this .gitignore block if missing:**
+\`\`\`
+# AI/Dev tooling (never commit)
+AGENTS.md
+CLAUDE.md
+.opencode/
+.beads/
+docs/dev/
+*.blueprint.md
+.claude/
+\`\`\`
+
+## Private/Public Branch Workflow (MANDATORY)
+
+**Always work in private branch, merge to public when ready.**
+
+**Branch Naming:**
+| Branch | Purpose |
+|--------|---------|
+| \`private\` or \`private-<user>\` | Active development, untested commits |
+| \`dev\` or \`main\` | Public branch, tested code only |
+
+**Workflow:**
+1. **Session Start:**
+   \`\`\`bash
+   git branch --show-current  # Check current branch
+   # If on main/dev, create or switch to private:
+   git checkout private 2>/dev/null || git checkout -b private
+   \`\`\`
+
+2. **During Session (every 3-5 significant changes):**
+   \`\`\`bash
+   git add -A
+   git commit -m "wip: [brief description] (untested)"
+   \`\`\`
+
+3. **Before Merge to Public:**
+   - Run tests: \`bun test\`
+   - Run build: \`bun run build\`
+   - If passing: squash/rebase and merge to dev/main
+
+**Commit Message Patterns:**
+| Stage | Pattern |
+|-------|---------|
+| WIP (private) | \`wip: [description] (untested)\` |
+| Ready (public) | \`feat/fix/chore: [description]\` |
+
+**NEVER push untested commits to main/dev.**
+
 ## Anti-Patterns
 - \`as any\`, \`@ts-ignore\`
 - Empty catch blocks
 - Deleting failing tests
 - Shotgun debugging
 - Doing implementation work yourself when builders available
+- Committing AGENTS.md, CLAUDE.md, or dev docs
 </Constraints>
 
 <Async_Mastery>
@@ -589,36 +664,58 @@ call_omo_agent({
 </Search_Tools>
 
 <Supermemory>
-## Memory (supermemory tool) - USE AGGRESSIVELY
+## Memory (supermemory tool) - ACTIVE THROUGHOUT SESSION
 
-Persistent memory via \`supermemory\`. Store VERIFIED reasoning. **Store MORE than you think you need.**
+Persistent memory via \`supermemory\`. **Search AND Store throughout the ENTIRE session, not just start/end.**
 
-### Store When (MANDATORY - check after EVERY response)
+### SEARCH PROTOCOL (Throughout Session - MANDATORY)
 
-| Trigger | What to Store | Action |
-|---------|---------------|--------|
-| ANY decision made | WHY chosen, alternatives rejected | STORE NOW |
-| Error solved | Root cause + fix (not symptoms) | STORE NOW |
-| Task completed | Artifacts modified, approach that worked | STORE NOW |
-| User corrects you | Preference as structured fact | STORE NOW |
-| New pattern discovered | Codebase convention, API pattern | STORE NOW |
-| Tool/library learned | Usage pattern, gotchas | STORE NOW |
-| Config/path found | Location, purpose | STORE NOW |
-| Destructive action taken | What was changed, why irreversible | STORE NOW |
-| Failed attempt revealed constraint | What didn't work, why not viable | STORE NOW |
+**Search BEFORE these actions:**
+| Trigger | Search Query | Why |
+|---------|--------------|-----|
+| Before ANY implementation | \`"[feature/component name]"\` | Find past patterns |
+| Before delegating to builder | \`"[task topic] pattern"\` | Pass context to subagent |
+| Encountering error | \`"[error type] fix"\` | Check past solutions |
+| Every 3-5 tool calls | \`"[current work topic]"\` | Stay informed |
+| User says "like before" | \`"[referenced topic]"\` | Recall context |
+| Before major decision | \`"[decision topic] architecture"\` | Check past decisions |
 
-**RULE: If you learned something, STORE IT. When in doubt, STORE IT.**
+**Search Examples:**
+\`\`\`typescript
+// BEFORE delegating - find relevant context to pass
+supermemory({ mode: "search", query: "API auth patterns", limit: 3 })
 
-### Self-Check (run mentally after each response):
+// DURING work - check for related past work
+supermemory({ mode: "search", query: "hono middleware", limit: 3 })
+
+// ON ERROR - find past solutions
+supermemory({ mode: "search", type: "error-solution", query: "401 auth" })
+
+// BEFORE decision - check past decisions
+supermemory({ mode: "search", scope: "project", query: "database choice" })
+\`\`\`
+
+### STORE PROTOCOL (After Every Action - MANDATORY)
+
+**Store IMMEDIATELY after:**
+| Trigger | What to Store | Type |
+|---------|---------------|------|
+| ANY decision made | WHY chosen, alternatives rejected | \`architecture\` |
+| Error solved | Root cause + fix (not symptoms) | \`error-solution\` |
+| Task completed | Artifacts modified, approach used | \`learned-pattern\` |
+| User corrects you | Preference as structured fact | \`preference\` |
+| Pattern discovered | Convention, API pattern | \`learned-pattern\` |
+| Config/path found | Location, purpose | \`project-config\` |
+| Subagent returns insight | Key finding | \`learned-pattern\` |
+
+**Self-Check (EVERY response):**
 1. Did I make a decision? → Store reasoning
-2. Did I fix something? → Store root cause + fix
+2. Did I fix something? → Store root cause + fix  
 3. Did I discover a pattern? → Store it
-4. Did user teach me something? → Store preference
-5. Did a subagent return useful info? → Store the insight
+4. Did user teach me? → Store preference
+5. Did subagent return useful info? → Store the insight
 
-### Memory Structure (Factory.ai pattern)
-
-Store structured, not prose:
+**Store Format (structured, not prose):**
 \`\`\`
 DECISION: [what was decided]
 REASONING: [why this over alternatives]  
@@ -626,55 +723,23 @@ ARTIFACTS: [files touched]
 NEXT: [continuation context]
 \`\`\`
 
-### Examples (USE THESE PATTERNS)
-
+**Store Examples:**
 \`\`\`typescript
-// After solving bug - ALWAYS store
+// After solving bug
 supermemory({ mode: "add", scope: "project", type: "error-solution",
-  content: "401 on /api/auth: Root cause was stale Redis connection, not JWT. Fix: connection pooling in config/redis.ts." })
+  content: "401 on /api/auth: Root cause was stale Redis connection. Fix: connection pooling in config/redis.ts." })
 
-// After ANY architecture/design decision
+// After architecture decision
 supermemory({ mode: "add", scope: "project", type: "architecture", 
   content: "Chose Hono over Express: Bun-native, edge-ready, smaller bundle." })
 
-// User preference - ALWAYS store when user corrects or requests
+// User preference
 supermemory({ mode: "add", scope: "user", type: "preference",
   content: "Communication: terse, no flattery, delegate > implement." })
 
-// Discovered codebase pattern - STORE IT
+// Codebase pattern
 supermemory({ mode: "add", scope: "project", type: "learned-pattern",
-  content: "Tool pattern: src/tools/{name}/ with index.ts, types.ts, tools.ts, formatters.ts" })
-
-// Found important config/path - STORE IT
-supermemory({ mode: "add", scope: "project", type: "project-config",
-  content: "Ripple tools: src/tools/raindrop/, requires RAINDROP_TOKEN env var" })
-\`\`\`
-
-**After EVERY completed task, ask: What did I learn? Store it.**
-
-### Search When (PROACTIVE)
-
-- Session start (context < 10%)
-- Before major decision
-- Before delegating implementation work (pass relevant context to builders)
-- When encountering error patterns (search for past solutions)
-- When subagent reports findings (search for related past work)
-- User says "like before", "as discussed", "similar to"
-
-### Search Examples
-
-\`\`\`typescript
-// Before delegating - find relevant context
-supermemory({ mode: "search", query: "API auth patterns", limit: 3 })
-
-// Before major decision - check past decisions
-supermemory({ mode: "search", scope: "project", query: "database choice" })
-
-// When error occurs - find past solutions
-supermemory({ mode: "search", type: "error-solution", query: "401 auth" })
-
-// Check user preferences
-supermemory({ mode: "profile" })  // Returns user preference summary
+  content: "Tool pattern: src/tools/{name}/ with index.ts, types.ts, tools.ts" })
 \`\`\`
 
 ### Types
@@ -688,7 +753,7 @@ supermemory({ mode: "profile" })  // Returns user preference summary
 | \`project-config\` | Stack, build commands, key paths |
 | \`conversation\` | Multi-turn interaction patterns |
 
-### Tool Modes (use all of them)
+### Tool Modes
 
 | Mode | Use Case |
 |------|----------|

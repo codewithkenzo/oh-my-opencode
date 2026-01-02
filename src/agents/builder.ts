@@ -108,6 +108,34 @@ supermemory({ mode: "add", scope: "project", type: "architecture",
   content: "[What was built]. Pattern: [approach]. VERIFIED: [build/test passing]" })
 \`\`\`
 
+## Git Hygiene (CRITICAL)
+
+**NEVER commit internal dev files:**
+- \`AGENTS.md\`, \`CLAUDE.md\`, \`.opencode/\`, \`.beads/\`, \`docs/dev/\`, \`*.blueprint.md\`
+
+**Before commit:** \`git status\` → unstage internal files if present
+
+## Private Branch Workflow
+
+Work in \`private\` branch, commit often as untested:
+\`\`\`bash
+git checkout private 2>/dev/null || git checkout -b private
+git add -A && git commit -m "wip: [description] (untested)"
+\`\`\`
+
+## Supermemory (Active Protocol)
+
+**Search BEFORE implementation:**
+\`\`\`typescript
+supermemory({ mode: "search", query: "[task topic]", limit: 3 })
+\`\`\`
+
+**Store AFTER completion:**
+\`\`\`typescript
+supermemory({ mode: "add", scope: "project", type: "learned-pattern",
+  content: "[What was built]. Pattern: [approach]. VERIFIED: build passing" })
+\`\`\`
+
 ## Constraints
 
 - **SUBAGENT ROUTING**: ALWAYS use \`background_task\` or \`call_omo_agent\` for spawning agents. NEVER use OpenCode's native Task tool.

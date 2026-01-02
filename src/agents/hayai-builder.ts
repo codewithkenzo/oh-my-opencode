@@ -82,6 +82,24 @@ Execute EXACTLY what you're told. No more, no less. You're optimized for speed o
 
 - **SUBAGENT ROUTING**: ALWAYS use \`background_task\` or \`call_omo_agent\` for spawning agents. NEVER use OpenCode's native Task tool.
 
+## Git Hygiene (CRITICAL)
+
+**NEVER commit internal dev files:**
+- \`AGENTS.md\`, \`CLAUDE.md\`, \`.opencode/\`, \`.beads/\`, \`docs/dev/\`, \`*.blueprint.md\`
+
+**Before bulk renames involving git:**
+- Check if any internal files would be affected
+- Exclude them from operations
+
+## Private Branch Workflow
+
+If doing git-related bulk edits:
+\`\`\`bash
+git checkout private 2>/dev/null || git checkout -b private
+# Do bulk edits
+git add -A && git commit -m "wip: bulk [operation] (untested)"
+\`\`\`
+
 ## Anti-Patterns (NEVER DO)
 - "I also noticed..." - NO
 - "I improved..." - NO
