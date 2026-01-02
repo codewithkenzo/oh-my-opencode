@@ -10,6 +10,8 @@ import type {
   RunwareModelSearchResult,
   RunwareImg2ImgParams,
   RunwareImg2ImgResult,
+  RunwareVideoParams,
+  RunwareVideoResult,
 } from "./types"
 
 export async function generateImage(params: RunwareImageParams): Promise<RunwareImageResult> {
@@ -26,7 +28,7 @@ export async function generateImage(params: RunwareImageParams): Promise<Runware
       taskType: "imageInference",
       taskUUID,
       positivePrompt: params.prompt,
-      negativePrompt: params.negativePrompt || "",
+      ...(params.negativePrompt && { negativePrompt: params.negativePrompt }),
       model: params.model || DEFAULT_MODEL,
       width: params.width || 1024,
       height: params.height || 1024,
@@ -261,5 +263,111 @@ export async function img2img(params: RunwareImg2ImgParams): Promise<RunwareImg2
   return {
     imageURL: result.imageURL,
     cost: result.cost,
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+async function pollForResult(apiKey: string, taskUUID: string, taskType: string, timeoutMs: number): Promise<any> {
+  const startTime = Date.now()
+  const { VIDEO_INITIAL_DELAY_MS, VIDEO_POLL_INTERVAL_MS } = await import("./constants")
+
+  await sleep(VIDEO_INITIAL_DELAY_MS)
+
+  while (Date.now() - startTime < timeoutMs) {
+    const pollPayload = [
+      { taskType: "authentication", apiKey },
+      { taskType: "getResponse", taskUUID }
+    ]
+
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(pollPayload),
+    })
+
+    const responseJson = await response.json() as { data?: any[], errors?: any[] }
+    
+    if (responseJson.errors && responseJson.errors.length > 0) {
+      const errorMsg = responseJson.errors.map((e: any) => e.message).join(", ")
+      throw new Error(`Runware API error: ${errorMsg}`)
+    }
+
+    const result = responseJson.data?.find((d: any) => d.taskType === taskType)
+    
+    if (result?.status === "success") {
+      return result
+    }
+
+    if (result?.status === "error") {
+      throw new Error(`Video generation failed: ${result.message || "Unknown error"}`)
+    }
+
+    await sleep(VIDEO_POLL_INTERVAL_MS)
+  }
+
+  throw new Error(`Video generation timed out after ${timeoutMs / 1000}s`)
+}
+
+export async function generateVideo(params: RunwareVideoParams): Promise<RunwareVideoResult> {
+  const apiKey = process.env.RUNWARE_API_KEY
+  if (!apiKey) {
+    throw new Error("RUNWARE_API_KEY environment variable not set")
+  }
+
+  const { DEFAULT_VIDEO_MODEL, VIDEO_DEFAULT_TIMEOUT_MS } = await import("./constants")
+
+  const taskUUID = crypto.randomUUID()
+  const duration = params.duration || 5
+
+  const payload = [
+    { taskType: "authentication", apiKey },
+    {
+      taskType: "videoInference",
+      taskUUID,
+      positivePrompt: params.prompt,
+      negativePrompt: params.negativePrompt || "blurry, low quality, distorted",
+      model: params.model || DEFAULT_VIDEO_MODEL,
+      width: params.width || 1280,
+      height: params.height || 720,
+      duration,
+      deliveryMethod: "async",
+      outputType: "URL",
+      outputFormat: "MP4",
+      includeCost: true,
+      ...(params.fps && { fps: params.fps }),
+      ...(params.lora && params.lora.length > 0 && { lora: params.lora }),
+      ...(params.frameImages && params.frameImages.length > 0 && { frameImages: params.frameImages }),
+      ...(params.seed && { seed: params.seed }),
+    }
+  ]
+
+  const response = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  })
+
+  const responseJson = await response.json() as { data?: any[], errors?: any[] }
+
+  if (responseJson.errors && responseJson.errors.length > 0) {
+    const errorMsg = responseJson.errors.map((e: any) => e.message).join(", ")
+    throw new Error(`Runware API error: ${errorMsg}`)
+  }
+
+  if (!response.ok) {
+    throw new Error(`Runware API error: ${response.status} ${response.statusText}`)
+  }
+
+  const timeoutMs = params.timeoutMs || VIDEO_DEFAULT_TIMEOUT_MS
+  const result = await pollForResult(apiKey, taskUUID, "videoInference", timeoutMs)
+
+  return {
+    videoURL: result.videoURL,
+    videoUUID: result.videoUUID,
+    cost: result.cost,
+    duration,
   }
 }
