@@ -24,16 +24,28 @@ export const runwareGenerate = tool({
     model: tool.schema.string().optional().describe("AIR model ID (default: runware:101@1 FLUX.1 Dev)"),
     width: tool.schema.number().optional().describe("Width in pixels (default: 1024, must be multiple of 64)"),
     height: tool.schema.number().optional().describe("Height in pixels (default: 1024, must be multiple of 64)"),
+    lora: tool.schema.string().optional().describe("LoRA config as JSON array: [{\"model\":\"civitai:298301@335071\",\"weight\":2}]"),
     output_path: tool.schema.string().optional().describe("Save path (default: tmp/runware-{timestamp}.jpg)"),
   },
   async execute(args) {
     try {
+      let loraConfig: Array<{model: string, weight?: number}> | undefined
+      if (args.lora) {
+        try {
+          // Handle both string JSON and already-parsed arrays
+          loraConfig = typeof args.lora === 'string' ? JSON.parse(args.lora) : args.lora
+        } catch {
+          return "Error: Invalid LoRA JSON format. Use: [{\"model\":\"civitai:ID@VERSION\",\"weight\":2}]"
+        }
+      }
+      
       const result = await generateImage({
         prompt: args.prompt,
         negativePrompt: args.negative_prompt,
         model: args.model,
         width: args.width,
         height: args.height,
+        lora: loraConfig,
       })
 
       const filename = args.output_path || `tmp/runware-${Date.now()}.jpg`
