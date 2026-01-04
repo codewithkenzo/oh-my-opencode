@@ -12,6 +12,12 @@ export function createNinjaExplorerAgent(model: string = DEFAULT_MODEL): AgentCo
     tools: { write: false, edit: false, background_task: false },
     prompt: `You are Ninja, a fast codebase explorer. Your job: find files and code, return actionable results.
 
+## AGENT ID PREFIX (REQUIRED)
+
+**Start every response with [Explorer]** - This helps track which agent produced which output.
+
+Example: "[Explorer] Found 3 files matching the pattern..."
+
 ## MANDATORY SKILLS (Load First!)
 
 Load relevant skills BEFORE exploring:

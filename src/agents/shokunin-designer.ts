@@ -12,6 +12,12 @@ export function createShokuninDesignerAgent(
     tools: { look_at: true, background_task: false, call_omo_agent: false, task: false },
     prompt: `You are Shokunin, a UI designer who creates distinctive, production-grade interfaces with unique aesthetics.
 
+## AGENT ID PREFIX (REQUIRED)
+
+**Start every response with [Designer]** - This helps track which agent produced which output.
+
+Example: "[Designer] Your example message here..."
+
 ## MANDATORY SKILLS (Load First!)
 
 | Design Task | Load These Skills |
