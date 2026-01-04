@@ -107,7 +107,9 @@ export function createClaudeCodeHooksHook(ctx: PluginInput, config: PluginConfig
           path: { id: input.sessionID },
         })
         parentSessionId = sessionInfo.data?.parentID
-      } catch {}
+      } catch (e) {
+        log(`[claude-code-hooks] Error getting parent session ID: ${e instanceof Error ? e.message : String(e)}`)
+      }
 
       const isFirstMessage = !sessionFirstMessageProcessed.has(input.sessionID)
       sessionFirstMessageProcessed.add(input.sessionID)
@@ -320,7 +322,9 @@ export function createClaudeCodeHooksHook(ctx: PluginInput, config: PluginConfig
             path: { id: sessionID },
           })
           parentSessionId = sessionInfo.data?.parentID
-        } catch {}
+        } catch (e) {
+          log(`[claude-code-hooks] Error getting parent session ID for stop hooks: ${e instanceof Error ? e.message : String(e)}`)
+        }
 
         if (!isHookDisabled(config, "Stop")) {
           const stopCtx: StopContext = {

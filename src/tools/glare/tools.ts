@@ -46,6 +46,7 @@ async function fetchRelayTyped<T>(path: string, schema: z.ZodType<T>, options?: 
   try {
     data = JSON.parse(text)
   } catch {
+    // JSON parsing failed, will throw custom error below
     throw new Error(`Invalid JSON response from relay: ${text.substring(0, 100)}`)
   }
   
@@ -63,6 +64,7 @@ async function isRelayRunning(): Promise<boolean> {
     await fetch(RELAY_URL, { signal: AbortSignal.timeout(1000) })
     return true
   } catch {
+    // Relay not running, return false
     return false
   }
 }
@@ -154,6 +156,7 @@ async function getPageUrl(): Promise<string> {
     const result = await relayPost("/evaluate", { expression: "window.location.href" }) as { result: { result: { value: string } } }
     return result.result?.result?.value || "about:blank"
   } catch {
+    // Page evaluation failed, return default
     return "about:blank"
   }
 }
@@ -199,6 +202,7 @@ export const glare = tool({
             const url = result.result?.result?.value
             return url ? `Connected (${url})` : "Connected"
           } catch {
+            // URL evaluation failed, but extension is connected
             return "Connected"
           }
         }

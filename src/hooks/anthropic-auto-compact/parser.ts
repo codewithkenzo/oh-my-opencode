@@ -1,5 +1,7 @@
 import type { ParsedTokenLimitError } from "./types"
 
+import { log } from "../../shared/logger"
+
 interface AnthropicErrorData {
   type: "error"
   error: {
@@ -106,7 +108,9 @@ export function parseAnthropicTokenLimitError(err: unknown): ParsedTokenLimitErr
       if (isTokenLimitError(jsonStr)) {
         textSources.push(jsonStr)
       }
-    } catch {}
+    } catch (e) {
+      log(`[anthropic-auto-compact] Error stringifying error object: ${e instanceof Error ? e.message : String(e)}`)
+    }
   }
 
   const combinedText = textSources.join(" ")
@@ -137,7 +141,9 @@ export function parseAnthropicTokenLimitError(err: unknown): ParsedTokenLimitErr
                 errorType: jsonData.error?.type || "token_limit_exceeded",
               }
             }
-          } catch {}
+          } catch (e) {
+            log(`[anthropic-auto-compact] Error parsing Anthropic error response: ${e instanceof Error ? e.message : String(e)}`)
+          }
         }
       }
 
@@ -149,7 +155,9 @@ export function parseAnthropicTokenLimitError(err: unknown): ParsedTokenLimitErr
           errorType: "bedrock_input_too_long",
         }
       }
-    } catch {}
+    } catch (e) {
+      log(`[anthropic-auto-compact] Error parsing Bedrock response: ${e instanceof Error ? e.message : String(e)}`)
+    }
   }
 
   for (const text of textSources) {
