@@ -5,6 +5,7 @@ import { randomUUID } from "crypto"
 import type { TranscriptEntry } from "./types"
 import { transformToolName } from "../../shared/tool-name"
 import { getClaudeConfigDir } from "../../shared"
+import { log } from "../../shared/logger"
 
 const TRANSCRIPT_DIR = join(getClaudeConfigDir(), "transcripts")
 
@@ -207,9 +208,10 @@ export async function buildTranscriptFromSession(
     writeFileSync(tempPath, entries.join("\n") + "\n")
 
     return tempPath
-  } catch {
+  } catch (e) {
     // CRITICAL FIX: Even on API failure, create file with current tool entry only
     // (matching original disabled behavior - never return null with incompatible format)
+    log(`[claude-code-hooks] Error creating transcript file: ${e instanceof Error ? e.message : String(e)}`)
     try {
       const currentEntry: DisabledTranscriptEntry = {
         type: "assistant",
@@ -230,8 +232,9 @@ export async function buildTranscriptFromSession(
       )
       writeFileSync(tempPath, JSON.stringify(currentEntry) + "\n")
       return tempPath
-    } catch {
+    } catch (e) {
       // If even this fails, return null (truly catastrophic failure)
+      log(`[claude-code-hooks] Error creating fallback transcript file: ${e instanceof Error ? e.message : String(e)}`)
       return null
     }
   }
@@ -246,7 +249,8 @@ export function deleteTempTranscript(path: string | null): void {
   if (!path) return
   try {
     unlinkSync(path)
-  } catch {
+  } catch (e) {
     // Ignore deletion errors
+    log(`[claude-code-hooks] Error deleting temp transcript file: ${e instanceof Error ? e.message : String(e)}`)
   }
 }

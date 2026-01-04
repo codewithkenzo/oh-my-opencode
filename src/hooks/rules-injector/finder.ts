@@ -11,6 +11,7 @@ import {
   RULE_EXTENSIONS,
   USER_RULE_DIR,
 } from "./constants";
+import { log } from "../../shared/logger";
 
 /**
  * Candidate rule file with metadata for filtering and sorting
@@ -39,7 +40,8 @@ export function findProjectRoot(startPath: string): string | null {
   try {
     const stat = statSync(startPath);
     current = stat.isDirectory() ? startPath : dirname(startPath);
-  } catch {
+  } catch (e) {
+    log(`[rules-injector] Error getting path stats: ${e instanceof Error ? e.message : String(e)}`)
     current = dirname(startPath);
   }
 
@@ -84,8 +86,9 @@ function findRuleFilesRecursive(dir: string, results: string[]): void {
         }
       }
     }
-  } catch {
+  } catch (e) {
     // Permission denied or other errors - silently skip
+    log(`[rules-injector] Error reading directory: ${e instanceof Error ? e.message : String(e)}`)
   }
 }
 
@@ -98,7 +101,8 @@ function findRuleFilesRecursive(dir: string, results: string[]): void {
 function safeRealpathSync(filePath: string): string {
   try {
     return realpathSync(filePath);
-  } catch {
+  } catch (e) {
+    log(`[rules-injector] Error resolving symlink: ${e instanceof Error ? e.message : String(e)}`)
     return filePath;
   }
 }
@@ -148,7 +152,8 @@ export function calculateDistance(
 
     // Distance is how many directories up from current file to common ancestor
     return currentParts.length - common;
-  } catch {
+  } catch (e) {
+    log(`[rules-injector] Error calculating directory distance: ${e instanceof Error ? e.message : String(e)}`)
     return 9999;
   }
 }

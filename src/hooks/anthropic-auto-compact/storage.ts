@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { join } from "node:path"
 import { xdgData } from "xdg-basedir"
+import { log } from "../../shared/logger"
 
 let OPENCODE_STORAGE = join(xdgData ?? "", "opencode", "storage")
 
@@ -106,7 +107,8 @@ export function findToolResultsBySize(sessionID: string): ToolResultInfo[] {
             outputSize: part.state.output.length,
           })
         }
-      } catch {
+      } catch (e) {
+        log(`[anthropic-auto-compact] Error reading part file: ${e instanceof Error ? e.message : String(e)}`)
         continue
       }
     }
@@ -148,7 +150,8 @@ export function truncateToolResult(partPath: string): {
     writeFileSync(partPath, JSON.stringify(part, null, 2))
 
     return { success: true, toolName, originalSize }
-  } catch {
+  } catch (e) {
+    log(`[anthropic-auto-compact] Error compacting tool output: ${e instanceof Error ? e.message : String(e)}`)
     return { success: false }
   }
 }
@@ -174,7 +177,8 @@ export function countTruncatedResults(sessionID: string): number {
         if (part.truncated === true) {
           count++
         }
-      } catch {
+      } catch (e) {
+        log(`[anthropic-auto-compact] Error reading part file for truncation count: ${e instanceof Error ? e.message : String(e)}`)
         continue
       }
     }
