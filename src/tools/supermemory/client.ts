@@ -114,11 +114,13 @@ export function isFullyPrivate(content: string): boolean {
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  let timeoutId: ReturnType<typeof setTimeout>
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
   const timeoutPromise = new Promise<T>((_, reject) => {
     timeoutId = setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)
   })
-  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId))
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timeoutId !== undefined) clearTimeout(timeoutId)
+  })
 }
 
 export class SupermemoryClient {

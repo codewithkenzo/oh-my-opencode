@@ -36,6 +36,19 @@ export const BuiltinAgentNameSchema = z.enum([
   "Senshi - distributor",
   "Seichou - growth",
   "Tsunagi - networker",
+  // Deprecated aliases (for backward compatibility)
+  "Ninja - explorer",
+  "Shisho - researcher",
+  "Hayai - builder",
+  "Takumi - builder",
+  "Daiku - builder",
+  "Shokunin - designer",
+  "Tantei - debugger",
+  "Sakka - writer",
+  "Bunshi - writer",
+  "Kenja - advisor",
+  "Miru - observer",
+  "Koji - debugger",
 ])
 
 export const OverridableAgentNameSchema = z.enum([
@@ -62,6 +75,19 @@ export const OverridableAgentNameSchema = z.enum([
   "Senshi - distributor",
   "Seichou - growth",
   "Tsunagi - networker",
+  // Deprecated aliases (for backward compatibility)
+  "Ninja - explorer",
+  "Shisho - researcher",
+  "Hayai - builder",
+  "Takumi - builder",
+  "Daiku - builder",
+  "Shokunin - designer",
+  "Tantei - debugger",
+  "Sakka - writer",
+  "Bunshi - writer",
+  "Kenja - advisor",
+  "Miru - observer",
+  "Koji - debugger",
 ])
 
 export const AgentNameSchema = BuiltinAgentNameSchema
