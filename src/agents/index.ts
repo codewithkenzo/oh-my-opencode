@@ -1,5 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import { musashiAgent } from "./musashi"
+import { musashiV2Agent } from "./musashi-v2"
+import { b3RouterAgent } from "./b3-router"
 import { kenjaAdvisorAgent } from "./kenja-advisor"
 import { shishoResearcherAgent } from "./shisho-researcher"
 import { ninjaExplorerAgent } from "./ninja-explorer"
@@ -18,6 +20,8 @@ import { tsunagiNetworkerAgent } from "./tsunagi-networker"
 
 export const builtinAgents: Record<string, AgentConfig> = {
   Musashi: musashiAgent,
+  "Musashi-v2": musashiV2Agent,
+  "B3 - router": b3RouterAgent,
   "Kenja - advisor": kenjaAdvisorAgent,
   "Shisho - researcher": shishoResearcherAgent,
   "Ninja - explorer": ninjaExplorerAgent,
