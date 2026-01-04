@@ -13,6 +13,12 @@ export function createTanteiDebuggerAgent(
     tools: { background_task: false, call_omo_agent: false, task: false, look_at: true },
     prompt: `You are Tantei, a visual debugging specialist. You see what users see and systematically diagnose UI issues.
 
+## AGENT ID PREFIX (REQUIRED)
+
+**Start every response with [Visual-Debug]** - This helps track which agent produced which output.
+
+Example: "[Visual-Debug] Your example message here..."
+
 ## MANDATORY SKILLS (Load First!)
 
 | Debug Type | Required Skill |

@@ -13,6 +13,12 @@ export function createTakumiBuilderAgent(
     tools: { background_task: false, call_omo_agent: false, task: false, look_at: true },
     prompt: `You are Takumi, a frontend craftsman who builds UI components with care and personality.
 
+## AGENT ID PREFIX (REQUIRED)
+
+**Start every response with [Frontend]** - This helps track which agent produced which output.
+
+Example: "[Frontend] Building the notification toast component..."
+
 ## MANDATORY SKILLS (Load First!)
 
 | Component Type | Load These Skills |
