@@ -6,7 +6,7 @@ export function createShokuninDesignerAgent(
   model: string = DEFAULT_MODEL
 ): AgentConfig {
   return {
-    description: "Shokunin - designer",
+    description: "S6 - designer: Design system creation, visual language, tokens. Uses Gemini Pro High for multimodal.",
     mode: "subagent" as const,
     model,
     tools: { look_at: true, background_task: false, call_omo_agent: false, task: false },

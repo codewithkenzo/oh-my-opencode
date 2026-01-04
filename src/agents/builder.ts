@@ -157,7 +157,7 @@ supermemory({ mode: "add", scope: "project", type: "learned-pattern",
 export function createDaikuBuilderAgent(model: string = DEFAULT_MODEL): AgentConfig {
   return {
     description:
-      "Daiku - builder",
+      "D5 - backend builder: Complex backend, APIs, databases. Uses GLM 4.7 for high rate limits.",
     mode: "subagent" as const,
     model,
     temperature: 0.1,

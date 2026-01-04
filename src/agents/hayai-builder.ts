@@ -7,7 +7,7 @@ export function createHayaiBuilderAgent(
 ): AgentConfig {
   return {
     description:
-      "Hayai - builder: Fast, instruction-following builder for bulk edits. Uses Grok for speed. Give clear instructions, it executes exactly. No creativity, no deviation.",
+      "H3 - bulk builder: Fast, instruction-following builder for bulk edits. Uses Grok for speed. Give clear instructions, it executes exactly. No creativity, no deviation.",
     mode: "subagent" as const,
     model,
     temperature: 0.0,

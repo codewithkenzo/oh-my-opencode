@@ -8,32 +8,43 @@ import { createShokuninDesignerAgent } from "./shokunin-designer"
 import { createDaikuBuilderAgent } from "./builder"
 import { createTakumiBuilderAgent } from "./takumi-builder"
 import { createHayaiBuilderAgent } from "./hayai-builder"
-import { createTanteiDebuggerAgent } from "./tantei-debugger"
-import { createKojiDebuggerAgent } from "./koji-debugger"
-import { createSakkaWriterAgent } from "./sakka-writer"
 import { createMiruCriticAgent } from "./miru-observer"
-import { createBunshiWriterAgent } from "./bunshi-writer"
 import { createSenshiDistributorAgent } from "./senshi-distributor"
 import { createSeichouGrowthAgent } from "./seichou-growth"
 import { createTsunagiNetworkerAgent } from "./tsunagi-networker"
+import { createG5DebuggerAgent } from "./g5-debugger"
+import { createW7WriterAgent } from "./w7-writer"
+import { createB3RouterAgent } from "./b3-router"
+import { createF1FastBuilderAgent } from "./f1-fast-builder"
+import { createO9SpecialistAgent } from "./o9-specialist"
 import { deepMerge } from "../shared"
 
 type AgentSource = AgentFactory | AgentConfig
 
+// Robot code naming: Letter + Number + Role
+// X1 = eXplorer, R2 = Researcher, H3 = bulk (Hayai), T4 = fronTend, D5 = backenD
+// F1 = Fast, S6 = deSigner, G5 = debuGger (merged), W7 = Writer (merged)
+// K9 = advisor (Kenja), M10 = critic (Miru), B3 = router, O9 = specialist (Opus)
 const agentSources: Record<BuiltinAgentName, AgentSource> = {
+  // Core orchestrator
   Musashi: createMusashiAgent,
-  "Kenja - advisor": createKenjaAdvisorAgent,
-  "Shisho - researcher": createShishoResearcherAgent,
-  "Ninja - explorer": createNinjaExplorerAgent,
-  "Shokunin - designer": createShokuninDesignerAgent,
-  "Daiku - builder": createDaikuBuilderAgent,
-  "Takumi - builder": createTakumiBuilderAgent,
-  "Hayai - builder": createHayaiBuilderAgent,
-  "Tantei - debugger": createTanteiDebuggerAgent,
-  "Koji - debugger": createKojiDebuggerAgent,
-  "Sakka - writer": createSakkaWriterAgent,
-  "Miru - critic": createMiruCriticAgent,
-  "Bunshi - writer": createBunshiWriterAgent,
+
+  // Robot-coded agents
+  "X1 - explorer": createNinjaExplorerAgent,
+  "R2 - researcher": createShishoResearcherAgent,
+  "H3 - bulk builder": createHayaiBuilderAgent,
+  "T4 - frontend builder": createTakumiBuilderAgent,
+  "D5 - backend builder": createDaikuBuilderAgent,
+  "F1 - fast builder": createF1FastBuilderAgent,
+  "S6 - designer": createShokuninDesignerAgent,
+  "G5 - debugger": createG5DebuggerAgent,
+  "W7 - writer": createW7WriterAgent,
+  "K9 - advisor": createKenjaAdvisorAgent,
+  "M10 - critic": createMiruCriticAgent,
+  "B3 - router": createB3RouterAgent,
+  "O9 - specialist": createO9SpecialistAgent,
+
+  // Marketing agents (keep Japanese names)
   "Senshi - distributor": createSenshiDistributorAgent,
   "Seichou - growth": createSeichouGrowthAgent,
   "Tsunagi - networker": createTsunagiNetworkerAgent,
@@ -114,7 +125,8 @@ export function createBuiltinAgents(
 
     let config = buildAgent(source, model)
 
-    if ((agentName === "Musashi" || agentName === "Shisho - researcher") && directory && config.prompt) {
+    // Inject env context for orchestrator and researcher
+    if ((agentName === "Musashi" || agentName === "R2 - researcher") && directory && config.prompt) {
       const envContext = createEnvContext(directory)
       config = { ...config, prompt: config.prompt + envContext }
     }

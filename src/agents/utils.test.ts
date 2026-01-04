@@ -57,49 +57,49 @@ describe("createBuiltinAgents with model overrides", () => {
     expect(agents["Musashi"].thinking).toBeUndefined()
   })
 
-  test("Kenja - advisor with default model (zai) has thinking enabled", () => {
+  test("K9 - advisor with default model (zai) has thinking enabled", () => {
     // #given - no overrides
 
     // #when
     const agents = createBuiltinAgents()
 
     // #then - zai-coding-plan/glm-4.7 is NOT a GPT model, so gets thinking
-    expect(agents["Kenja - advisor"].model).toBe("zai-coding-plan/glm-4.7")
-    expect(agents["Kenja - advisor"].thinking).toEqual({ type: "enabled", budgetTokens: 32000 })
-    expect(agents["Kenja - advisor"].reasoningEffort).toBeUndefined()
-    expect(agents["Kenja - advisor"].textVerbosity).toBeUndefined()
+    expect(agents["K9 - advisor"].model).toBe("zai-coding-plan/glm-4.7")
+    expect(agents["K9 - advisor"].thinking).toEqual({ type: "enabled", budgetTokens: 32000 })
+    expect(agents["K9 - advisor"].reasoningEffort).toBeUndefined()
+    expect(agents["K9 - advisor"].textVerbosity).toBeUndefined()
   })
 
-  test("Kenja - advisor with GPT model override has reasoningEffort", () => {
+  test("K9 - advisor with GPT model override has reasoningEffort", () => {
     // #given
     const overrides = {
-      "Kenja - advisor": { model: "openai/gpt-4o" },
+      "K9 - advisor": { model: "openai/gpt-4o" },
     }
 
     // #when
     const agents = createBuiltinAgents([], overrides)
 
     // #then
-    expect(agents["Kenja - advisor"].model).toBe("openai/gpt-4o")
-    expect(agents["Kenja - advisor"].reasoningEffort).toBe("medium")
-    expect(agents["Kenja - advisor"].textVerbosity).toBe("high")
-    expect(agents["Kenja - advisor"].thinking).toBeUndefined()
+    expect(agents["K9 - advisor"].model).toBe("openai/gpt-4o")
+    expect(agents["K9 - advisor"].reasoningEffort).toBe("medium")
+    expect(agents["K9 - advisor"].textVerbosity).toBe("high")
+    expect(agents["K9 - advisor"].thinking).toBeUndefined()
   })
 
-  test("Kenja - advisor with Gemini model override has thinking enabled", () => {
+  test("K9 - advisor with Gemini model override has thinking enabled", () => {
     // #given
     const overrides = {
-      "Kenja - advisor": { model: "google/gemini-3-flash" },
+      "K9 - advisor": { model: "google/gemini-3-flash" },
     }
 
     // #when
     const agents = createBuiltinAgents([], overrides)
 
     // #then
-    expect(agents["Kenja - advisor"].model).toBe("google/gemini-3-flash")
-    expect(agents["Kenja - advisor"].thinking).toEqual({ type: "enabled", budgetTokens: 32000 })
-    expect(agents["Kenja - advisor"].reasoningEffort).toBeUndefined()
-    expect(agents["Kenja - advisor"].textVerbosity).toBeUndefined()
+    expect(agents["K9 - advisor"].model).toBe("google/gemini-3-flash")
+    expect(agents["K9 - advisor"].thinking).toEqual({ type: "enabled", budgetTokens: 32000 })
+    expect(agents["K9 - advisor"].reasoningEffort).toBeUndefined()
+    expect(agents["K9 - advisor"].textVerbosity).toBeUndefined()
   })
 
   test("non-model overrides are still applied after factory rebuild", () => {

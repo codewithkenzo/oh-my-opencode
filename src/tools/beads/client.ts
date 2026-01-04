@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import type { BeadsIssue, IssueOptions, UpdateOptions, BeadsStatus, ListOptions } from "./types";
 
 const TIMEOUT_MS = 30000;
 let bdAvailable: boolean | null = null;
@@ -228,42 +229,4 @@ interface BdStatusJson {
     blocked_issues: number;
     ready_issues: number;
   };
-}
-
-export interface ListOptions {
-  status?: string;
-  priority?: number;
-  type?: string;
-  search?: string;
-}
-
-export interface BeadsIssue {
-  id: string;
-  title: string;
-  status: string;
-  priority?: string;
-  description?: string;
-  type?: string;
-  blockers?: string[];
-  dependencies?: string[];
-}
-
-export interface IssueOptions {
-  type?: string;
-  priority?: number;
-  status?: string;
-  description?: string;
-}
-
-export interface UpdateOptions {
-  status?: string;
-  title?: string;
-  description?: string;
-  priority?: number;
-}
-
-export interface BeadsStatus {
-  total: number;
-  byStatus: Record<string, number>;
-  byPriority: Record<string, number>;
 }
