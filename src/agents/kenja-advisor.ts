@@ -108,7 +108,7 @@ Your response goes directly to the user. Make it self-contained: a clear recomme
 export function createKenjaAdvisorAgent(model: string = DEFAULT_MODEL): AgentConfig {
   const base = {
     description:
-      "Kenja - advisor. Expert technical advisor with deep reasoning for architecture decisions, code analysis, and engineering guidance.",
+      "K9 - advisor: Expert technical advisor with deep reasoning for architecture decisions, code analysis, and engineering guidance.",
     mode: "subagent" as const,
     model,
     temperature: 0.1,

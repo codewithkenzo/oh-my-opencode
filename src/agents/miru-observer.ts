@@ -7,7 +7,7 @@ export function createMiruCriticAgent(
 ): AgentConfig {
   return {
     description:
-      "Miru - critic: Visual perfectionist. Analyzes UI, provides actionable feedback, and ensures design alignment.",
+      "M10 - critic: Visual perfectionist. Analyzes UI, provides actionable feedback, and ensures design alignment.",
     mode: "subagent" as const,
     model,
     temperature: 0.2,
