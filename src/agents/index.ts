@@ -38,4 +38,4 @@ export const builtinAgents: Record<string, AgentConfig> = {
 }
 
 export * from "./types"
-export { createBuiltinAgents } from "./utils"
+export { createBuiltinAgents, resolveAgentAlias } from "./utils"

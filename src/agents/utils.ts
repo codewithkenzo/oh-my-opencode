@@ -21,6 +21,25 @@ import { deepMerge } from "../shared"
 
 type AgentSource = AgentFactory | AgentConfig
 
+const DEPRECATED_ALIASES: Record<string, BuiltinAgentName> = {
+  "Ninja - explorer": "X1 - explorer",
+  "Shisho - researcher": "R2 - researcher",
+  "Hayai - builder": "H3 - bulk builder",
+  "Takumi - builder": "T4 - frontend builder",
+  "Daiku - builder": "D5 - backend builder",
+  "Shokunin - designer": "S6 - designer",
+  "Tantei - debugger": "G5 - debugger",
+  "Sakka - writer": "W7 - writer",
+  "Bunshi - writer": "W7 - writer",
+  "Kenja - advisor": "K9 - advisor",
+  "Miru - observer": "M10 - critic",
+  "Koji - debugger": "G5 - debugger",
+}
+
+export function resolveAgentAlias(name: string): BuiltinAgentName {
+  return (DEPRECATED_ALIASES[name] || name) as BuiltinAgentName
+}
+
 // Robot code naming: Letter + Number + Role
 // X1 = eXplorer, R2 = Researcher, H3 = bulk (Hayai), T4 = fronTend, D5 = backenD
 // F1 = Fast, S6 = deSigner, G5 = debuGger (merged), W7 = Writer (merged)
@@ -113,14 +132,24 @@ export function createBuiltinAgents(
 ): Record<string, AgentConfig> {
   const result: Record<string, AgentConfig> = {}
 
+  // Resolve deprecated aliases in overrides
+  const resolvedOverrides: AgentOverrides = {}
+  for (const [name, override] of Object.entries(agentOverrides)) {
+    const resolvedName = resolveAgentAlias(name)
+    resolvedOverrides[resolvedName] = override
+  }
+
+  // Resolve deprecated aliases in disabled list
+  const resolvedDisabled = disabledAgents.map(resolveAgentAlias)
+
   for (const [name, source] of Object.entries(agentSources)) {
     const agentName = name as BuiltinAgentName
 
-    if (disabledAgents.includes(name)) {
+    if (resolvedDisabled.includes(agentName)) {
       continue
     }
 
-    const override = agentOverrides[agentName]
+    const override = resolvedOverrides[agentName]
     const model = override?.model ?? (agentName === "Musashi" ? systemDefaultModel : undefined)
 
     let config = buildAgent(source, model)
