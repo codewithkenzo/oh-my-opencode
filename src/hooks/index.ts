@@ -26,5 +26,6 @@ export { createThinkingBlockValidatorHook } from "./thinking-block-validator";
 export { createBrowserRelayHook } from "./browser-relay";
 export { createSkillEnforcerHook } from "./skill-enforcer";
 export { createAgentsMdEnforcerHook } from "./agents-md-enforcer";
+export { createRunwareNotificationHook } from "./runware-notification";
 
 export * from './compaction-state';
