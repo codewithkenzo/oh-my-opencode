@@ -12,6 +12,12 @@ import type {
   ParsedOAuthError,
 } from "./types"
 
+function debugLog(message: string): void {
+  if (process.env.ANTIGRAVITY_DEBUG === "1") {
+    console.log(`[antigravity-token] ${message}`)
+  }
+}
+
 export class AntigravityTokenRefreshError extends Error {
   code?: string
   description?: string
@@ -64,7 +70,8 @@ function parseOAuthErrorPayload(text: string | undefined): ParsedOAuthError {
       code,
       description: payload.error_description,
     }
-  } catch {
+  } catch (error) {
+    debugLog(`[PARSE][WARN] Failed to parse OAuth error payload: ${error instanceof Error ? error.message : String(error)}`)
     return { description: text }
   }
 }
