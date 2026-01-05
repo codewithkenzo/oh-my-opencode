@@ -80,70 +80,89 @@ function parseTicketFromMarkdown(markdown: string): Ticket {
   const ticket: Partial<Ticket> = {
     id: "",
     title: "",
-    status: "",
-    priority: 0,
+    status: "open",
+    priority: 2,
     dependencies: [],
     created: new Date().toISOString(),
   }
 
+  let inFrontmatter = false
+  let foundFrontmatterEnd = false
+
   for (const line of lines) {
     const trimmed = line.trim()
 
-    const idMatch = trimmed.match(/^\*\*ID\*\*:\s*(.+)$/)
-    if (idMatch) {
-      ticket.id = idMatch[1].trim()
+    // Handle YAML frontmatter
+    if (trimmed === "---") {
+      if (!inFrontmatter) {
+        inFrontmatter = true
+        continue
+      } else {
+        inFrontmatter = false
+        foundFrontmatterEnd = true
+        continue
+      }
+    }
+
+    if (inFrontmatter) {
+      // Parse YAML frontmatter fields
+      const idMatch = trimmed.match(/^id:\s*(.+)$/)
+      if (idMatch) {
+        ticket.id = idMatch[1].trim()
+        continue
+      }
+
+      const statusMatch = trimmed.match(/^status:\s*(.+)$/)
+      if (statusMatch) {
+        ticket.status = statusMatch[1].trim()
+        continue
+      }
+
+      const priorityMatch = trimmed.match(/^priority:\s*(\d)$/)
+      if (priorityMatch) {
+        ticket.priority = Number.parseInt(priorityMatch[1], 10)
+        continue
+      }
+
+      const typeMatch = trimmed.match(/^type:\s*(.+)$/)
+      if (typeMatch) {
+        ticket.type = typeMatch[1].trim()
+        continue
+      }
+
+      const createdMatch = trimmed.match(/^created:\s*(.+)$/)
+      if (createdMatch) {
+        ticket.created = createdMatch[1].trim()
+        continue
+      }
+
+      const assigneeMatch = trimmed.match(/^assignee:\s*(.+)$/)
+      if (assigneeMatch) {
+        ticket.assignee = assigneeMatch[1].trim()
+        continue
+      }
+
+      const depsMatch = trimmed.match(/^deps:\s*\[(.*)\]$/)
+      if (depsMatch) {
+        const depsStr = depsMatch[1].trim()
+        if (depsStr.length > 0) {
+          ticket.dependencies = depsStr
+            .split(",")
+            .map((d) => d.trim())
+            .filter((d) => d.length > 0)
+        }
+        continue
+      }
       continue
     }
 
-    const titleMatch = trimmed.match(/^##\s+(.+)$/)
-    if (titleMatch && !ticket.title) {
-      ticket.title = titleMatch[1].trim()
-      continue
-    }
-
-    const statusMatch = trimmed.match(/^\*\*Status\*\*:\s*(.+)$/)
-    if (statusMatch) {
-      ticket.status = statusMatch[1].trim()
-      continue
-    }
-
-    const priorityMatch = trimmed.match(/^\*\*Priority\*\*:\s*(\d)$/)
-    if (priorityMatch) {
-      ticket.priority = Number.parseInt(priorityMatch[1], 10)
-      continue
-    }
-
-    const typeMatch = trimmed.match(/^\*\*Type\*\*:\s*(.+)$/)
-    if (typeMatch) {
-      ticket.type = typeMatch[1].trim()
-      continue
-    }
-
-    const createdMatch = trimmed.match(/^\*\*Created\*\*:\s*(.+)$/)
-    if (createdMatch) {
-      ticket.created = createdMatch[1].trim()
-      continue
-    }
-
-    const assigneeMatch = trimmed.match(/^\*\*Assignee\*\*:\s*(.+)$/)
-    if (assigneeMatch) {
-      ticket.assignee = assigneeMatch[1].trim()
-      continue
-    }
-
-    const depMatch = trimmed.match(/^\*\*Dependencies\*\*:\s*\[(.+)\]$/)
-    if (depMatch) {
-      ticket.dependencies = depMatch[1]
-        .split(",")
-        .map((d) => d.trim())
-        .filter((d) => d.length > 0)
-      continue
-    }
-
-    const descMatch = trimmed.match(/^\*\*Description\*\*:\s*(.+)$/)
-    if (descMatch) {
-      ticket.description = descMatch[1].trim()
-      continue
+    // After frontmatter, parse title from # heading
+    if (foundFrontmatterEnd) {
+      const titleMatch = trimmed.match(/^#\s+(.+)$/)
+      if (titleMatch && !ticket.title) {
+        ticket.title = titleMatch[1].trim()
+        continue
+      }
     }
   }
 
@@ -158,14 +177,35 @@ function parseTicketFromMarkdown(markdown: string): Ticket {
   return ticket as Ticket
 }
 
-function parseTicketsFromOutput(output: string): Ticket[] {
-  const tickets: Ticket[] = []
-  const ticketBlocks = output.split(/\n\n+/).filter((b) => b.trim().length > 0)
+interface TkQueryResult {
+  id: string
+  status: string
+  deps: string[]
+  links: string[]
+  created: string
+  type: string
+  priority: string | number
+  assignee?: string
+  title?: string
+}
 
-  for (const block of ticketBlocks) {
+function parseTicketsFromJsonLines(output: string): Ticket[] {
+  const tickets: Ticket[] = []
+  const lines = output.split("\n").filter((l) => l.trim().length > 0)
+
+  for (const line of lines) {
     try {
-      const ticket = parseTicketFromMarkdown(block)
-      tickets.push(ticket)
+      const json = JSON.parse(line) as TkQueryResult
+      tickets.push({
+        id: json.id,
+        title: json.title || json.id, // tk query doesn't include title, use id as fallback
+        status: json.status,
+        priority: typeof json.priority === "string" ? Number.parseInt(json.priority, 10) : json.priority,
+        dependencies: json.deps || [],
+        created: json.created,
+        type: json.type,
+        assignee: json.assignee,
+      })
     } catch {
       continue
     }
@@ -181,13 +221,16 @@ export async function getReadyTickets(): Promise<Ticket[]> {
       throw new Error(`tk query failed: ${result.stderr}`)
     }
 
-    const allTickets = parseTicketsFromOutput(result.stdout)
+    const allTickets = parseTicketsFromJsonLines(result.stdout)
+    // Ready = open/in_progress with NO unresolved dependencies
     return allTickets.filter((t) => {
       if (t.status === "closed") return false
       if (t.dependencies.length === 0) return true
-      return allTickets.some(
+      // All dependencies must be closed for ticket to be ready
+      const hasOpenDeps = allTickets.some(
         (dep) => t.dependencies.includes(dep.id) && dep.status !== "closed"
       )
+      return !hasOpenDeps
     })
   } catch (e) {
     throw new Error(`Failed to get ready tickets: ${e instanceof Error ? e.message : String(e)}`)
@@ -201,7 +244,7 @@ export async function listTickets(options: ListOptions = {}): Promise<Ticket[]> 
       throw new Error(`tk query failed: ${result.stderr}`)
     }
 
-    const tickets = parseTicketsFromOutput(result.stdout)
+    const tickets = parseTicketsFromJsonLines(result.stdout)
 
     return tickets.filter((t) => {
       if (options.status && t.status !== options.status) return false
@@ -256,7 +299,9 @@ export async function createTicket(
       throw new Error(`tk create failed: ${result.stderr}`)
     }
 
-    return parseTicketFromMarkdown(result.stdout)
+    // tk create just returns the ID, fetch full ticket
+    const ticketId = result.stdout.trim()
+    return showTicket(ticketId)
   } catch (e) {
     throw new Error(`Failed to create ticket: ${e instanceof Error ? e.message : String(e)}`)
   }
@@ -334,7 +379,7 @@ export async function getBlockedTickets(): Promise<Ticket[]> {
       throw new Error(`tk query failed: ${result.stderr}`)
     }
 
-    const allTickets = parseTicketsFromOutput(result.stdout)
+    const allTickets = parseTicketsFromJsonLines(result.stdout)
 
     return allTickets.filter((t) => {
       if (t.status === "closed") return false
