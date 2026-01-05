@@ -30,3 +30,10 @@ export interface BeadsStatus {
   byStatus: Record<string, number>;
   byPriority: Record<string, number>;
 }
+
+export interface ListOptions {
+  status?: string;
+  priority?: number;
+  type?: string;
+  search?: string;
+}

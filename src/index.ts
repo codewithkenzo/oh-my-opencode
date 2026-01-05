@@ -68,22 +68,22 @@ const AGENT_NAME_MAP: Record<string, string> = {
   // Legacy names (backward compatibility)
   omo: "Musashi",
   "OmO": "Musashi",
-  "OmO-Plan": "Planner-Musashi",
-  "omo-plan": "Planner-Musashi",
+  "OmO-Plan": "Musashi - plan",
+  "omo-plan": "Musashi - plan",
   // English names (backward compatibility)
   musashi: "Musashi",
-  "planner-musashi": "Planner-Musashi",
+  "planner-musashi": "Musashi - plan",
   sisyphus: "Musashi",
-  "planner-sisyphus": "Planner-Musashi",
+  "planner-sisyphus": "Musashi - plan",
   build: "build",
-  oracle: "Kenja - advisor",
-  librarian: "Shisho - researcher",
-  explore: "Ninja - explorer",
-  "frontend-ui-ux-engineer": "Shokunin - designer",
-  "frontend-builder": "Takumi - builder",
-  "frontend-debugger": "Tantei - debugger",
-  "document-writer": "Sakka - writer",
-  "multimodal-looker": "Miru - critic",
+  oracle: "K9 - advisor",
+  librarian: "R2 - researcher",
+  explore: "X1 - explorer",
+  "frontend-ui-ux-engineer": "S6 - designer",
+  "frontend-builder": "T4 - frontend builder",
+  "frontend-debugger": "G5 - debugger",
+  "document-writer": "W7 - writer",
+  "multimodal-looker": "M10 - critic",
 };
 
 function migrateAgentNames(agents: Record<string, unknown>): { migrated: Record<string, unknown>; changed: boolean } {
@@ -471,7 +471,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
 
         if (plannerEnabled) {
           const { name: _planName, ...planConfigWithoutName } = config.agent?.plan ?? {};
-          const plannerMusashiOverride = pluginConfig.agents?.["Planner-Musashi"];
+          const plannerMusashiOverride = pluginConfig.agents?.["Musashi - plan"];
           const plannerMusashiBase = {
             ...planConfigWithoutName,
             mode: "primary" as const,
@@ -481,7 +481,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
             color: config.agent?.plan?.color ?? "#9d65ff",
           };
 
-          agentConfig["Planner-Musashi"] = plannerMusashiOverride
+          agentConfig["Musashi - plan"] = plannerMusashiOverride
             ? { ...plannerMusashiBase, ...plannerMusashiOverride }
             : plannerMusashiBase;
         }
@@ -528,21 +528,21 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
         ...config.tools,
       };
 
-      if (config.agent["Ninja - explorer"]) {
-        config.agent["Ninja - explorer"].tools = {
-          ...config.agent["Ninja - explorer"].tools,
+      if (config.agent["X1 - explorer"]) {
+        config.agent["X1 - explorer"].tools = {
+          ...config.agent["X1 - explorer"].tools,
           call_omo_agent: false,
         };
       }
-      if (config.agent["Shisho - researcher"]) {
-        config.agent["Shisho - researcher"].tools = {
-          ...config.agent["Shisho - researcher"].tools,
+      if (config.agent["R2 - researcher"]) {
+        config.agent["R2 - researcher"].tools = {
+          ...config.agent["R2 - researcher"].tools,
           call_omo_agent: false,
         };
       }
-      if (config.agent["Miru - critic"]) {
-        config.agent["Miru - critic"].tools = {
-          ...config.agent["Miru - critic"].tools,
+      if (config.agent["M10 - critic"]) {
+        config.agent["M10 - critic"].tools = {
+          ...config.agent["M10 - critic"].tools,
           task: false,
           call_omo_agent: false,
           look_at: false,
@@ -664,7 +664,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       if (input.tool === "task") {
         const args = output.args as Record<string, unknown>;
         const subagentType = args.subagent_type as string;
-        const isExploreOrLibrarian = ["Ninja - explorer", "Shisho - researcher"].includes(subagentType);
+        const isExploreOrLibrarian = ["X1 - explorer", "R2 - researcher"].includes(subagentType);
 
         args.tools = {
           ...(args.tools as Record<string, boolean> | undefined),

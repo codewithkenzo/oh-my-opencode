@@ -56,7 +56,29 @@ export function createLookAt(ctx: PluginInput) {
       const filename = basename(filePath)
       const fileUrl = pathToFileURL(filePath).href
 
-      const prompt = `Analyze this file and extract the requested information.
+      // Detect if goal is UI/design related for critic mode
+      const isVisualGoal = /ui|design|layout|spacing|color|style|css|component|screenshot/i.test(args.goal)
+      
+      const prompt = isVisualGoal 
+        ? `You are a CRITIC, not a narrator. Analyze this file with a critical eye.
+
+Goal: ${args.goal}
+
+RULES:
+1. DO NOT describe what you see passively
+2. DO identify problems, inconsistencies, missed opportunities
+3. DO provide specific, numbered actionable feedback
+4. DO compare against best practices
+5. DO rate confidence: "Certain" / "Likely" / "Speculative"
+
+VISUAL CRITIQUE:
+- Check alignment, spacing, contrast, hierarchy
+- Identify generic/default elements
+- Suggest specific improvements with values (e.g., "increase padding to 32px")
+- Call out anything that looks "lazy" or "default"
+
+OUTPUT: Numbered findings + recommendations. No fluff.`
+        : `Analyze this file and extract the requested information.
 
 Goal: ${args.goal}
 
@@ -119,7 +141,7 @@ If the requested information is not found, clearly state what is missing.`
 
       if (!lastAssistantMessage) {
         log(`[look_at] No assistant message found`)
-        return `Error: No response from Miru - critic agent`
+        return `Error: No response from M10 - critic agent`
       }
 
       log(`[look_at] Found assistant message with ${lastAssistantMessage.parts.length} parts`)

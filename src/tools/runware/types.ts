@@ -92,3 +92,59 @@ export interface RunwareVideoResult {
   cost?: number
   duration: number
 }
+
+// API Response Types
+export interface RunwareAPIResponse<T> {
+  data?: T[]
+  errors?: Array<{ message: string }>
+}
+
+export interface RunwareImageTaskResult {
+  taskType: "imageInference"
+  imageURL: string
+  cost: number
+}
+
+export interface RunwareRemoveBgTaskResult {
+  taskType: "removeBackground"
+  imageURL: string
+}
+
+export interface RunwareUpscaleTaskResult {
+  taskType: "upscale"
+  imageURL: string
+}
+
+export interface RunwareModelSearchTaskResult {
+  taskType: "modelSearch"
+  results: Array<{
+    name: string
+    modelID: string
+    category: string
+    architecture: string
+  }>
+}
+
+export interface RunwareVideoTaskResultSuccess {
+  taskType: "videoInference"
+  status: "success"
+  videoURL: string
+  videoUUID: string
+  cost?: number
+}
+
+export interface RunwareVideoTaskResultError {
+  taskType: "videoInference"
+  status: "error"
+  message?: string
+}
+
+export interface RunwareVideoTaskResultProcessing {
+  taskType: "videoInference"
+  status: "processing"
+}
+
+export type RunwareVideoTaskResult =
+  | RunwareVideoTaskResultSuccess
+  | RunwareVideoTaskResultError
+  | RunwareVideoTaskResultProcessing

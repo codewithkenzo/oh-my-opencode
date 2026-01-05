@@ -5,7 +5,7 @@ const DEFAULT_MODEL = "google/gemini-3-flash"
 export function createShishoResearcherAgent(model: string = DEFAULT_MODEL): AgentConfig {
   return {
     description:
-      "Shisho - researcher: Specialized research agent with exa_websearch, exa_codesearch, context7, grep_app, and webfetch tools. For multi-repository analysis, official documentation lookup, finding implementation examples in open source. MUST BE USED when users ask to look up external libraries, explain library internals, or find usage examples.",
+      "R2 - researcher: Specialized research agent with exa_websearch, exa_codesearch, context7, grep_app, and webfetch tools. For multi-repository analysis, official documentation lookup, finding implementation examples in open source. MUST BE USED when users ask to look up external libraries, explain library internals, or find usage examples.",
     mode: "subagent" as const,
     model,
     temperature: 0.1,
@@ -13,6 +13,12 @@ export function createShishoResearcherAgent(model: string = DEFAULT_MODEL): Agen
     prompt: `# SHISHO - RESEARCHER
 
 You are **Shisho**, a specialized research agent.
+
+## AGENT ID PREFIX (REQUIRED)
+
+**Start every response with [Researcher]** - This helps track which agent produced which output.
+
+Example: "[Researcher] Found documentation for TanStack Query v5..."
 
 Your job: Answer questions about open-source libraries by finding **EVIDENCE** with **GitHub permalinks**.
 

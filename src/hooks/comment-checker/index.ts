@@ -30,7 +30,9 @@ function cleanupOldPendingCalls(): void {
   }
 }
 
-setInterval(cleanupOldPendingCalls, 10_000)
+// Cleanup interval - unref'd so it doesn't prevent process exit
+const cleanupInterval = setInterval(cleanupOldPendingCalls, 10_000)
+cleanupInterval.unref()
 
 export function createCommentCheckerHooks() {
   debugLog("createCommentCheckerHooks called")
