@@ -117,7 +117,7 @@ supermemory({ mode: "add", scope: "project", type: "architecture",
 ## Git Hygiene (CRITICAL)
 
 **NEVER commit internal dev files:**
-- \`AGENTS.md\`, \`CLAUDE.md\`, \`.opencode/\`, \`.beads/\`, \`docs/dev/\`, \`*.blueprint.md\`
+- \`AGENTS.md\`, \`CLAUDE.md\`, \`.opencode/\`, \`.tickets/\`, \`docs/dev/\`, \`*.blueprint.md\`
 
 **Before commit:** \`git status\` → unstage internal files if present
 

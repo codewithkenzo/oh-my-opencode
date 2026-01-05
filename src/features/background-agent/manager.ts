@@ -1,5 +1,5 @@
 import { existsSync, readdirSync } from "node:fs"
-import { join } from "node:path"
+import { join, basename } from "node:path"
 import type { PluginInput } from "@opencode-ai/plugin"
 import type {
   BackgroundTask,
@@ -11,6 +11,7 @@ import {
   MESSAGE_STORAGE,
 } from "../hook-message-injector"
 import { subagentSessions } from "../claude-code-session-state"
+import { sendSystemNotification } from "../../tools/system-notify"
 
 type OpencodeClient = PluginInput["client"]
 
@@ -300,6 +301,7 @@ export class BackgroundManager {
 
   private notifyParentSession(task: BackgroundTask): void {
     const duration = this.formatDuration(task.startedAt, task.completedAt)
+    const projectName = basename(this.directory)
 
     log("[background-agent] notifyParentSession called for task:", task.id)
 
@@ -309,6 +311,11 @@ export class BackgroundManager {
       variant: "success",
       duration: 5000,
     })
+
+    sendSystemNotification({
+      title: "Agent Done",
+      message: `${task.agent} finished in ${projectName}`,
+    }).catch(() => {})
 
     const message = `[BACKGROUND TASK COMPLETED] Task "${task.description}" finished in ${duration}. Use background_output with task_id="${task.id}" to get results.`
 

@@ -163,7 +163,7 @@ ALWAYS:
 
 ### Phase 5: DOCUMENT
 - On approval → Write to \`.opencode/blueprints/\`
-- Create Beads issues if .beads/ exists
+- Create ticket issues if .tickets/ exists
 - "Blueprint saved. Switch to Musashi to implement."
 
 ---
@@ -231,17 +231,14 @@ ALWAYS:
 
 ## MEMORY SYSTEM
 
-### Beads (Session Tracking)
+### Ticket (Session Tracking)
 \`\`\`bash
 # Session start:
-beads_ready  # Find work
-beads_update(id, status="in_progress")
+ticket_ready  # Find work
+ticket_start(id)
 
 # During:
-beads_create("title", type="task", priority=2)
-
-# Session end (MANDATORY):
-beads_sync
+ticket_create("title", type="task", priority=2)
 \`\`\`
 
 ### Supermemory (Knowledge)
@@ -273,7 +270,7 @@ supermemory({ mode: "search", query: "[topic]", limit: 3 })
 | \`look_at\` | Analyze images/PDFs |
 | \`write\` | Save blueprints only |
 | \`todowrite\` | Structure tasks |
-| \`beads_*\` | Issue tracking |
+| \`ticket_*\` | Issue tracking |
 
 ### CANNOT USE
 \`edit\`, \`multiedit\`, \`bash\` (modifications), \`lsp_rename\`
@@ -359,7 +356,7 @@ export const PLAN_PERMISSION = {
     "wc*": "allow" as const,
     "whereis*": "allow" as const,
     "which*": "allow" as const,
-    "bd *": "allow" as const,
+    "tk *": "allow" as const,
     "*": "ask" as const,
   },
   webfetch: "allow" as const,

@@ -184,21 +184,18 @@ NEXT: [what to do with this info]
 
 | Layer | Tool | Scope | When |
 |-------|------|-------|------|
-| **Strategic** | Beads | Multi-session | Issues, blockers, handoffs |
+| **Strategic** | Ticket | Multi-session | Issues, blockers, handoffs |
 | **Tactical** | TodoWrite | This session | Step tracking |
 | **Knowledge** | Supermemory | Permanent | Decisions, patterns, fixes |
 
-### Beads (Project Memory)
+### Ticket (Project Memory)
 \`\`\`bash
 # Session start:
-beads_ready  # Find ready work
-beads_update(id, status="in_progress")  # Claim it
+ticket_ready  # Find ready work
+ticket_start(id)  # Claim it
 
 # During session:
-beads_create("title", type="task", priority=2)  # Found work for later
-
-# Session end (MANDATORY):
-beads_sync  # Always sync before ending
+ticket_create("title", type="task", priority=2)  # Found work for later
 \`\`\`
 
 ### Supermemory (Knowledge Base)
@@ -234,7 +231,7 @@ supermemory({ mode: "search", query: "[topic]", limit: 3 })
 | Commit without request | Never |
 
 ## Git Hygiene
-**Never commit:** AGENTS.md, CLAUDE.md, .opencode/, .beads/, docs/dev/, *.blueprint.md
+**Never commit:** AGENTS.md, CLAUDE.md, .opencode/, .tickets/, docs/dev/, *.blueprint.md
 
 ## Anti-Patterns
 - Reading many files without firing agents
@@ -321,7 +318,7 @@ Never: "Great question!", flattery, unnecessary summaries.
 ### Memory
 | Tool | Use |
 |------|-----|
-| beads_* | Issue tracking |
+| ticket_* | Issue tracking |
 | supermemory | Persistent knowledge |
 | todowrite | Session tracking |
 </Tool_Reference>

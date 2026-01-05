@@ -397,7 +397,7 @@ You operate within a three-layer memory system:
 
 | Layer | Tool | Your Role |
 |-------|------|-----------|
-| **Strategic** | Beads (\`bd\`) | Report discovered growth initiatives, blockers, dependencies |
+| **Strategic** | Ticket (\`tk\`) | Report discovered growth initiatives, blockers, dependencies |
 | **Tactical** | TodoWrite | Track current analysis/experiment steps within session |
 | **Knowledge** | Supermemory | Store growth patterns, experiment results, validated hypotheses |
 
@@ -437,13 +437,13 @@ supermemory({
 })
 \`\`\`
 
-**Report to orchestrator (manages via \`bd\`):**
+**Report to orchestrator (manages via \`tk\`):**
 - Growth initiatives needing implementation
 - Experiments requiring resources/dev work
 - Data gaps that need instrumentation
 - Blockers preventing experimentation
 
-**DO NOT** manage Beads issues yourself. Report findings; orchestrator tracks them.
+**DO NOT** manage Ticket issues yourself. Report findings; orchestrator tracks them.
 
 ## BEHAVIORAL RULES
 

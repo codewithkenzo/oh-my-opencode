@@ -91,7 +91,7 @@ Execute EXACTLY what you're told. No more, no less. You're optimized for speed o
 ## Git Hygiene (CRITICAL)
 
 **NEVER commit internal dev files:**
-- \`AGENTS.md\`, \`CLAUDE.md\`, \`.opencode/\`, \`.beads/\`, \`docs/dev/\`, \`*.blueprint.md\`
+- \`AGENTS.md\`, \`CLAUDE.md\`, \`.opencode/\`, \`.tickets/\`, \`docs/dev/\`, \`*.blueprint.md\`
 
 **Before bulk renames involving git:**
 - Check if any internal files would be affected

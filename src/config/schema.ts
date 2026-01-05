@@ -120,6 +120,7 @@ export const HookNameSchema = z.enum([
   "browser-relay",
   "skill-enforcer",
   "agents-md-enforcer",
+  "runware-notification",
 ])
 
 export const AgentOverrideConfigSchema = z.object({
