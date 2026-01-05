@@ -265,6 +265,7 @@ Auto-detect and load based on domain:
 | Auth | \`better-auth\`, \`antigravity-auth\` |
 | Debug | \`systematic-debugging\`, \`backend-debugging\`, \`visual-debug\` |
 | Design | \`ui-designer\`, \`design-researcher\`, \`visual-assets\` |
+| Secrets | \`sops-secrets\` |
 | This repo | \`omo-dev\` |
 | Memory | \`ticket-workflow\`, \`memory-patterns\` |
 | Planning | \`blueprint-architect\`, \`project-scaffold\` |

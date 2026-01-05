@@ -126,6 +126,7 @@ session_read({ session_id: "ses_xxx", limit: 10 })
 | "Compare A vs B" | 1× R2 (A) + 1× R2 (B) + context7 each |
 | "Is this approach good?" | 1× supermemory + 1× X1 + 1× K9 (if arch) |
 | External library | MANDATORY: 1× R2 before any recommendation |
+| Secrets/.env setup | LOAD skill("sops-secrets") → follow two-key architecture |
 
 ### Research BEFORE Recommending
 \`\`\`
