@@ -34,6 +34,25 @@ const DEPRECATED_ALIASES: Record<string, BuiltinAgentName> = {
   "Kenja - advisor": "K9 - advisor",
   "Miru - observer": "M10 - critic",
   "Koji - debugger": "G5 - debugger",
+  // Common typos and shorthand
+  "h3 builder": "H3 - bulk builder",
+  "H3 builder": "H3 - bulk builder",
+  "h3 bulk builder": "H3 - bulk builder",
+  "t4 builder": "T4 - frontend builder",
+  "T4 builder": "T4 - frontend builder",
+  "d5 builder": "D5 - backend builder",
+  "D5 builder": "D5 - backend builder",
+  "f1 builder": "F1 - fast builder",
+  "F1 builder": "F1 - fast builder",
+  "g5 debugger": "G5 - debugger",
+  "w7 writer": "W7 - writer",
+  "b3 router": "B3 - router",
+  "o9 specialist": "O9 - specialist",
+  "x1 explorer": "X1 - explorer",
+  "r2 researcher": "R2 - researcher",
+  "k9 advisor": "K9 - advisor",
+  "m10 critic": "M10 - critic",
+  "s6 designer": "S6 - designer",
 }
 
 export function resolveAgentAlias(name: string): BuiltinAgentName {
