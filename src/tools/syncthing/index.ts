@@ -14,6 +14,7 @@ export {
   syncthing_share,
   syncthing_unshare,
   syncthing_ignores_get,
+  syncthing_ignores_set,
   syncthing_versioning,
   syncthing_connections,
   syncthingTools,
