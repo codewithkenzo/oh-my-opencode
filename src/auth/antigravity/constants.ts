@@ -33,6 +33,12 @@ export const ANTIGRAVITY_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/cclog",
   "https://www.googleapis.com/auth/experimentsandconfigs",
+  // Required for consumer Gemini API (Veo, Imagen, Lyria, direct generativelanguage.googleapis.com)
+  "https://www.googleapis.com/auth/generative-language",
+  // Required for Google Workspace tools (Drive, Gmail, Calendar)
+  "https://www.googleapis.com/auth/drive",
+  "https://www.googleapis.com/auth/gmail.modify",
+  "https://www.googleapis.com/auth/calendar",
 ] as const
 
 // API Endpoint Fallbacks (order: daily → autopush → prod)

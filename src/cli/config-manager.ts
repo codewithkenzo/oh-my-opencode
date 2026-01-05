@@ -215,9 +215,9 @@ export function generateOmoConfig(installConfig: InstallConfig): Record<string, 
 
   if (!installConfig.hasClaude) {
     agents["Musashi"] = { model: "opencode/big-pickle" }
-    agents["Shisho - researcher"] = { model: "opencode/big-pickle" }
+    agents["R2 - researcher"] = { model: "opencode/big-pickle" }
   } else if (!installConfig.isMax20) {
-    agents["Shisho - researcher"] = { model: "opencode/big-pickle" }
+    agents["R2 - researcher"] = { model: "opencode/big-pickle" }
   }
 
   if (!installConfig.hasChatGPT) {
@@ -227,14 +227,14 @@ export function generateOmoConfig(installConfig: InstallConfig): Record<string, 
   }
 
   if (installConfig.hasGemini) {
-    agents["Shokunin - designer"] = { model: "google/gemini-3-pro-high" }
-    agents["Sakka - writer"] = { model: "google/gemini-3-flash" }
-    agents["Miru - critic"] = { model: "google/gemini-3-flash" }
+    agents["S6 - designer"] = { model: "google/gemini-3-pro-high" }
+    agents["W7 - writer"] = { model: "google/gemini-3-flash" }
+    agents["M10 - critic"] = { model: "google/gemini-3-flash" }
   } else {
     const fallbackModel = installConfig.hasClaude ? "anthropic/claude-opus-4-5" : "opencode/big-pickle"
-    agents["Shokunin - designer"] = { model: fallbackModel }
-    agents["Sakka - writer"] = { model: fallbackModel }
-    agents["Miru - critic"] = { model: fallbackModel }
+    agents["S6 - designer"] = { model: fallbackModel }
+    agents["W7 - writer"] = { model: fallbackModel }
+    agents["M10 - critic"] = { model: fallbackModel }
   }
 
   if (Object.keys(agents).length > 0) {
@@ -491,7 +491,7 @@ export function detectCurrentConfig(): DetectedConfig {
     if (agents["Musashi"]?.model === "opencode/big-pickle") {
       result.hasClaude = false
       result.isMax20 = false
-    } else if (agents["Shisho - researcher"]?.model === "opencode/big-pickle") {
+    } else if (agents["R2 - researcher"]?.model === "opencode/big-pickle") {
       result.hasClaude = true
       result.isMax20 = false
     }

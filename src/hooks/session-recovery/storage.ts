@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFile
 import { join } from "node:path"
 import { MESSAGE_STORAGE, PART_STORAGE, THINKING_TYPES, META_TYPES } from "./constants"
 import type { StoredMessageMeta, StoredPart, StoredTextPart } from "./types"
+import { log } from "../../shared/logger"
 
 export function generatePartId(): string {
   const timestamp = Date.now().toString(16)
@@ -37,7 +38,8 @@ export function readMessages(sessionID: string): StoredMessageMeta[] {
     try {
       const content = readFileSync(join(messageDir, file), "utf-8")
       messages.push(JSON.parse(content))
-    } catch {
+    } catch (e) {
+      log(`[session-recovery] Error reading message file: ${e instanceof Error ? e.message : String(e)}`)
       continue
     }
   }
@@ -60,7 +62,8 @@ export function readParts(messageID: string): StoredPart[] {
     try {
       const content = readFileSync(join(partDir, file), "utf-8")
       parts.push(JSON.parse(content))
-    } catch {
+    } catch (e) {
+      log(`[session-recovery] Error reading part file: ${e instanceof Error ? e.message : String(e)}`)
       continue
     }
   }
@@ -113,7 +116,8 @@ export function injectTextPart(sessionID: string, messageID: string, text: strin
   try {
     writeFileSync(join(partDir, `${partId}.json`), JSON.stringify(part, null, 2))
     return true
-  } catch {
+  } catch (e) {
+    log(`[session-recovery] Error writing part file: ${e instanceof Error ? e.message : String(e)}`)
     return false
   }
 }
@@ -281,7 +285,8 @@ export function prependThinkingPart(sessionID: string, messageID: string): boole
   try {
     writeFileSync(join(partDir, `${partId}.json`), JSON.stringify(part, null, 2))
     return true
-  } catch {
+  } catch (e) {
+    log(`[session-recovery] Error writing thinking part file: ${e instanceof Error ? e.message : String(e)}`)
     return false
   }
 }
@@ -301,7 +306,8 @@ export function stripThinkingParts(messageID: string): boolean {
         unlinkSync(filePath)
         anyRemoved = true
       }
-    } catch {
+    } catch (e) {
+      log(`[session-recovery] Error processing part file for removal: ${e instanceof Error ? e.message : String(e)}`)
       continue
     }
   }
@@ -330,7 +336,8 @@ export function replaceEmptyTextParts(messageID: string, replacementText: string
           anyReplaced = true
         }
       }
-    } catch {
+    } catch (e) {
+      log(`[session-recovery] Error processing part file for replacement: ${e instanceof Error ? e.message : String(e)}`)
       continue
     }
   }

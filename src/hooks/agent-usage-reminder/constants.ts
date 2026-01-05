@@ -35,9 +35,9 @@ RECOMMENDED: Use background_task with explore/researcher agents for better resul
 
 \`\`\`
 // Parallel exploration - fire multiple agents simultaneously
-background_task(agent="Ninja - explorer", prompt="Find all files matching pattern X")
-background_task(agent="Ninja - explorer", prompt="Search for implementation of Y")
-background_task(agent="Shisho - researcher", prompt="Lookup documentation for Z")
+background_task(agent="X1 - explorer", prompt="Find all files matching pattern X")
+background_task(agent="X1 - explorer", prompt="Search for implementation of Y")
+background_task(agent="R2 - researcher", prompt="Lookup documentation for Z")
 
 // Then continue your work while they run in background
 // System will notify you when each completes

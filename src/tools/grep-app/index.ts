@@ -5,11 +5,18 @@ const GREP_APP_MCP = "https://mcp.grep.app"
 interface McpResponse {
   result?: {
     content?: Array<{ type: string; text: string }>
+    isError?: boolean
   }
   error?: {
     code: number
     message: string
   }
+}
+
+const RATE_LIMIT_MESSAGE = "Rate limited by grep.app. Wait a few seconds before retrying."
+
+function isRateLimitError(text: string): boolean {
+  return text.includes("Too Many R") || text.includes("429") || text.includes("rate limit")
 }
 
 async function callGrepApp(args: Record<string, unknown>): Promise<string> {
@@ -18,6 +25,7 @@ async function callGrepApp(args: Record<string, unknown>): Promise<string> {
     headers: {
       "Accept": "application/json, text/event-stream",
       "Content-Type": "application/json",
+      "User-Agent": "oh-my-opencode/grep-app-tool",
     },
     body: JSON.stringify({
       jsonrpc: "2.0",
@@ -31,19 +39,33 @@ async function callGrepApp(args: Record<string, unknown>): Promise<string> {
   })
 
   if (!response.ok) {
+    if (response.status === 429) {
+      return RATE_LIMIT_MESSAGE
+    }
     return `Error: grep.app returned ${response.status}`
   }
 
-  // grep.app returns SSE format, need to parse it
   const text = await response.text()
   
-  // Parse SSE: find the data line
+  if (isRateLimitError(text)) {
+    return RATE_LIMIT_MESSAGE
+  }
+  
   const lines = text.split('\n')
   for (const line of lines) {
     if (line.startsWith('data: ')) {
       const jsonStr = line.slice(6)
       try {
         const data = JSON.parse(jsonStr) as McpResponse
+        
+        if (data.result?.isError && data.result?.content?.[0]?.text) {
+          const errorText = data.result.content[0].text
+          if (isRateLimitError(errorText)) {
+            return RATE_LIMIT_MESSAGE
+          }
+          return `Error: ${errorText}`
+        }
+        
         if (data.error) {
           return `Error: ${data.error.message}`
         }

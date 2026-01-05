@@ -12,6 +12,13 @@ import type {
   RunwareImg2ImgResult,
   RunwareVideoParams,
   RunwareVideoResult,
+  RunwareAPIResponse,
+  RunwareImageTaskResult,
+  RunwareRemoveBgTaskResult,
+  RunwareUpscaleTaskResult,
+  RunwareModelSearchTaskResult,
+  RunwareVideoTaskResultSuccess,
+  RunwareVideoTaskResult,
 } from "./types"
 
 export async function generateImage(params: RunwareImageParams): Promise<RunwareImageResult> {
@@ -47,10 +54,10 @@ export async function generateImage(params: RunwareImageParams): Promise<Runware
     body: JSON.stringify(payload),
   })
 
-  const responseJson = await response.json() as { data?: any[], errors?: any[] }
+  const responseJson = await response.json() as RunwareAPIResponse<RunwareImageTaskResult>
 
   if (responseJson.errors && responseJson.errors.length > 0) {
-    const errorMsg = responseJson.errors.map((e: any) => e.message).join(", ")
+    const errorMsg = responseJson.errors.map((e) => e.message).join(", ")
     throw new Error(`Runware API error: ${errorMsg}`)
   }
 
@@ -58,7 +65,7 @@ export async function generateImage(params: RunwareImageParams): Promise<Runware
     throw new Error(`Runware API error: ${response.status} ${response.statusText}`)
   }
 
-  const result = responseJson.data?.find((d: any) => d.taskType === "imageInference")
+  const result = responseJson.data?.find((d) => d.taskType === "imageInference")
 
   if (!result) {
     throw new Error("No image result returned")
@@ -95,10 +102,10 @@ export async function removeBackground(params: RunwareRemoveBgParams): Promise<R
     body: JSON.stringify(payload),
   })
 
-  const responseJson = await response.json() as { data?: any[], errors?: any[] }
+  const responseJson = await response.json() as RunwareAPIResponse<RunwareRemoveBgTaskResult>
 
   if (responseJson.errors && responseJson.errors.length > 0) {
-    const errorMsg = responseJson.errors.map((e: any) => e.message).join(", ")
+    const errorMsg = responseJson.errors.map((e) => e.message).join(", ")
     throw new Error(`Runware API error: ${errorMsg}`)
   }
 
@@ -106,7 +113,7 @@ export async function removeBackground(params: RunwareRemoveBgParams): Promise<R
     throw new Error(`Runware API error: ${response.status} ${response.statusText}`)
   }
 
-  const result = responseJson.data?.find((d: any) => d.taskType === "removeBackground")
+  const result = responseJson.data?.find((d) => d.taskType === "removeBackground")
 
   if (!result) {
     throw new Error("No background removal result returned")
@@ -143,10 +150,10 @@ export async function upscaleImage(params: RunwareUpscaleParams): Promise<Runwar
     body: JSON.stringify(payload),
   })
 
-  const responseJson = await response.json() as { data?: any[], errors?: any[] }
+  const responseJson = await response.json() as RunwareAPIResponse<RunwareUpscaleTaskResult>
 
   if (responseJson.errors && responseJson.errors.length > 0) {
-    const errorMsg = responseJson.errors.map((e: any) => e.message).join(", ")
+    const errorMsg = responseJson.errors.map((e) => e.message).join(", ")
     throw new Error(`Runware API error: ${errorMsg}`)
   }
 
@@ -154,7 +161,7 @@ export async function upscaleImage(params: RunwareUpscaleParams): Promise<Runwar
     throw new Error(`Runware API error: ${response.status} ${response.statusText}`)
   }
 
-  const result = responseJson.data?.find((d: any) => d.taskType === "upscale")
+  const result = responseJson.data?.find((d) => d.taskType === "upscale")
 
   if (!result) {
     throw new Error("No upscale result returned")
@@ -191,10 +198,10 @@ export async function searchModels(params: RunwareModelSearchParams): Promise<Ru
     body: JSON.stringify(payload),
   })
 
-  const responseJson = await response.json() as { data?: any[], errors?: any[] }
+  const responseJson = await response.json() as RunwareAPIResponse<RunwareModelSearchTaskResult>
 
   if (responseJson.errors && responseJson.errors.length > 0) {
-    const errorMsg = responseJson.errors.map((e: any) => e.message).join(", ")
+    const errorMsg = responseJson.errors.map((e) => e.message).join(", ")
     throw new Error(`Runware API error: ${errorMsg}`)
   }
 
@@ -202,7 +209,7 @@ export async function searchModels(params: RunwareModelSearchParams): Promise<Ru
     throw new Error(`Runware API error: ${response.status} ${response.statusText}`)
   }
 
-  const result = responseJson.data?.find((d: any) => d.taskType === "modelSearch")
+  const result = responseJson.data?.find((d) => d.taskType === "modelSearch")
 
   if (!result) {
     throw new Error("No model search results returned")
@@ -243,10 +250,10 @@ export async function img2img(params: RunwareImg2ImgParams): Promise<RunwareImg2
     body: JSON.stringify(payload),
   })
 
-  const responseJson = await response.json() as { data?: any[], errors?: any[] }
+  const responseJson = await response.json() as RunwareAPIResponse<RunwareImageTaskResult>
 
   if (responseJson.errors && responseJson.errors.length > 0) {
-    const errorMsg = responseJson.errors.map((e: any) => e.message).join(", ")
+    const errorMsg = responseJson.errors.map((e) => e.message).join(", ")
     throw new Error(`Runware API error: ${errorMsg}`)
   }
 
@@ -254,7 +261,7 @@ export async function img2img(params: RunwareImg2ImgParams): Promise<RunwareImg2
     throw new Error(`Runware API error: ${response.status} ${response.statusText}`)
   }
 
-  const result = responseJson.data?.find((d: any) => d.taskType === "imageInference")
+  const result = responseJson.data?.find((d) => d.taskType === "imageInference")
 
   if (!result) {
     throw new Error("No img2img result returned")
@@ -270,7 +277,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-async function pollForResult(apiKey: string, taskUUID: string, taskType: string, timeoutMs: number): Promise<any> {
+async function pollForResult(apiKey: string, taskUUID: string, taskType: string, timeoutMs: number): Promise<RunwareVideoTaskResultSuccess> {
   const startTime = Date.now()
   const { VIDEO_INITIAL_DELAY_MS, VIDEO_POLL_INTERVAL_MS } = await import("./constants")
 
@@ -288,14 +295,14 @@ async function pollForResult(apiKey: string, taskUUID: string, taskType: string,
       body: JSON.stringify(pollPayload),
     })
 
-    const responseJson = await response.json() as { data?: any[], errors?: any[] }
+    const responseJson = await response.json() as RunwareAPIResponse<RunwareVideoTaskResult>
     
     if (responseJson.errors && responseJson.errors.length > 0) {
-      const errorMsg = responseJson.errors.map((e: any) => e.message).join(", ")
+      const errorMsg = responseJson.errors.map((e) => e.message).join(", ")
       throw new Error(`Runware API error: ${errorMsg}`)
     }
 
-    const result = responseJson.data?.find((d: any) => d.taskType === taskType)
+    const result = responseJson.data?.find((d) => d.taskType === taskType)
     
     if (result?.status === "success") {
       return result
@@ -350,10 +357,10 @@ export async function generateVideo(params: RunwareVideoParams): Promise<Runware
     body: JSON.stringify(payload),
   })
 
-  const responseJson = await response.json() as { data?: any[], errors?: any[] }
+  const responseJson = await response.json() as RunwareAPIResponse<RunwareVideoTaskResult>
 
   if (responseJson.errors && responseJson.errors.length > 0) {
-    const errorMsg = responseJson.errors.map((e: any) => e.message).join(", ")
+    const errorMsg = responseJson.errors.map((e) => e.message).join(", ")
     throw new Error(`Runware API error: ${errorMsg}`)
   }
 
