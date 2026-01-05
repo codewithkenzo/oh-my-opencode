@@ -485,7 +485,7 @@
             }
           }
         },
-        "Planner-Musashi": {
+        "Musashi - plan": {
           "type": "object",
           "properties": {
             "model": {
@@ -599,7 +599,7 @@
             }
           }
         },
-        "Kenja - advisor": {
+        "X1 - explorer": {
           "type": "object",
           "properties": {
             "model": {
@@ -713,7 +713,7 @@
             }
           }
         },
-        "Shisho - researcher": {
+        "R2 - researcher": {
           "type": "object",
           "properties": {
             "model": {
@@ -827,7 +827,7 @@
             }
           }
         },
-        "Ninja - explorer": {
+        "H3 - bulk builder": {
           "type": "object",
           "properties": {
             "model": {
@@ -941,7 +941,7 @@
             }
           }
         },
-        "Shokunin - designer": {
+        "T4 - frontend builder": {
           "type": "object",
           "properties": {
             "model": {
@@ -1055,7 +1055,7 @@
             }
           }
         },
-        "Takumi - builder": {
+        "D5 - backend builder": {
           "type": "object",
           "properties": {
             "model": {
@@ -1169,7 +1169,7 @@
             }
           }
         },
-        "Daiku - builder": {
+        "F1 - fast builder": {
           "type": "object",
           "properties": {
             "model": {
@@ -1283,7 +1283,7 @@
             }
           }
         },
-        "Hayai - builder": {
+        "S6 - designer": {
           "type": "object",
           "properties": {
             "model": {
@@ -1397,7 +1397,7 @@
             }
           }
         },
-        "Tantei - debugger": {
+        "G5 - debugger": {
           "type": "object",
           "properties": {
             "model": {
@@ -1511,7 +1511,7 @@
             }
           }
         },
-        "Koji - debugger": {
+        "W7 - writer": {
           "type": "object",
           "properties": {
             "model": {
@@ -1625,7 +1625,7 @@
             }
           }
         },
-        "Sakka - writer": {
+        "K9 - advisor": {
           "type": "object",
           "properties": {
             "model": {
@@ -1739,7 +1739,235 @@
             }
           }
         },
-        "Miru - critic": {
+        "M10 - critic": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "type": "string"
+            },
+            "temperature": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2
+            },
+            "top_p": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "prompt": {
+              "type": "string"
+            },
+            "prompt_append": {
+              "type": "string"
+            },
+            "tools": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "boolean"
+              }
+            },
+            "disable": {
+              "type": "boolean"
+            },
+            "description": {
+              "type": "string"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "subagent",
+                "primary",
+                "all"
+              ]
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "permission": {
+              "type": "object",
+              "properties": {
+                "edit": {
+                  "type": "string",
+                  "enum": [
+                    "ask",
+                    "allow",
+                    "deny"
+                  ]
+                },
+                "bash": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "ask",
+                        "allow",
+                        "deny"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "string",
+                        "enum": [
+                          "ask",
+                          "allow",
+                          "deny"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "webfetch": {
+                  "type": "string",
+                  "enum": [
+                    "ask",
+                    "allow",
+                    "deny"
+                  ]
+                },
+                "doom_loop": {
+                  "type": "string",
+                  "enum": [
+                    "ask",
+                    "allow",
+                    "deny"
+                  ]
+                },
+                "external_directory": {
+                  "type": "string",
+                  "enum": [
+                    "ask",
+                    "allow",
+                    "deny"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "B3 - router": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "type": "string"
+            },
+            "temperature": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2
+            },
+            "top_p": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "prompt": {
+              "type": "string"
+            },
+            "prompt_append": {
+              "type": "string"
+            },
+            "tools": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "boolean"
+              }
+            },
+            "disable": {
+              "type": "boolean"
+            },
+            "description": {
+              "type": "string"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "subagent",
+                "primary",
+                "all"
+              ]
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "permission": {
+              "type": "object",
+              "properties": {
+                "edit": {
+                  "type": "string",
+                  "enum": [
+                    "ask",
+                    "allow",
+                    "deny"
+                  ]
+                },
+                "bash": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "ask",
+                        "allow",
+                        "deny"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "string",
+                        "enum": [
+                          "ask",
+                          "allow",
+                          "deny"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "webfetch": {
+                  "type": "string",
+                  "enum": [
+                    "ask",
+                    "allow",
+                    "deny"
+                  ]
+                },
+                "doom_loop": {
+                  "type": "string",
+                  "enum": [
+                    "ask",
+                    "allow",
+                    "deny"
+                  ]
+                },
+                "external_directory": {
+                  "type": "string",
+                  "enum": [
+                    "ask",
+                    "allow",
+                    "deny"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "O9 - specialist": {
           "type": "object",
           "properties": {
             "model": {

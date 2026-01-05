@@ -7,19 +7,23 @@ export function isGptModel(model: string): boolean {
 }
 
 export type BuiltinAgentName =
+  // Core orchestrator
   | "Musashi"
-  | "Kenja - advisor"
-  | "Shisho - researcher"
-  | "Ninja - explorer"
-  | "Shokunin - designer"
-  | "Daiku - builder"
-  | "Takumi - builder"
-  | "Hayai - builder"
-  | "Tantei - debugger"
-  | "Koji - debugger"
-  | "Sakka - writer"
-  | "Miru - critic"
-  | "Bunshi - writer"
+  // Robot-coded agents
+  | "X1 - explorer"
+  | "R2 - researcher"
+  | "H3 - bulk builder"
+  | "T4 - frontend builder"
+  | "D5 - backend builder"
+  | "F1 - fast builder"
+  | "S6 - designer"
+  | "G5 - debugger"
+  | "W7 - writer"
+  | "K9 - advisor"
+  | "M10 - critic"
+  | "B3 - router"
+  | "O9 - specialist"
+  // Marketing agents (keep Japanese)
   | "Senshi - distributor"
   | "Seichou - growth"
   | "Tsunagi - networker"

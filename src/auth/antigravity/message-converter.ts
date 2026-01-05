@@ -124,12 +124,43 @@ export function convertOpenAIToGemini(
 
     if (msg.role === "tool") {
       let response: Record<string, unknown> = {}
+      
+      const sanitizeString = (s: string): string => s
+        .replace(/\x1b\[[0-9;]*m/g, '')
+        .replace(/[\u{1F300}-\u{1F9FF}]/gu, '')
+        .replace(/[\u{2600}-\u{26FF}]/gu, '')
+        .replace(/[\u{2700}-\u{27BF}]/gu, '')
+        .replace(/[\u{FE00}-\u{FE0F}]/gu, '')
+        .replace(/[\u2500-\u257F]/g, '-')
+        .replace(/[\u2580-\u259F]/g, '#')
+        .replace(/[^\x20-\x7E\n\t]/g, '')
+      
+      const sanitizeValue = (val: unknown): unknown => {
+        if (typeof val === "string") return sanitizeString(val)
+        if (Array.isArray(val)) return val.map(sanitizeValue)
+        if (val && typeof val === "object") {
+          const result: Record<string, unknown> = {}
+          for (const [k, v] of Object.entries(val)) {
+            result[sanitizeString(k)] = sanitizeValue(v)
+          }
+          return result
+        }
+        return val
+      }
+      
       try {
-        response = typeof msg.content === "string" 
+        const parsed = typeof msg.content === "string" 
           ? JSON.parse(msg.content) 
-          : { result: msg.content }
+          : msg.content
+        const clean = typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+          ? parsed as Record<string, unknown>
+          : { result: parsed }
+        response = sanitizeValue(clean) as Record<string, unknown>
       } catch {
-        response = { result: msg.content }
+        const sanitized = typeof msg.content === "string"
+          ? sanitizeString(msg.content).trim()
+          : String(msg.content)
+        response = { result: sanitized || "success" }
       }
 
       const toolName = msg.name || "unknown"

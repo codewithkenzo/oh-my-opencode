@@ -47,7 +47,7 @@ export function createBackgroundTask(manager: BackgroundManager) {
     },
     async execute(args: BackgroundTaskArgs, toolContext) {
       if (!args.agent || args.agent.trim() === "") {
-        return `❌ Agent parameter is required. Please specify which agent to use (e.g., "Ninja - explorer", "Shisho - researcher", "Takumi - builder", etc.)`
+        return `❌ Agent parameter is required. Please specify which agent to use (e.g., "X1 - explorer", "R2 - researcher", "T4 - frontend builder", etc.)`
       }
 
       try {

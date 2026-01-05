@@ -82,7 +82,8 @@ function getRegex(pattern: string): RegExp {
     try {
       regex = new RegExp(pattern)
       regexCache.set(pattern, regex)
-    } catch {
+    } catch (e) {
+      log(`[claude-code-hooks] Error compiling regex pattern, using escaped fallback: ${e instanceof Error ? e.message : String(e)}`)
       regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
       regexCache.set(pattern, regex)
     }

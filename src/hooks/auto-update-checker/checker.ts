@@ -43,12 +43,14 @@ export function getLocalDevPath(directory: string): string | null {
         if (entry.startsWith("file://") && entry.includes(PACKAGE_NAME)) {
           try {
             return fileURLToPath(entry)
-          } catch {
+          } catch (e) {
+            log(`[auto-update-checker] Error parsing file URL: ${e instanceof Error ? e.message : String(e)}`)
             return entry.replace("file://", "")
           }
         }
       }
-    } catch {
+    } catch (e) {
+      log(`[auto-update-checker] Error reading config file: ${e instanceof Error ? e.message : String(e)}`)
       continue
     }
   }
@@ -68,13 +70,17 @@ function findPackageJsonUp(startPath: string): string | null {
           const content = fs.readFileSync(pkgPath, "utf-8")
           const pkg = JSON.parse(content) as PackageJson
           if (pkg.name === PACKAGE_NAME) return pkgPath
-        } catch {}
+        } catch (e) {
+          log(`[auto-update-checker] Error parsing package.json: ${e instanceof Error ? e.message : String(e)}`)
+        }
       }
       const parent = path.dirname(dir)
       if (parent === dir) break
       dir = parent
     }
-  } catch {}
+  } catch (e) {
+    log(`[auto-update-checker] Error finding package.json: ${e instanceof Error ? e.message : String(e)}`)
+  }
   return null
 }
 
@@ -88,7 +94,8 @@ export function getLocalDevVersion(directory: string): string | null {
     const content = fs.readFileSync(pkgPath, "utf-8")
     const pkg = JSON.parse(content) as PackageJson
     return pkg.version ?? null
-  } catch {
+  } catch (e) {
+    log(`[auto-update-checker] Error getting local dev version: ${e instanceof Error ? e.message : String(e)}`)
     return null
   }
 }
@@ -118,7 +125,8 @@ export function findPluginEntry(directory: string): PluginEntryInfo | null {
           return { entry, isPinned, pinnedVersion: isPinned ? pinnedVersion : null, configPath }
         }
       }
-    } catch {
+    } catch (e) {
+      log(`[auto-update-checker] Error reading plugin config: ${e instanceof Error ? e.message : String(e)}`)
       continue
     }
   }
@@ -133,7 +141,9 @@ export function getCachedVersion(): string | null {
       const pkg = JSON.parse(content) as PackageJson
       if (pkg.version) return pkg.version
     }
-  } catch {}
+  } catch (e) {
+    log(`[auto-update-checker] Error reading installed package.json: ${e instanceof Error ? e.message : String(e)}`)
+  }
 
   try {
     const currentDir = path.dirname(fileURLToPath(import.meta.url))

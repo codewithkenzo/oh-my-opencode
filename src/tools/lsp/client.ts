@@ -4,6 +4,7 @@ import { extname, resolve } from "path"
 import type { ResolvedServer } from "./config"
 import { getLanguageId } from "./config"
 import type { Diagnostic } from "./types"
+import { log } from "../../shared/logger"
 
 interface ManagedClient {
   client: LSPClient
@@ -29,7 +30,9 @@ class LSPServerManager {
       for (const [, managed] of this.clients) {
         try {
           managed.client.stop()
-        } catch {}
+        } catch {
+          // Ignore errors during cleanup - process is shutting down
+        }
       }
       this.clients.clear()
       if (this.cleanupInterval) {
@@ -190,7 +193,7 @@ export const lspManager = LSPServerManager.getInstance()
 export class LSPClient {
   private proc: Subprocess<"pipe", "pipe", "pipe"> | null = null
   private buffer: Uint8Array = new Uint8Array(0)
-  private pending = new Map<number, { resolve: (value: unknown) => void; reject: (error: Error) => void }>()
+  private pending = new Map<number, { resolve: (value: unknown) => void; reject: (error: Error) => void; timeoutId: ReturnType<typeof setTimeout> }>()
   private requestIdCounter = 0
   private openedFiles = new Set<string>()
   private stderrBuffer: string[] = []
@@ -261,27 +264,29 @@ export class LSPClient {
   private startStderrReading(): void {
     if (!this.proc) return
 
-    const reader = this.proc.stderr.getReader()
-    const read = async () => {
-      const decoder = new TextDecoder()
-      try {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          const text = decoder.decode(value)
-          this.stderrBuffer.push(text)
-          if (this.stderrBuffer.length > 100) {
-            this.stderrBuffer.shift()
-          }
-        }
-      } catch {
-      }
-    }
+     const reader = this.proc.stderr.getReader()
+     const read = async () => {
+       const decoder = new TextDecoder()
+       try {
+         while (true) {
+           const { done, value } = await reader.read()
+           if (done) break
+           const text = decoder.decode(value)
+           this.stderrBuffer.push(text)
+           if (this.stderrBuffer.length > 100) {
+             this.stderrBuffer.shift()
+           }
+         }
+       } catch {
+         // Ignore stderr read errors - stderr stream closed
+       }
+     }
     read()
   }
 
   private rejectAllPending(reason: string): void {
     for (const [id, handler] of this.pending) {
+      clearTimeout(handler.timeoutId)
       handler.reject(new Error(reason))
       this.pending.delete(id)
     }
@@ -340,6 +345,7 @@ export class LSPClient {
         } else if ("id" in msg && this.pending.has(msg.id)) {
           const handler = this.pending.get(msg.id)!
           this.pending.delete(msg.id)
+          clearTimeout(handler.timeoutId)
           if ("error" in msg) {
             handler.reject(new Error(msg.error.message))
           } else {
@@ -365,14 +371,14 @@ export class LSPClient {
     this.proc.stdin.write(header + msg)
 
     return new Promise((resolve, reject) => {
-      this.pending.set(id, { resolve, reject })
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         if (this.pending.has(id)) {
           this.pending.delete(id)
           const stderr = this.stderrBuffer.slice(-5).join("\n")
           reject(new Error(`LSP request timeout (method: ${method})` + (stderr ? `\nrecent stderr: ${stderr}` : "")))
         }
       }, 15000)
+      this.pending.set(id, { resolve, reject, timeoutId })
     })
   }
 
@@ -543,6 +549,7 @@ export class LSPClient {
         return result as { items: Diagnostic[] }
       }
     } catch {
+      // Fallback to stored diagnostics if server doesn't support diagnostic request
     }
 
     return { items: this.diagnosticsStore.get(uri) ?? [] }
@@ -603,6 +610,7 @@ export class LSPClient {
       this.notify("shutdown", {})
       this.notify("exit")
     } catch {
+      // Ignore errors during shutdown notifications
     }
     this.proc?.kill()
     this.proc = null
