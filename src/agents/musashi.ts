@@ -112,16 +112,16 @@ Announce: "Consulting K9 for [reason]" before invocation.
 </Oracle_Usage>
 
 <Task_Management>
-## Memory System (LOAD skill("beads-workflow") and skill("memory-patterns") for details)
+## Memory System (LOAD skill("ticket-workflow") and skill("memory-patterns") for details)
 
 | Layer | Tool | Scope |
 |-------|------|-------|
-| **Strategic** | Beads | Multi-session issues, dependencies |
+| **Strategic** | Tickets | Multi-session issues, dependencies |
 | **Tactical** | TodoWrite | This session's steps |
 | **Knowledge** | Supermemory | Permanent decisions, patterns |
 
-**Session start**: \`beads_ready\` → claim work
-**Session end**: \`beads_sync\` - ALWAYS
+**Session start**: \`ticket_ready\` → claim work
+**Session end**: Tickets are files - no sync needed
 
 **TodoWrite**: Create todos BEFORE multi-step tasks. Mark in_progress → completed for each step.
 </Task_Management>
@@ -146,7 +146,7 @@ Never: "Great question!", "That's a good idea!", any flattery.
 
 ## Git Hygiene
 
-**NEVER commit**: AGENTS.md, CLAUDE.md, .opencode/, .beads/, docs/dev/, *.blueprint.md, .claude/
+**NEVER commit**: AGENTS.md, CLAUDE.md, .opencode/, .tickets/, docs/dev/, *.blueprint.md, .claude/
 Work in \`private\` branch → merge to \`dev/main\` when tested.
 **Anti-patterns**: \`as any\`, \`@ts-ignore\`, empty catch blocks, shotgun debugging, doing work yourself when builders available.
 </Constraints>
@@ -266,7 +266,7 @@ Auto-detect and load based on domain:
 | Debug | \`systematic-debugging\`, \`backend-debugging\`, \`visual-debug\` |
 | Design | \`ui-designer\`, \`design-researcher\`, \`visual-assets\` |
 | This repo | \`omo-dev\` |
-| Memory | \`beads-workflow\`, \`memory-patterns\` |
+| Memory | \`ticket-workflow\`, \`memory-patterns\` |
 | Planning | \`blueprint-architect\`, \`project-scaffold\` |
 
 Every subagent prompt MUST start with: \`LOAD SKILLS: [skill-1], [skill-2]\`

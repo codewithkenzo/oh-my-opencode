@@ -27,6 +27,7 @@ import {
   createBrowserRelayHook,
   createSkillEnforcerHook,
   createAgentsMdEnforcerHook,
+  createRunwareNotificationHook,
 } from "./hooks";
 import { createGoogleAntigravityAuthPlugin } from "./auth/antigravity";
 import {
@@ -339,6 +340,9 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     : null;
   const agentsMdEnforcer = isHookEnabled("agents-md-enforcer")
     ? createAgentsMdEnforcerHook(ctx)
+    : null;
+  const runwareNotification = isHookEnabled("runware-notification")
+    ? createRunwareNotificationHook()
     : null;
 
   const backgroundManager = new BackgroundManager(ctx);
@@ -683,6 +687,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await interactiveBashSession?.["tool.execute.after"](input, output);
       await skillEnforcer?.["tool.execute.after"](input, output);
       await agentsMdEnforcer?.["tool.execute.after"](input, output);
+      await runwareNotification?.["tool.execute.after"]({ name: input.tool, input: {}, output: output.output ?? "" });
     },
   };
 };

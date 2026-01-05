@@ -1,63 +1,49 @@
 import { tool } from "@opencode-ai/plugin"
-import { spawn } from "node:child_process"
-import { readFileSync } from "node:fs"
-import { platform } from "node:os"
 import { TOOL_DESCRIPTION } from "./constants"
-import type { Platform } from "./types"
+import { detectPlatform, execCommand, openPath, convertToWindowsPath } from "./utils"
 
-const TIMEOUT_MS = 10000
-
-function detectPlatform(): Platform {
-  const os = platform()
-  if (os === "darwin") return "darwin"
-  if (os === "win32") return "win32"
-  if (os === "linux") {
-    try {
-      const release = readFileSync("/proc/version", "utf8")
-      if (release.toLowerCase().includes("microsoft")) return "wsl"
-    } catch {}
-    return "linux"
+async function notifyLinux(title: string, message: string, imagePath?: string): Promise<boolean> {
+  const args = [title, message]
+  if (imagePath) {
+    args.unshift("-i", imagePath)
   }
-  return "unsupported"
-}
-
-function execCommand(cmd: string, args: string[]): Promise<boolean> {
-  return new Promise((resolve) => {
-    const proc = spawn(cmd, args, { stdio: "ignore", timeout: TIMEOUT_MS })
-    proc.on("close", (code) => resolve(code === 0))
-    proc.on("error", () => resolve(false))
-  })
-}
-
-async function notifyLinux(title: string, message: string): Promise<boolean> {
-  return execCommand("notify-send", [title, message])
+  return execCommand("notify-send", args)
 }
 
 async function notifyMac(title: string, message: string): Promise<boolean> {
-  const script = `display notification "${message}" with title "${title}"`
+  const escapedTitle = title.replace(/"/g, '\\"')
+  const escapedMessage = message.replace(/"/g, '\\"')
+  const script = `display notification "${escapedMessage}" with title "${escapedTitle}"`
   return execCommand("osascript", ["-e", script])
 }
 
-async function notifyWSL(title: string, message: string): Promise<boolean> {
+async function notifyWSL(title: string, message: string, imagePath?: string): Promise<boolean> {
   const escapedTitle = title.replace(/'/g, "''")
   const escapedMessage = message.replace(/'/g, "''")
-  const burntToast = await execCommand("powershell.exe", [
-    "-NoProfile", "-Command",
-    `New-BurntToastNotification -Text '${escapedTitle}', '${escapedMessage}'`
-  ])
+  
+  let psCommand = `New-BurntToastNotification -Text '${escapedTitle}', '${escapedMessage}'`
+  if (imagePath) {
+    const winPath = convertToWindowsPath(imagePath)
+    psCommand = `New-BurntToastNotification -Text '${escapedTitle}', '${escapedMessage}' -HeroImage '${winPath}'`
+  }
+  
+  const burntToast = await execCommand("powershell.exe", ["-NoProfile", "-Command", psCommand])
   if (burntToast) return true
   
   const fullMessage = `${title}: ${message}`.replace(/"/g, "'")
   return execCommand("msg.exe", ["%USERNAME%", "/TIME:10", fullMessage])
 }
 
-async function notifyWindows(title: string, message: string): Promise<boolean> {
+async function notifyWindows(title: string, message: string, imagePath?: string): Promise<boolean> {
   const escapedTitle = title.replace(/'/g, "''")
   const escapedMessage = message.replace(/'/g, "''")
-  return execCommand("powershell", [
-    "-NoProfile", "-Command",
-    `New-BurntToastNotification -Text '${escapedTitle}', '${escapedMessage}'`
-  ])
+  
+  let psCommand = `New-BurntToastNotification -Text '${escapedTitle}', '${escapedMessage}'`
+  if (imagePath) {
+    psCommand = `New-BurntToastNotification -Text '${escapedTitle}', '${escapedMessage}' -HeroImage '${imagePath}'`
+  }
+  
+  return execCommand("powershell", ["-NoProfile", "-Command", psCommand])
 }
 
 export const system_notify = tool({
@@ -65,30 +51,38 @@ export const system_notify = tool({
   args: {
     message: tool.schema.string().describe("Notification message"),
     title: tool.schema.string().optional().describe("Notification title (default: OpenCode)"),
+    image_path: tool.schema.string().optional().describe("Path to image file to display in notification (Linux: -i flag, Windows: HeroImage)"),
+    open_path: tool.schema.string().optional().describe("File path or URL to open after notification (opens in default app/browser)"),
   },
-  execute: async ({ message, title = "OpenCode" }) => {
+  execute: async ({ message, title = "OpenCode", image_path, open_path }) => {
     const plat = detectPlatform()
     
     let success = false
     switch (plat) {
       case "linux":
-        success = await notifyLinux(title, message)
+        success = await notifyLinux(title, message, image_path)
         break
       case "darwin":
         success = await notifyMac(title, message)
         break
       case "wsl":
-        success = await notifyWSL(title, message)
+        success = await notifyWSL(title, message, image_path)
         break
       case "win32":
-        success = await notifyWindows(title, message)
+        success = await notifyWindows(title, message, image_path)
         break
       default:
-        return `Unsupported platform: ${platform()}`
+        return `Unsupported platform: ${plat}`
+    }
+    
+    let openResult = ""
+    if (open_path && success) {
+      const opened = await openPath(open_path, plat)
+      openResult = opened ? ` Opened: ${open_path}` : ` Failed to open: ${open_path}`
     }
     
     if (success) {
-      return `Notification sent: "${title}: ${message}"`
+      return `Notification sent: "${title}: ${message}"${openResult}`
     }
     return `Failed to send notification on ${plat}. Ensure notification tools are installed.`
   },
