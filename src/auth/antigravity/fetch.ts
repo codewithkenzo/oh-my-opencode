@@ -105,7 +105,9 @@ async function isRetryableResponse(response: Response): Promise<boolean> {
         debugLog(`[RETRY] 403 SUBSCRIPTION_REQUIRED detected, will retry with next endpoint`)
         return true
       }
-    } catch {}
+    } catch (error) {
+      debugLog(`[RETRY][WARN] Failed to check response for retry: ${error instanceof Error ? error.message : String(error)}`)
+    }
   }
   return false
 }
@@ -213,7 +215,9 @@ async function attemptFetch(
             }
             debugLog(`[RETRY] GCP permission error, max retries exceeded`)
           }
-        } catch {}
+        } catch (error) {
+          debugLog(`[PERMISSION][WARN] Failed to check GCP permission error: ${error instanceof Error ? error.message : String(error)}`)
+        }
       }
 
       if (!response.ok && (await isRetryableResponse(response))) {
@@ -322,7 +326,9 @@ async function transformResponseWithThinking(
         })
       }
     }
-  } catch {}
+  } catch (error) {
+    debugLog(`[TRANSFORM][ERROR] Response transformation failed: ${error instanceof Error ? error.message : String(error)}`)
+  }
 
   return result.response
 }
