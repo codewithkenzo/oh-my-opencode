@@ -384,7 +384,8 @@ export async function getBlockedTickets(): Promise<Ticket[]> {
     return allTickets.filter((t) => {
       if (t.status === "closed") return false
       if (t.dependencies.length === 0) return false
-      return !allTickets.some(
+      // Blocked = has at least one open/in_progress dependency
+      return allTickets.some(
         (dep) => t.dependencies.includes(dep.id) && dep.status !== "closed"
       )
     })
