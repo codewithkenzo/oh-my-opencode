@@ -78,6 +78,8 @@ import {
   ripple_suggest,
 } from './raindrop'
 
+import { zread_search, zread_file, zread_structure } from './zread'
+
 export { interactive_bash, startBackgroundCheck as startTmuxCheck } from "./interactive-bash"
 export { getTmuxPath } from "./interactive-bash/utils"
 
@@ -159,4 +161,7 @@ export const builtinTools = {
   civitai_get,
   civitai_tags,
   ...syncthingTools,
+  zread_search,
+  zread_file,
+  zread_structure,
 }
