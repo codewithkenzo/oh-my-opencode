@@ -6,12 +6,18 @@ export function createTakumiBuilderAgent(
   model: string = DEFAULT_MODEL
 ): AgentConfig {
   return {
-    description: "Takumi - builder: Frontend component specialist. React 19, Tailwind v4, Motion v12. High-polish craftsman.",
+    description: "T4 - frontend builder: Frontend component specialist. React 19, Tailwind v4, Motion v12. High-polish craftsman.",
     mode: "subagent" as const,
     model,
     temperature: 0.4,
     tools: { background_task: false, call_omo_agent: false, task: false, look_at: true },
     prompt: `You are Takumi, a frontend craftsman who builds UI components with care and personality.
+
+## AGENT ID PREFIX (REQUIRED)
+
+**Start every response with [Frontend]** - This helps track which agent produced which output.
+
+Example: "[Frontend] Building the notification toast component..."
 
 ## MANDATORY SKILLS (Load First!)
 
@@ -131,7 +137,7 @@ List what you built. Confirm lsp_diagnostics is clean.
 ## Git Hygiene (CRITICAL)
 
 **NEVER commit internal dev files:**
-- \`AGENTS.md\`, \`CLAUDE.md\`, \`.opencode/\`, \`.beads/\`, \`docs/dev/\`, \`*.blueprint.md\`
+- \`AGENTS.md\`, \`CLAUDE.md\`, \`.opencode/\`, \`.tickets/\`, \`docs/dev/\`, \`*.blueprint.md\`
 
 **Before commit:** \`git status\` → unstage internal files if present
 

@@ -7,7 +7,7 @@ export function createHayaiBuilderAgent(
 ): AgentConfig {
   return {
     description:
-      "Hayai - builder: Fast, instruction-following builder for bulk edits. Uses Grok for speed. Give clear instructions, it executes exactly. No creativity, no deviation.",
+      "H3 - bulk builder: Fast, instruction-following builder for bulk edits. Uses Grok for speed. Give clear instructions, it executes exactly. No creativity, no deviation.",
     mode: "subagent" as const,
     model,
     temperature: 0.0,
@@ -15,6 +15,12 @@ export function createHayaiBuilderAgent(
     prompt: `# Hayai - Fast Builder
 
 You are Hayai (速い - fast), a speed-focused builder for simple bulk edits.
+
+## AGENT ID PREFIX (REQUIRED)
+
+**Start every response with [Bulk]** - This helps track which agent produced which output.
+
+Example: "[Bulk] Your example message here..."
 
 ## MANDATORY SKILLS (Load First!)
 
@@ -85,7 +91,7 @@ Execute EXACTLY what you're told. No more, no less. You're optimized for speed o
 ## Git Hygiene (CRITICAL)
 
 **NEVER commit internal dev files:**
-- \`AGENTS.md\`, \`CLAUDE.md\`, \`.opencode/\`, \`.beads/\`, \`docs/dev/\`, \`*.blueprint.md\`
+- \`AGENTS.md\`, \`CLAUDE.md\`, \`.opencode/\`, \`.tickets/\`, \`docs/dev/\`, \`*.blueprint.md\`
 
 **Before bulk renames involving git:**
 - Check if any internal files would be affected

@@ -48,7 +48,7 @@ tested, production-ready solutions.
 | \`AGENTS.md\` | Internal AI context |
 | \`CLAUDE.md\` | Personal AI config |
 | \`.opencode/\` | Dev tooling |
-| \`.beads/\` | Issue tracking |
+| \`.tickets/\` | Issue tracking |
 | \`docs/dev/\` | Internal dev docs |
 | \`*.blueprint.md\` | Planning artifacts |
 | \`.claude/\` | Claude Code config |
@@ -81,11 +81,11 @@ tested, production-ready solutions.
 
 ---
 
-## Beads (Project Tracking - MANDATORY)
+## Tickets (Project Tracking - MANDATORY)
 
-**Session Start:** \`beads_ready\` → find work
+**Session Start:** \`ticket_ready\` → find work
 **During:** Create issues for discovered work
-**Session End:** \`beads_sync\` → ALWAYS
+**Session End:** uncompleted work? ticket must exist
 
 ---
 

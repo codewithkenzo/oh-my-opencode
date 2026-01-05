@@ -29,6 +29,7 @@ import {
 } from "./session-manager"
 
 import { beadsTools } from './beads'
+import { ticketTools } from './ticket'
 import { system_notify } from './system-notify'
 
 import {
@@ -48,7 +49,6 @@ import {
 } from './civitai'
 
 import { syncthingTools } from './syncthing'
-import { birdTools } from './bird'
 
 import { context7_resolve_library_id, context7_get_library_docs, context7_query_docs } from './context7'
 
@@ -148,6 +148,7 @@ export const builtinTools = {
   ripple_bulk_delete,
   ripple_suggest,
   ...beadsTools,
+  ...ticketTools,
   system_notify,
   runwareGenerate,
   runwareRemoveBg,
@@ -160,5 +161,4 @@ export const builtinTools = {
   civitai_get,
   civitai_tags,
   ...syncthingTools,
-  ...birdTools,
 }

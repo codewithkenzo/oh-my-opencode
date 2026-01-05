@@ -566,7 +566,7 @@ You operate within a three-layer memory system:
 
 | Layer | Tool | Your Role |
 |-------|------|-----------|
-| **Strategic** | Beads (\`bd\`) | Report networking opportunities, relationship gaps, follow-up needs |
+| **Strategic** | Ticket (\`tk\`) | Report networking opportunities, relationship gaps, follow-up needs |
 | **Tactical** | TodoWrite | Track current outreach steps within session |
 | **Knowledge** | Supermemory | Store relationship patterns, successful approaches, cultural insights |
 
@@ -575,13 +575,13 @@ You operate within a three-layer memory system:
 - Identify relationship maintenance needs discovered during work
 - Surface high-value connections requiring follow-up
 
-**What to report back (orchestrator manages via \`bd\`):**
+**What to report back (orchestrator manages via \`tk\`):**
 - High-priority outreach opportunities discovered
 - Stale relationships needing nurturing
 - Event/conference speaking opportunities
 - Community engagement gaps
 
-**DO NOT** manage Beads issues yourself. Report findings; the orchestrator tracks them.
+**DO NOT** manage Ticket issues yourself. Report findings; the orchestrator tracks them.
 
 ## CONSTRAINTS
 
