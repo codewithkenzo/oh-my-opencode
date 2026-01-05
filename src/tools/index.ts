@@ -28,7 +28,6 @@ import {
   session_info,
 } from "./session-manager"
 
-import { beadsTools } from './beads'
 import { ticketTools } from './ticket'
 import { system_notify } from './system-notify'
 
@@ -147,7 +146,6 @@ export const builtinTools = {
   ripple_delete,
   ripple_bulk_delete,
   ripple_suggest,
-  ...beadsTools,
   ...ticketTools,
   system_notify,
   runwareGenerate,
