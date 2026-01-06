@@ -1,4 +1,5 @@
 import { tool } from "@opencode-ai/plugin/tool"
+import { log } from "../../shared/logger"
 
 const GREP_APP_MCP = "https://mcp.grep.app"
 const GREP_APP_API = "https://grep.app/api/search"
@@ -97,6 +98,9 @@ async function tryMcpEndpoint(args: Record<string, unknown>): Promise<string | n
 }
 
 async function callDirectApi(args: Record<string, unknown>): Promise<string> {
+  if (!args.query) {
+    return "Error: query parameter is required"
+  }
   const params = new URLSearchParams({ q: args.query as string })
 
   if (args.language) {
@@ -150,7 +154,7 @@ async function callGrepApp(args: Record<string, unknown>): Promise<string> {
     return mcpResult
   }
 
-  process.stderr.write("[grep.app] MCP rate limited, using direct API\n")
+  log("[grep.app] MCP rate limited, using direct API")
   return await callDirectApi(args)
 }
 

@@ -165,7 +165,7 @@ async function executeSync(
     log(`[call_omo_agent] Assistant message has error:`, assistantError)
     const errorStr = typeof assistantError === 'string' 
       ? assistantError 
-      : JSON.stringify(assistantError)
+      : (assistantError?.message || JSON.stringify(assistantError))
     return `Error: Subagent session failed: ${errorStr}\n\n<task_metadata>\nsession_id: ${sessionID}\n</task_metadata>`
   }
 
