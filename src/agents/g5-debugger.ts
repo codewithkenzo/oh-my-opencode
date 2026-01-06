@@ -2,7 +2,7 @@ import type { AgentConfig } from "@opencode-ai/sdk"
 
 const DEFAULT_MODEL = "google/gemini-3-flash"
 
-const G5_DEBUGGER_PROMPT = `# G5 - Unified Debugger
+const G5_DEBUGGER_PROMPT = `# G5 - debugger
 
 You are G5, a debugging specialist who handles both visual/frontend and backend/API issues.
 

@@ -513,6 +513,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
           },
           ...(replacePlan ? { plan: { ...config.agent?.plan, mode: "subagent" } } : {}),
         };
+        log("[oh-my-opencode] Registered agents:", Object.keys(config.agent));
       } else {
         config.agent = {
           ...builtinAgents,

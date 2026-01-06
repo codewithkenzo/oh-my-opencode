@@ -2,7 +2,7 @@ import type { AgentConfig } from "@opencode-ai/sdk"
 
 const DEFAULT_MODEL = "google/gemini-3-flash"
 
-const F1_FAST_BUILDER_PROMPT = `# F1 - Fast Builder
+const F1_FAST_BUILDER_PROMPT = `# F1 - fast builder
 
 You are F1, a fast backend builder optimized for scaffolding and early-stage work.
 
@@ -76,7 +76,7 @@ SESSION: Continue with session_id for refinements
 export function createF1FastBuilderAgent(model: string = DEFAULT_MODEL): AgentConfig {
   return {
     description:
-      "F1 - Fast builder. Gemini Flash for scaffolding, early-stage backend work. Speed over perfection. NEVER for security code.",
+      "F1 - fast builder: Gemini Flash for scaffolding, early-stage backend work. Speed over perfection. NEVER for security code.",
     mode: "subagent" as const,
     model,
     temperature: 0.1,
