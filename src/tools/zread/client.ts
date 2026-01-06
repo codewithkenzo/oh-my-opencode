@@ -8,7 +8,7 @@ const SESSION_TTL = 5 * 60 * 1000
 function getApiKey(): string {
   const apiKey = process.env.ZAI_API_KEY
   if (!apiKey) {
-    throw new Error("ZAI_API_KEY environment variable not set")
+    throw new Error("ZAI_API_KEY not set. Get your API key from https://zread.ai and set it in your environment.")
   }
   return apiKey
 }
@@ -58,6 +58,8 @@ async function ensureSession(): Promise<string> {
 
 function parseSSEResponse(text: string): string {
   const lines = text.split("\n")
+  const errors: string[] = []
+  
   for (const line of lines) {
     if (line.startsWith("data:")) {
       const jsonStr = line.slice(5)
@@ -75,10 +77,11 @@ function parseSSEResponse(text: string): string {
         if (e instanceof Error && e.message.startsWith("Zread error")) {
           throw e
         }
+        errors.push(`Failed to parse: ${jsonStr.slice(0, 100)}`)
       }
     }
   }
-  throw new Error("No result from Zread API")
+  throw new Error(`No result from Zread API. Parse errors: ${errors.join('; ')}`)
 }
 
 export async function callZreadTool(
