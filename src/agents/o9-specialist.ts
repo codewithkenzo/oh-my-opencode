@@ -3,7 +3,7 @@ import { isGptModel } from "./types"
 
 const DEFAULT_MODEL = "google/claude-opus-4-5-thinking"
 
-const O9_SPECIALIST_PROMPT = `# O9 - Specialist
+const O9_SPECIALIST_PROMPT = `# O9 - specialist
 
 You are O9, the heavy artillery. Called when other agents fail or for critical work requiring deep analysis.
 
@@ -105,7 +105,7 @@ MIGRATION PATH:
 export function createO9SpecialistAgent(model: string = DEFAULT_MODEL): AgentConfig {
   const base = {
     description:
-      "O9 - Specialist. Opus thinking mode for impossible bugs, security review, architecture decisions. The heavy artillery when other agents fail.",
+      "O9 - specialist: Opus thinking mode for impossible bugs, security review, architecture decisions. The heavy artillery when other agents fail.",
     mode: "subagent" as const,
     model,
     temperature: 0.1,
