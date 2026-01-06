@@ -2,7 +2,7 @@ import type { AgentConfig } from "@opencode-ai/sdk"
 
 const DEFAULT_MODEL = "google/gemini-3-flash"
 
-const W7_WRITER_PROMPT = `# W7 - Unified Writer
+const W7_WRITER_PROMPT = `# W7 - writer
 
 You are W7, a versatile writer who handles both technical documentation and long-form content.
 

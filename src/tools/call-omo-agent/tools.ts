@@ -3,6 +3,7 @@ import { ALLOWED_AGENTS, CALL_OMO_AGENT_DESCRIPTION } from "./constants"
 import type { CallOmoAgentArgs } from "./types"
 import type { BackgroundManager } from "../../features/background-agent"
 import { log } from "../../shared/logger"
+import { resolveAgentAlias } from "../../agents/utils"
 
 export function createCallOmoAgent(
   ctx: PluginInput,
@@ -19,7 +20,7 @@ export function createCallOmoAgent(
       description: tool.schema.string().describe("Short task description (3-5 words, shown in UI)"),
       prompt: tool.schema.string().describe("Detailed instructions for the agent (not shown in UI preview)"),
       subagent_type: tool.schema
-        .enum(ALLOWED_AGENTS)
+        .string()
         .describe(`Allowed: ${ALLOWED_AGENTS.join(", ")}`),
       run_in_background: tool.schema
         .boolean()
@@ -27,20 +28,23 @@ export function createCallOmoAgent(
       session_id: tool.schema.string().describe("Existing Task session to continue").optional(),
     },
     async execute(args: CallOmoAgentArgs, toolContext) {
-      log(`[call_omo_agent] Starting with agent: ${args.subagent_type}, background: ${args.run_in_background}`)
+      const resolvedAgent = resolveAgentAlias(args.subagent_type)
+      log(`[call_omo_agent] Starting with agent: ${args.subagent_type} -> ${resolvedAgent}, background: ${args.run_in_background}`)
 
-      if (!ALLOWED_AGENTS.includes(args.subagent_type as typeof ALLOWED_AGENTS[number])) {
-        return `Error: Invalid agent type "${args.subagent_type}". Only ${ALLOWED_AGENTS.join(", ")} are allowed.`
+      if (!ALLOWED_AGENTS.includes(resolvedAgent as typeof ALLOWED_AGENTS[number])) {
+        return `Error: Invalid agent type "${args.subagent_type}" (resolved: "${resolvedAgent}"). Only ${ALLOWED_AGENTS.join(", ")} are allowed.`
       }
+      
+      const normalizedArgs = { ...args, subagent_type: resolvedAgent }
 
-      if (args.run_in_background) {
-        if (args.session_id) {
+      if (normalizedArgs.run_in_background) {
+        if (normalizedArgs.session_id) {
           return `Error: session_id is not supported in background mode. Use run_in_background=false to continue an existing session.`
         }
-        return await executeBackground(args, toolContext, backgroundManager)
+        return await executeBackground(normalizedArgs, toolContext, backgroundManager)
       }
 
-      return await executeSync(args, toolContext, ctx)
+      return await executeSync(normalizedArgs, toolContext, ctx)
     },
   })
 }
@@ -152,6 +156,17 @@ async function executeSync(
     log(`[call_omo_agent] No assistant message found`)
     log(`[call_omo_agent] All messages:`, JSON.stringify(messages, null, 2))
     return `Error: No assistant response found\n\n<task_metadata>\nsession_id: ${sessionID}\n</task_metadata>`
+  }
+
+  // Check if the assistant message has an error - don't crash main session
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const assistantError = (lastAssistantMessage as any).info?.error
+  if (assistantError) {
+    log(`[call_omo_agent] Assistant message has error:`, assistantError)
+    const errorStr = typeof assistantError === 'string' 
+      ? assistantError 
+      : (assistantError?.message || JSON.stringify(assistantError))
+    return `Error: Subagent session failed: ${errorStr}\n\n<task_metadata>\nsession_id: ${sessionID}\n</task_metadata>`
   }
 
   log(`[call_omo_agent] Found assistant message with ${lastAssistantMessage.parts.length} parts`)

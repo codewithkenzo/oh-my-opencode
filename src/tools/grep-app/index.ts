@@ -1,6 +1,8 @@
 import { tool } from "@opencode-ai/plugin/tool"
+import { log } from "../../shared/logger"
 
 const GREP_APP_MCP = "https://mcp.grep.app"
+const GREP_APP_API = "https://grep.app/api/search"
 
 interface McpResponse {
   result?: {
@@ -13,13 +15,27 @@ interface McpResponse {
   }
 }
 
-const RATE_LIMIT_MESSAGE = "Rate limited by grep.app. Wait a few seconds before retrying."
+interface DirectApiResponse {
+  hits: {
+    total: number
+    hits: Array<{
+      repo: string
+      path: string
+      content: { snippet: string }
+    }>
+  }
+  facets?: unknown
+}
 
 function isRateLimitError(text: string): boolean {
   return text.includes("Too Many R") || text.includes("429") || text.includes("rate limit")
 }
 
-async function callGrepApp(args: Record<string, unknown>): Promise<string> {
+function stripHtmlTags(html: string): string {
+  return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")
+}
+
+async function tryMcpEndpoint(args: Record<string, unknown>): Promise<string | null> {
   const response = await fetch(GREP_APP_MCP, {
     method: "POST",
     headers: {
@@ -40,32 +56,32 @@ async function callGrepApp(args: Record<string, unknown>): Promise<string> {
 
   if (!response.ok) {
     if (response.status === 429) {
-      return RATE_LIMIT_MESSAGE
+      return null
     }
     return `Error: grep.app returned ${response.status}`
   }
 
   const text = await response.text()
-  
+
   if (isRateLimitError(text)) {
-    return RATE_LIMIT_MESSAGE
+    return null
   }
-  
+
   const lines = text.split('\n')
   for (const line of lines) {
     if (line.startsWith('data: ')) {
       const jsonStr = line.slice(6)
       try {
         const data = JSON.parse(jsonStr) as McpResponse
-        
+
         if (data.result?.isError && data.result?.content?.[0]?.text) {
           const errorText = data.result.content[0].text
           if (isRateLimitError(errorText)) {
-            return RATE_LIMIT_MESSAGE
+            return null
           }
           return `Error: ${errorText}`
         }
-        
+
         if (data.error) {
           return `Error: ${data.error.message}`
         }
@@ -77,8 +93,69 @@ async function callGrepApp(args: Record<string, unknown>): Promise<string> {
       }
     }
   }
-  
+
   return "No results from grep.app"
+}
+
+async function callDirectApi(args: Record<string, unknown>): Promise<string> {
+  if (!args.query) {
+    return "Error: query parameter is required"
+  }
+  const params = new URLSearchParams({ q: args.query as string })
+
+  if (args.language) {
+    const langs = args.language as string[]
+    params.set('lang', langs.join(','))
+  }
+  if (args.repo) params.set('repo', args.repo as string)
+  if (args.path) params.set('path', args.path as string)
+  if (args.useRegexp) params.set('regexp', 'true')
+  if (args.matchCase) params.set('case', 'true')
+  if (args.matchWholeWords) params.set('words', 'true')
+
+  const response = await fetch(`${GREP_APP_API}?${params}`, {
+    headers: {
+      'Accept': 'application/json',
+      'User-Agent': 'oh-my-opencode/grep-app-tool',
+    }
+  })
+
+  if (!response.ok) {
+    return `Error: grep.app returned ${response.status}`
+  }
+
+  const data = await response.json() as DirectApiResponse
+  return formatDirectApiResponse(data)
+}
+
+function formatDirectApiResponse(data: DirectApiResponse): string {
+  const hits = data.hits?.hits || []
+  const total = data.hits?.total || 0
+
+  if (hits.length === 0) {
+    return `No results found. (total: ${total})`
+  }
+
+  const formatted = hits.map((hit, index) => {
+    const snippet = stripHtmlTags(hit.content?.snippet || "")
+    return `[${index + 1}] ${hit.repo}/${hit.path}
+${snippet}`
+  }).join('\n\n')
+
+  return `Found ${total} results (showing first ${hits.length}):
+
+${formatted}`
+}
+
+async function callGrepApp(args: Record<string, unknown>): Promise<string> {
+  const mcpResult = await tryMcpEndpoint(args)
+
+  if (mcpResult !== null) {
+    return mcpResult
+  }
+
+  log("[grep.app] MCP rate limited, using direct API")
+  return await callDirectApi(args)
 }
 
 export const grep_app_searchGitHub = tool({
