@@ -6,6 +6,7 @@ import type {
   LaunchInput,
 } from "./types"
 import { log, showToast } from "../../shared"
+import { resolveAgentAlias } from "../../agents/utils"
 import {
   findNearestMessageWithFields,
   MESSAGE_STORAGE,
@@ -74,6 +75,8 @@ export class BackgroundManager {
       throw new Error("Agent parameter is required")
     }
 
+    const resolvedAgent = resolveAgentAlias(input.agent.trim())
+
     const createResult = await this.client.session.create({
       body: {
         parentID: input.parentSessionID,
@@ -95,7 +98,7 @@ export class BackgroundManager {
       parentMessageID: input.parentMessageID,
       description: input.description,
       prompt: input.prompt,
-      agent: input.agent,
+      agent: resolvedAgent,
       status: "running",
       startedAt: new Date(),
       progress: {
@@ -108,12 +111,12 @@ export class BackgroundManager {
     this.tasks.set(task.id, task)
     this.startPolling()
 
-    log("[background-agent] Launching task:", { taskId: task.id, sessionID, agent: input.agent })
+    log("[background-agent] Launching task:", { taskId: task.id, sessionID, agent: resolvedAgent })
 
     this.client.session.promptAsync({
       path: { id: sessionID },
       body: {
-        agent: input.agent,
+        agent: resolvedAgent,
         tools: {
           task: false,
           background_task: false,

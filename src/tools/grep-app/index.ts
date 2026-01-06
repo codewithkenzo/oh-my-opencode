@@ -150,7 +150,7 @@ async function callGrepApp(args: Record<string, unknown>): Promise<string> {
     return mcpResult
   }
 
-  console.warn("[grep.app] MCP rate limited, using direct API")
+  process.stderr.write("[grep.app] MCP rate limited, using direct API\n")
   return await callDirectApi(args)
 }
 
