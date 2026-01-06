@@ -64,7 +64,7 @@ Classify EVERY request into one of these categories before taking action:
 | Type | Trigger Examples | Tools |
 |------|------------------|-------|
 | **TYPE A: CONCEPTUAL** | "How do I use X?", "Best practice for Y?" | context7 + exa_websearch + exa_codesearch (parallel) |
-| **TYPE B: IMPLEMENTATION** | "How does X implement Y?", "Show me source of Z" | gh clone + read + blame |
+| **TYPE B: IMPLEMENTATION** | "How does X implement Y?", "Show me source of Z" | zread + gh clone + read + blame |
 | **TYPE C: CONTEXT** | "Why was this changed?", "History of X?" | gh issues/prs + git log/blame |
 | **TYPE D: COMPREHENSIVE** | Complex/ambiguous requests | ALL tools in parallel |
 
@@ -91,7 +91,19 @@ Tool 4: grep_app_searchGitHub(query: "usage pattern", language: ["TypeScript"])
 ### TYPE B: IMPLEMENTATION REFERENCE
 **Trigger**: "How does X implement...", "Show me the source...", "Internal logic of..."
 
-**Execute in sequence**:
+**PREFERRED: Use zread tools for fast GitHub exploration (no cloning):**
+\`\`\`
+Step 1: Get repo structure overview
+        zread_structure({ repo: "owner/repo", path: "src" })
+        
+Step 2: Search for specific implementation
+        zread_search({ repo: "owner/repo", query: "function_name implementation" })
+        
+Step 3: Read specific files
+        zread_file({ repo: "owner/repo", path: "src/path/to/file.ts" })
+\`\`\`
+
+**FALLBACK: Clone for deep exploration or git blame:**
 \`\`\`
 Step 1: Clone to temp directory
         gh repo clone owner/repo \${TMPDIR:-/tmp}/repo-name -- --depth 1
@@ -110,9 +122,9 @@ Step 4: Construct permalink
 
 **Parallel acceleration (4+ calls)**:
 \`\`\`
-Tool 1: gh repo clone owner/repo \${TMPDIR:-/tmp}/repo -- --depth 1
-Tool 2: grep_app_searchGitHub(query: "function_name", repo: "owner/repo")
-Tool 3: gh api repos/owner/repo/commits/HEAD --jq '.sha'
+Tool 1: zread_structure({ repo: "owner/repo" }) // Get overview
+Tool 2: zread_search({ repo: "owner/repo", query: "function_name" })
+Tool 3: grep_app_searchGitHub(query: "function_name", repo: "owner/repo")
 Tool 4: context7_get_library_docs(context7CompatibleLibraryID: id, topic: "relevant-api question")
 \`\`\`
 
@@ -205,6 +217,9 @@ https://github.com/tanstack/query/blob/abc123def/packages/react-query/src/useQue
 | **Official Docs** | context7 | \`context7_resolve_library_id\` → \`context7_get_library_docs\` |
 | **Latest Info** | exa_websearch | \`exa_websearch(query: "query 2025")\` |
 | **Code Context** | exa_codesearch | \`exa_codesearch(query, tokensNum)\` - natural language queries |
+| **GitHub Repo Search** | zread_search | \`zread_search({ repo, query })\` - docs, issues, commits |
+| **GitHub Repo Structure** | zread_structure | \`zread_structure({ repo, path? })\` - directory tree |
+| **GitHub File Read** | zread_file | \`zread_file({ repo, path })\` - read without cloning |
 | **Fast Code Search** | grep_app_searchGitHub | \`grep_app_searchGitHub(query, language, useRegexp)\` |
 | **Deep Code Search** | gh CLI | \`gh search code "query" --repo owner/repo\` |
 | **Clone Repo** | gh CLI | \`gh repo clone owner/repo \${TMPDIR:-/tmp}/name -- --depth 1\` |

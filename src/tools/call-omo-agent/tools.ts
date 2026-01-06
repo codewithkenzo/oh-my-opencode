@@ -154,6 +154,17 @@ async function executeSync(
     return `Error: No assistant response found\n\n<task_metadata>\nsession_id: ${sessionID}\n</task_metadata>`
   }
 
+  // Check if the assistant message has an error - don't crash main session
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const assistantError = (lastAssistantMessage as any).info?.error
+  if (assistantError) {
+    log(`[call_omo_agent] Assistant message has error:`, assistantError)
+    const errorStr = typeof assistantError === 'string' 
+      ? assistantError 
+      : JSON.stringify(assistantError)
+    return `Error: Subagent session failed: ${errorStr}\n\n<task_metadata>\nsession_id: ${sessionID}\n</task_metadata>`
+  }
+
   log(`[call_omo_agent] Found assistant message with ${lastAssistantMessage.parts.length} parts`)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
