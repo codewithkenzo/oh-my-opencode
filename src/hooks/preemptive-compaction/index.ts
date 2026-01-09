@@ -197,61 +197,54 @@ export function createPreemptiveCompactionHook(
 
     log("[preemptive-compaction] triggering compaction", { sessionID, usageRatio })
 
-    try {
-      if (onBeforeSummarize) {
-        await onBeforeSummarize({
-          sessionID,
-          providerID,
-          modelID,
-          usageRatio,
-          directory: ctx.directory,
-        })
-      }
+    if (onBeforeSummarize) {
+      await onBeforeSummarize({
+        sessionID,
+        providerID,
+        modelID,
+        usageRatio,
+        directory: ctx.directory,
+      })
+    }
 
-      // Inject supermemory context if available and enabled
-      const injectMemory = experimental?.inject_supermemory_context !== false
-      if (injectMemory) {
-        const supermemoryIntegration = getSupermemoryIntegration()
-        if (supermemoryIntegration?.isConfigured()) {
-          try {
-            const tags = supermemoryIntegration.getTags(ctx.directory)
-            const memories = await supermemoryIntegration.fetchProjectMemories(tags.project, 10)
-            if (memories.length > 0) {
-              const prompt = createMemoryInjectionPrompt(memories)
-              injectHookMessage(sessionID, prompt, { model: { providerID, modelID } })
-              log("[preemptive-compaction] memory context injected", { memoriesCount: memories.length })
-            }
-          } catch (err) {
-            log("[preemptive-compaction] failed to inject memory context", { error: String(err) })
+    // Inject supermemory context if available and enabled
+    const injectMemory = experimental?.inject_supermemory_context !== false
+    if (injectMemory) {
+      const supermemoryIntegration = getSupermemoryIntegration()
+      if (supermemoryIntegration?.isConfigured()) {
+        try {
+          const tags = supermemoryIntegration.getTags(ctx.directory)
+          const memories = await supermemoryIntegration.fetchProjectMemories(tags.project, 10)
+          if (memories.length > 0) {
+            const prompt = createMemoryInjectionPrompt(memories)
+            injectHookMessage(sessionID, prompt, { model: { providerID, modelID } })
+            log("[preemptive-compaction] memory context injected", { memoriesCount: memories.length })
           }
+        } catch (err) {
+          log("[preemptive-compaction] failed to inject memory context", { error: String(err) })
         }
       }
-
-      // Non-blocking: trigger compaction without awaiting to prevent streaming interruption
-      ctx.client.session.summarize({
-        path: { id: sessionID },
-        body: { providerID, modelID },
-        query: { directory: ctx.directory },
-      }).then(() => {
-        showToast(ctx, {
-          title: "Compaction Complete",
-          message: "Session compacted. Send any message to continue.",
-          variant: "success",
-          duration: 2000,
-        })
-        markPendingContinue(sessionID)
-      }).catch((err) => {
-        log("[preemptive-compaction] compaction failed", { sessionID, error: err })
-      }).finally(() => {
-        markCompactionEnd(sessionID)
-        state.compactionInProgress.delete(sessionID)
-      })
-
-      return
-    } catch (err) {
-      log("[preemptive-compaction] compaction failed", { sessionID, error: err })
-      state.compactionInProgress.delete(sessionID)
     }
+
+    // Non-blocking: trigger compaction without awaiting to prevent streaming interruption
+    ctx.client.session.summarize({
+      path: { id: sessionID },
+      body: { providerID, modelID },
+      query: { directory: ctx.directory },
+    }).then(() => {
+      showToast(ctx, {
+        title: "Compaction Complete",
+        message: "Session compacted. Send any message to continue.",
+        variant: "success",
+        duration: 2000,
+      })
+      markPendingContinue(sessionID)
+    }).catch((err) => {
+      log("[preemptive-compaction] compaction failed", { sessionID, error: err })
+    }).finally(() => {
+      markCompactionEnd(sessionID)
+      state.compactionInProgress.delete(sessionID)
+    })
   }
 
   const eventHandler = async ({ event }: { event: { type: string; properties?: unknown } }) => {
