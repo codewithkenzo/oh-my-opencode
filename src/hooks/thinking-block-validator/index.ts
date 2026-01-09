@@ -15,7 +15,7 @@
  */
 
 import type { Message, Part } from "@opencode-ai/sdk"
-import { getLatestSignature } from "../../auth/antigravity/thought-signature-store"
+import { getSignatureForSession } from "../../auth/antigravity/thought-signature-store"
 
 interface MessageWithParts {
   info: Message
@@ -100,14 +100,19 @@ function findPreviousThinkingContent(
  */
 function prependThinkingBlock(
   message: MessageWithParts,
-  thinkingContent: string
+  thinkingContent: string,
+  sessionID: string
 ): void {
   if (!message.parts) {
     message.parts = []
   }
 
-  // Get the latest signature for multi-turn continuity
-  const signature = getLatestSignature()
+  // Get the signature for this session
+  const signature = getSignatureForSession(sessionID)
+
+  // Only inject signature if available - prevents invalid signature errors
+  // If no signature available, the thinking block will still work but may not
+  // maintain full reasoning continuity with previous turns
 
   // Create synthetic thinking part with unique ID per message
   const thinkingPart: Record<string, unknown> = {
@@ -166,7 +171,8 @@ export function createThinkingBlockValidatorHook(): MessagesTransformHook {
           // Prepend thinking block with content from previous turn or placeholder
           const thinkingContent = previousThinking || "[Continuing from previous reasoning]"
 
-          prependThinkingBlock(msg, thinkingContent)
+          const sessionID = (msg.info as any).sessionID || ""
+          prependThinkingBlock(msg, thinkingContent, sessionID)
         }
       }
     },

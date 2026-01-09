@@ -1,9 +1,6 @@
 import type { SummarizeContext } from "../preemptive-compaction"
 import { injectHookMessage } from "../../features/hook-message-injector"
 import { log } from "../../shared/logger"
-// Import clearSignatureCache from antigravity plugin to clear signatures before compaction
-// This prevents stale signatures from causing "invalid model response" errors
-import { clearSignatureCache } from "opencode-antigravity-auth/dist/src/plugin/cache"
 
 const SUMMARIZE_CONTEXT_PROMPT = `[COMPACTION CONTEXT INJECTION]
 
@@ -40,10 +37,6 @@ This context is critical for maintaining continuity after compaction.
 export function createCompactionContextInjector() {
   return async (ctx: SummarizeContext): Promise<void> => {
     log("[compaction-context-injector] injecting context", { sessionID: ctx.sessionID })
-
-    // Clear antigravity signatures before compaction to prevent stale signature errors
-    clearSignatureCache(ctx.sessionID)
-    log("[compaction-context-injector] cleared Antigravity signatures")
 
     const success = injectHookMessage(ctx.sessionID, SUMMARIZE_CONTEXT_PROMPT, {
       agent: "Musashi",

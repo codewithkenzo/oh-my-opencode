@@ -120,3 +120,43 @@ export function getLatestSignature(): string | undefined {
   const entries = Array.from(signatureStore.entries())
   return entries[entries.length - 1]?.[1]
 }
+
+/**
+ * Get the most recent signature for a specific session.
+ * Falls back to global latest if session has no signature.
+ *
+ * @param sessionID - The session ID to get signature for
+ * @returns The signature for this session, or undefined
+ */
+export function getSignatureForSession(sessionID: string): string | undefined {
+  const entries = Array.from(sessionIdStore.entries())
+  for (const [fetchInstanceId, storedSessionId] of entries) {
+    if (storedSessionId === sessionID || fetchInstanceId.includes(sessionID)) {
+      const sig = signatureStore.get(fetchInstanceId)
+      if (sig) return sig
+    }
+  }
+
+  return getLatestSignature()
+}
+
+/**
+ * Clear all signatures and session IDs associated with a session.
+ * Called when session is deleted to prevent memory leaks.
+ *
+ * @param sessionID - The session ID to clean up
+ */
+export function clearSessionSignatures(sessionID: string): void {
+  const keysToDelete: string[] = []
+  const entries = Array.from(sessionIdStore.entries())
+  for (const [key, storedSessionId] of entries) {
+    if (storedSessionId === sessionID || key.includes(sessionID)) {
+      keysToDelete.push(key)
+    }
+  }
+
+  for (const key of keysToDelete) {
+    signatureStore.delete(key)
+    sessionIdStore.delete(key)
+  }
+}
