@@ -239,11 +239,11 @@ export function createPreemptiveCompactionHook(
           variant: "success",
           duration: 2000,
         })
-        markCompactionEnd(sessionID)
         markPendingContinue(sessionID)
       }).catch((err) => {
         log("[preemptive-compaction] compaction failed", { sessionID, error: err })
       }).finally(() => {
+        markCompactionEnd(sessionID)
         state.compactionInProgress.delete(sessionID)
       })
 
