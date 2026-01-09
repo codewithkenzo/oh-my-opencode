@@ -227,30 +227,29 @@ export function createPreemptiveCompactionHook(
         }
       }
 
-      await ctx.client.session.summarize({
+      // Non-blocking: trigger compaction without awaiting to prevent streaming interruption
+      ctx.client.session.summarize({
         path: { id: sessionID },
         body: { providerID, modelID },
         query: { directory: ctx.directory },
+      }).then(() => {
+        showToast(ctx, {
+          title: "Compaction Complete",
+          message: "Session compacted. Send any message to continue.",
+          variant: "success",
+          duration: 2000,
+        })
+        markCompactionEnd(sessionID)
+        markPendingContinue(sessionID)
+      }).catch((err) => {
+        log("[preemptive-compaction] compaction failed", { sessionID, error: err })
+      }).finally(() => {
+        state.compactionInProgress.delete(sessionID)
       })
 
-      showToast(ctx, {
-        title: "Compaction Complete",
-        message: "Session compacted. Send any message to continue.",
-        variant: "success",
-        duration: 2000,
-      })
-
-      markCompactionEnd(sessionID)
-      state.compactionInProgress.delete(sessionID)
-
-      // Don't auto-continue - this was causing double compaction cascade
-      // Let user send any message to continue
-      markPendingContinue(sessionID)
       return
     } catch (err) {
       log("[preemptive-compaction] compaction failed", { sessionID, error: err })
-    } finally {
-      markCompactionEnd(sessionID)
       state.compactionInProgress.delete(sessionID)
     }
   }
