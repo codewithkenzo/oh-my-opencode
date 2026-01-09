@@ -105,3 +105,18 @@ export function clearAllSignatures(): void {
   signatureStore.clear()
   sessionIdStore.clear()
 }
+
+/**
+ * Get the most recent signature regardless of session key.
+ * Used by thinking-block-validator to inject signatures into synthetic thinking blocks.
+ *
+ * @returns The most recently stored signature, or undefined
+ */
+export function getLatestSignature(): string | undefined {
+  if (signatureStore.size === 0) {
+    return undefined
+  }
+  // Return the last value in the map (most recently added)
+  const entries = Array.from(signatureStore.entries())
+  return entries[entries.length - 1]?.[1]
+}

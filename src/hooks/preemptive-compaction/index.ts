@@ -197,33 +197,40 @@ export function createPreemptiveCompactionHook(
 
     log("[preemptive-compaction] triggering compaction", { sessionID, usageRatio })
 
-    if (onBeforeSummarize) {
-      await onBeforeSummarize({
-        sessionID,
-        providerID,
-        modelID,
-        usageRatio,
-        directory: ctx.directory,
-      })
-    }
+    try {
+      if (onBeforeSummarize) {
+        await onBeforeSummarize({
+          sessionID,
+          providerID,
+          modelID,
+          usageRatio,
+          directory: ctx.directory,
+        })
+      }
 
-    // Inject supermemory context if available and enabled
-    const injectMemory = experimental?.inject_supermemory_context !== false
-    if (injectMemory) {
-      const supermemoryIntegration = getSupermemoryIntegration()
-      if (supermemoryIntegration?.isConfigured()) {
-        try {
-          const tags = supermemoryIntegration.getTags(ctx.directory)
-          const memories = await supermemoryIntegration.fetchProjectMemories(tags.project, 10)
-          if (memories.length > 0) {
-            const prompt = createMemoryInjectionPrompt(memories)
-            injectHookMessage(sessionID, prompt, { model: { providerID, modelID } })
-            log("[preemptive-compaction] memory context injected", { memoriesCount: memories.length })
+      // Inject supermemory context if available and enabled
+      const injectMemory = experimental?.inject_supermemory_context !== false
+      if (injectMemory) {
+        const supermemoryIntegration = getSupermemoryIntegration()
+        if (supermemoryIntegration?.isConfigured()) {
+          try {
+            const tags = supermemoryIntegration.getTags(ctx.directory)
+            const memories = await supermemoryIntegration.fetchProjectMemories(tags.project, 10)
+            if (memories.length > 0) {
+              const prompt = createMemoryInjectionPrompt(memories)
+              injectHookMessage(sessionID, prompt, { model: { providerID, modelID } })
+              log("[preemptive-compaction] memory context injected", { memoriesCount: memories.length })
+            }
+          } catch (err) {
+            log("[preemptive-compaction] failed to inject memory context", { error: String(err) })
           }
-        } catch (err) {
-          log("[preemptive-compaction] failed to inject memory context", { error: String(err) })
         }
       }
+    } catch (err) {
+      log("[preemptive-compaction] pre-compaction failed", { sessionID, error: err })
+      markCompactionEnd(sessionID)
+      state.compactionInProgress.delete(sessionID)
+      return
     }
 
     // Non-blocking: trigger compaction without awaiting to prevent streaming interruption

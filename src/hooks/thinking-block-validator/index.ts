@@ -15,6 +15,7 @@
  */
 
 import type { Message, Part } from "@opencode-ai/sdk"
+import { getLatestSignature } from "../../auth/antigravity/thought-signature-store"
 
 interface MessageWithParts {
   info: Message
@@ -105,14 +106,22 @@ function prependThinkingBlock(
     message.parts = []
   }
 
+  // Get the latest signature for multi-turn continuity
+  const signature = getLatestSignature()
+
   // Create synthetic thinking part with unique ID per message
-  const thinkingPart = {
-    type: "thinking" as const,
+  const thinkingPart: Record<string, unknown> = {
+    type: "thinking",
     id: `prt_${message.info.id}_synthetic`,
     sessionID: (message.info as any).sessionID || "",
     messageID: message.info.id,
     thinking: thinkingContent,
     synthetic: true,
+  }
+
+  // Inject signature for Claude extended thinking continuity
+  if (signature) {
+    thinkingPart.signature = signature
   }
 
   // Prepend to parts array
