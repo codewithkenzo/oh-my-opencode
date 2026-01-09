@@ -1,4 +1,5 @@
 import { tool } from "@opencode-ai/plugin/tool"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 import {
   CIVITAI_SEARCH_DESCRIPTION,
   CIVITAI_GET_DESCRIPTION,
@@ -7,7 +8,7 @@ import {
 import { searchModels, getModel, searchTags } from "./client"
 import { formatModelsResponse, formatModel, formatTagsResponse } from "./formatters"
 
-export const civitai_search = tool({
+export const civitai_search: ToolDefinition = tool({
   description: CIVITAI_SEARCH_DESCRIPTION,
   args: {
     query: tool.schema.string().optional().describe("Search models by name"),
@@ -50,7 +51,7 @@ export const civitai_search = tool({
   },
 })
 
-export const civitai_get = tool({
+export const civitai_get: ToolDefinition = tool({
   description: CIVITAI_GET_DESCRIPTION,
   args: {
     id: tool.schema.number().describe("Model ID"),
@@ -66,7 +67,7 @@ export const civitai_get = tool({
   },
 })
 
-export const civitai_tags = tool({
+export const civitai_tags: ToolDefinition = tool({
   description: CIVITAI_TAGS_DESCRIPTION,
   args: {
     query: tool.schema.string().optional().describe("Filter tags by name"),

@@ -1,4 +1,5 @@
 import { tool } from "@opencode-ai/plugin/tool"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 import { getAllServers } from "./config"
 import {
   DEFAULT_MAX_REFERENCES,
@@ -34,7 +35,7 @@ import type {
 
 
 
-export const lsp_hover = tool({
+export const lsp_hover: ToolDefinition = tool({
   description: "Get type info, docs, and signature for a symbol at position.",
   args: {
     filePath: tool.schema.string(),
@@ -55,7 +56,7 @@ export const lsp_hover = tool({
   },
 })
 
-export const lsp_goto_definition = tool({
+export const lsp_goto_definition: ToolDefinition = tool({
   description: "Jump to symbol definition. Find WHERE something is defined.",
   args: {
     filePath: tool.schema.string(),
@@ -92,7 +93,7 @@ export const lsp_goto_definition = tool({
   },
 })
 
-export const lsp_find_references = tool({
+export const lsp_find_references: ToolDefinition = tool({
   description: "Find ALL usages/references of a symbol across the entire workspace.",
   args: {
     filePath: tool.schema.string(),
@@ -129,7 +130,7 @@ export const lsp_find_references = tool({
   },
 })
 
-export const lsp_document_symbols = tool({
+export const lsp_document_symbols: ToolDefinition = tool({
   description: "Get hierarchical outline of all symbols in a file.",
   args: {
     filePath: tool.schema.string(),
@@ -167,7 +168,7 @@ export const lsp_document_symbols = tool({
   },
 })
 
-export const lsp_workspace_symbols = tool({
+export const lsp_workspace_symbols: ToolDefinition = tool({
   description: "Search symbols by name across ENTIRE workspace.",
   args: {
     filePath: tool.schema.string(),
@@ -202,7 +203,7 @@ export const lsp_workspace_symbols = tool({
   },
 })
 
-export const lsp_diagnostics = tool({
+export const lsp_diagnostics: ToolDefinition = tool({
   description: "Get errors, warnings, hints from language server BEFORE running build.",
   args: {
     filePath: tool.schema.string(),
@@ -249,7 +250,7 @@ export const lsp_diagnostics = tool({
   },
 })
 
-export const lsp_servers = tool({
+export const lsp_servers: ToolDefinition = tool({
   description: "List available LSP servers and installation status.",
   args: {},
   execute: async (_args, context) => {
@@ -271,7 +272,7 @@ export const lsp_servers = tool({
   },
 })
 
-export const lsp_prepare_rename = tool({
+export const lsp_prepare_rename: ToolDefinition = tool({
   description: "Check if rename is valid. Use BEFORE lsp_rename.",
   args: {
     filePath: tool.schema.string(),
@@ -295,7 +296,7 @@ export const lsp_prepare_rename = tool({
   },
 })
 
-export const lsp_rename = tool({
+export const lsp_rename: ToolDefinition = tool({
   description: "Rename symbol across entire workspace. APPLIES changes to all files.",
   args: {
     filePath: tool.schema.string(),
@@ -318,7 +319,7 @@ export const lsp_rename = tool({
   },
 })
 
-export const lsp_code_actions = tool({
+export const lsp_code_actions: ToolDefinition = tool({
   description: "Get available quick fixes, refactorings, and source actions (organize imports, fix all).",
   args: {
     filePath: tool.schema.string(),
@@ -362,7 +363,7 @@ export const lsp_code_actions = tool({
   },
 })
 
-export const lsp_code_action_resolve = tool({
+export const lsp_code_action_resolve: ToolDefinition = tool({
   description: "Resolve and APPLY a code action from lsp_code_actions.",
   args: {
     filePath: tool.schema.string(),

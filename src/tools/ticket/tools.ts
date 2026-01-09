@@ -1,4 +1,5 @@
 import { tool } from "@opencode-ai/plugin/tool"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 import * as api from "./client"
 import * as format from "./formatters"
 import type { OutputFormat } from "./types"
@@ -10,7 +11,7 @@ const formatArg = {
     .describe("Output format: markdown (default), json, or compact"),
 }
 
-export const ticket_ready = tool({
+export const ticket_ready: ToolDefinition = tool({
   description: "List tickets with no blockers. Filter by status, priority, type, or search.",
   args: {
     status: tool.schema.string().optional().describe("Filter by status"),
@@ -36,7 +37,7 @@ export const ticket_ready = tool({
   },
 })
 
-export const ticket_list = tool({
+export const ticket_list: ToolDefinition = tool({
   description: "List all tickets with optional filtering by status, priority, type, and search.",
   args: {
     status: tool.schema.string().optional().describe("Filter by status"),
@@ -55,7 +56,7 @@ export const ticket_list = tool({
   },
 })
 
-export const ticket_show = tool({
+export const ticket_show: ToolDefinition = tool({
   description: "Show detailed information about a single ticket by ID.",
   args: {
     id: tool.schema.string().describe("Ticket ID (required)"),
@@ -74,7 +75,7 @@ export const ticket_show = tool({
   },
 })
 
-export const ticket_create = tool({
+export const ticket_create: ToolDefinition = tool({
   description:
     "Create a new ticket. Priority: 0=critical, 1=high, 2=medium (default), 3=low, 4=nice-to-have.",
   args: {
@@ -100,7 +101,7 @@ export const ticket_create = tool({
   },
 })
 
-export const ticket_start = tool({
+export const ticket_start: ToolDefinition = tool({
   description: "Start working on a ticket by ID.",
   args: {
     id: tool.schema.string().describe("Ticket ID (required)"),
@@ -115,7 +116,7 @@ export const ticket_start = tool({
   },
 })
 
-export const ticket_close = tool({
+export const ticket_close: ToolDefinition = tool({
   description: "Close a ticket with a completion reason (default: completed).",
   args: {
     id: tool.schema.string().describe("Ticket ID (required)"),
@@ -134,7 +135,7 @@ export const ticket_close = tool({
   },
 })
 
-export const ticket_dep = tool({
+export const ticket_dep: ToolDefinition = tool({
   description: "Add a dependency between two tickets. Makes 'from' depend on 'to'.",
   args: {
     from: tool.schema.string().describe("Dependent ticket ID (required)"),
@@ -150,7 +151,7 @@ export const ticket_dep = tool({
   },
 })
 
-export const ticket_undep = tool({
+export const ticket_undep: ToolDefinition = tool({
   description: "Remove a dependency between two tickets.",
   args: {
     from: tool.schema.string().describe("Dependent ticket ID (required)"),
@@ -166,7 +167,7 @@ export const ticket_undep = tool({
   },
 })
 
-export const ticket_blocked = tool({
+export const ticket_blocked: ToolDefinition = tool({
   description: "List tickets that are blocked by unresolved dependencies.",
   args: {
     status: tool.schema.string().optional().describe("Filter by status"),
@@ -192,7 +193,7 @@ export const ticket_blocked = tool({
   },
 })
 
-export const ticketTools = {
+export const ticketTools: Record<string, ToolDefinition> = {
   ticket_ready,
   ticket_list,
   ticket_show,

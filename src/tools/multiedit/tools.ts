@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { tool } from "@opencode-ai/plugin/tool"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 import type { EditResult } from "./types"
 import { MULTIEDIT_DESCRIPTION } from "./constants"
 
@@ -44,7 +45,7 @@ function escapeRegex(string: string): string {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
-export const multiedit = tool({
+export const multiedit: ToolDefinition = tool({
   description: MULTIEDIT_DESCRIPTION,
   args: {
     filePath: tool.schema.string().describe("The absolute path to the file to modify"),

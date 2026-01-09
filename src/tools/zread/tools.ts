@@ -1,4 +1,5 @@
 import { tool } from "@opencode-ai/plugin/tool"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 import {
   TOOL_DESCRIPTION_SEARCH,
   TOOL_DESCRIPTION_FILE,
@@ -7,7 +8,7 @@ import {
 import { callZreadTool } from "./client"
 import { unescapeZreadOutput, formatError } from "./formatters"
 
-export const zread_search = tool({
+export const zread_search: ToolDefinition = tool({
   description: TOOL_DESCRIPTION_SEARCH,
   args: {
     repo: tool.schema.string().describe("GitHub repository in 'owner/repo' format"),
@@ -28,7 +29,7 @@ export const zread_search = tool({
   },
 })
 
-export const zread_file = tool({
+export const zread_file: ToolDefinition = tool({
   description: TOOL_DESCRIPTION_FILE,
   args: {
     repo: tool.schema.string().describe("GitHub repository in 'owner/repo' format"),
@@ -47,7 +48,7 @@ export const zread_file = tool({
   },
 })
 
-export const zread_structure = tool({
+export const zread_structure: ToolDefinition = tool({
   description: TOOL_DESCRIPTION_STRUCTURE,
   args: {
     repo: tool.schema.string().describe("GitHub repository in 'owner/repo' format"),

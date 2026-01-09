@@ -1,4 +1,5 @@
 import { tool } from "@opencode-ai/plugin"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 import { existsSync, mkdirSync, writeFileSync } from "fs"
 import { dirname, join } from "path"
 import { spawn } from "bun"
@@ -165,7 +166,7 @@ function isBlankPage(url: string): boolean {
   return url === "about:blank" || url.startsWith("about:") || url === ""
 }
 
-export const glare = tool({
+export const glare: ToolDefinition = tool({
   description: GLARE_DESCRIPTION,
   args: {
     action: tool.schema

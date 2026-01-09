@@ -1,4 +1,5 @@
 import { tool } from "@opencode-ai/plugin/tool"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 import { log } from "../../shared/logger"
 
 const GREP_APP_MCP = "https://mcp.grep.app"
@@ -158,7 +159,7 @@ async function callGrepApp(args: Record<string, unknown>): Promise<string> {
   return await callDirectApi(args)
 }
 
-export const grep_app_searchGitHub = tool({
+export const grep_app_searchGitHub: ToolDefinition = tool({
   description: `Find real-world code examples from over a million public GitHub repositories to help answer programming questions.
 
 **IMPORTANT: This tool searches for literal code patterns (like grep), not keywords. Search for actual code that would appear in files:**

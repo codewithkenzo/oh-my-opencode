@@ -1,4 +1,5 @@
 import { tool } from "@opencode-ai/plugin/tool"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 
 const CODESEARCH_DESCRIPTION = `Search and get relevant context for any programming task using Exa Code API. Provides the highest quality and freshest context for libraries, SDKs, and APIs. Use this tool for ANY question or task related to programming. Returns comprehensive code examples, documentation, and API references.
 
@@ -21,7 +22,7 @@ interface McpResponse {
   }
 }
 
-export const codesearch = tool({
+export const codesearch: ToolDefinition = tool({
   description: CODESEARCH_DESCRIPTION,
   args: {
     query: tool.schema.string().describe(

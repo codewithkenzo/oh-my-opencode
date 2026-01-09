@@ -1,4 +1,5 @@
 import { tool } from "@opencode-ai/plugin/tool"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 import * as client from "./client"
 import * as formatters from "./formatters"
 import { OutputFormat, SyncthingError, type Connection } from "./types"
@@ -11,7 +12,7 @@ const formatArg = {
     .describe("Output format: markdown (default), json, or compact"),
 }
 
-export const syncthing_status = tool({
+export const syncthing_status: ToolDefinition = tool({
   description: constants.SYNCTHING_STATUS_DESCRIPTION,
   args: {
     ...formatArg,
@@ -29,7 +30,7 @@ export const syncthing_status = tool({
   },
 })
 
-export const syncthing_folders = tool({
+export const syncthing_folders: ToolDefinition = tool({
   description: constants.SYNCTHING_FOLDERS_DESCRIPTION,
   args: {
     ...formatArg,
@@ -47,7 +48,7 @@ export const syncthing_folders = tool({
   },
 })
 
-export const syncthing_folder_add = tool({
+export const syncthing_folder_add: ToolDefinition = tool({
   description: constants.SYNCTHING_FOLDER_ADD_DESCRIPTION,
   args: {
     id: tool.schema.string().describe("Unique folder identifier (e.g., 'my-project')"),
@@ -65,7 +66,7 @@ export const syncthing_folder_add = tool({
   },
 })
 
-export const syncthing_folder_remove = tool({
+export const syncthing_folder_remove: ToolDefinition = tool({
   description: constants.SYNCTHING_FOLDER_REMOVE_DESCRIPTION,
   args: {
     id: tool.schema.string().describe("Folder ID to remove"),
@@ -81,7 +82,7 @@ export const syncthing_folder_remove = tool({
   },
 })
 
-export const syncthing_folder_pause = tool({
+export const syncthing_folder_pause: ToolDefinition = tool({
   description: constants.SYNCTHING_FOLDER_PAUSE_DESCRIPTION,
   args: {
     id: tool.schema.string().describe("Folder ID"),
@@ -98,7 +99,7 @@ export const syncthing_folder_pause = tool({
   },
 })
 
-export const syncthing_folder_rescan = tool({
+export const syncthing_folder_rescan: ToolDefinition = tool({
   description: constants.SYNCTHING_FOLDER_RESCAN_DESCRIPTION,
   args: {
     id: tool.schema.string().describe("Folder ID to rescan"),
@@ -114,7 +115,7 @@ export const syncthing_folder_rescan = tool({
   },
 })
 
-export const syncthing_devices = tool({
+export const syncthing_devices: ToolDefinition = tool({
   description: constants.SYNCTHING_DEVICES_DESCRIPTION,
   args: {
     ...formatArg,
@@ -132,7 +133,7 @@ export const syncthing_devices = tool({
   },
 })
 
-export const syncthing_device_add = tool({
+export const syncthing_device_add: ToolDefinition = tool({
   description: constants.SYNCTHING_DEVICE_ADD_DESCRIPTION,
   args: {
     device_id: tool.schema.string().describe("Syncthing device ID (56 chars with hyphens)"),
@@ -149,7 +150,7 @@ export const syncthing_device_add = tool({
   },
 })
 
-export const syncthing_device_remove = tool({
+export const syncthing_device_remove: ToolDefinition = tool({
   description: constants.SYNCTHING_DEVICE_REMOVE_DESCRIPTION,
   args: {
     device_id: tool.schema.string().describe("Device ID to remove"),
@@ -165,7 +166,7 @@ export const syncthing_device_remove = tool({
   },
 })
 
-export const syncthing_share = tool({
+export const syncthing_share: ToolDefinition = tool({
   description: constants.SYNCTHING_SHARE_DESCRIPTION,
   args: {
     folder_id: tool.schema.string().describe("Folder ID to share"),
@@ -182,7 +183,7 @@ export const syncthing_share = tool({
   },
 })
 
-export const syncthing_unshare = tool({
+export const syncthing_unshare: ToolDefinition = tool({
   description: constants.SYNCTHING_UNSHARE_DESCRIPTION,
   args: {
     folder_id: tool.schema.string().describe("Folder ID"),
@@ -199,7 +200,7 @@ export const syncthing_unshare = tool({
   },
 })
 
-export const syncthing_ignores_get = tool({
+export const syncthing_ignores_get: ToolDefinition = tool({
   description: constants.SYNCTHING_IGNORES_GET_DESCRIPTION,
   args: {
     folder_id: tool.schema.string().describe("Folder ID"),
@@ -215,7 +216,7 @@ export const syncthing_ignores_get = tool({
   },
 })
 
-export const syncthing_ignores_set = tool({
+export const syncthing_ignores_set: ToolDefinition = tool({
   description: constants.SYNCTHING_IGNORES_SET_DESCRIPTION,
   args: {
     folder_id: tool.schema.string().describe("Folder ID"),
@@ -232,7 +233,7 @@ export const syncthing_ignores_set = tool({
   },
 })
 
-export const syncthing_versioning = tool({
+export const syncthing_versioning: ToolDefinition = tool({
   description: constants.SYNCTHING_VERSIONING_DESCRIPTION,
   args: {
     folder_id: tool.schema.string().describe("Folder ID"),
@@ -256,7 +257,7 @@ export const syncthing_versioning = tool({
   },
 })
 
-export const syncthing_connections = tool({
+export const syncthing_connections: ToolDefinition = tool({
   description: constants.SYNCTHING_CONNECTIONS_DESCRIPTION,
   args: {
     ...formatArg,
@@ -274,7 +275,7 @@ export const syncthing_connections = tool({
   },
 })
 
-export const syncthingTools = {
+export const syncthingTools: Record<string, ToolDefinition> = {
   syncthing_status,
   syncthing_folders,
   syncthing_folder_add,

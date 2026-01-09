@@ -1,4 +1,5 @@
 import { tool } from "@opencode-ai/plugin/tool"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 
 const CONTEXT7_API_BASE = "https://context7.com/api"
 
@@ -54,7 +55,7 @@ function formatSearchResults(results: SearchResult[]): string {
   }).join("\n----------\n")
 }
 
-export const context7_resolve_library_id = tool({
+export const context7_resolve_library_id: ToolDefinition = tool({
   description: `Resolves a package/product name to a Context7-compatible library ID and returns matching libraries.
 
 You MUST call this function before 'context7_query_docs' to obtain a valid Context7-compatible library ID UNLESS the user explicitly provides a library ID in the format '/org/project' or '/org/project/version' in their query.
@@ -130,7 +131,7 @@ ${resultsText}`
   },
 })
 
-export const context7_query_docs = tool({
+export const context7_query_docs: ToolDefinition = tool({
   description: `Retrieves and queries up-to-date documentation and code examples from Context7 for any programming library or framework.
 
 You must call 'context7_resolve_library_id' first to obtain the exact Context7-compatible library ID required to use this tool, UNLESS the user explicitly provides a library ID in the format '/org/project' or '/org/project/version' in their query.
@@ -176,4 +177,4 @@ IMPORTANT: Do not call this tool more than 3 times per question. If you cannot f
 })
 
 // Keep backward compatibility alias
-export const context7_get_library_docs = context7_query_docs
+export const context7_get_library_docs: ToolDefinition = context7_query_docs

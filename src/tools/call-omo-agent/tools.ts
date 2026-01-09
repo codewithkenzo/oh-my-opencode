@@ -1,4 +1,5 @@
 import { tool, type PluginInput } from "@opencode-ai/plugin"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 import { ALLOWED_AGENTS, CALL_OMO_AGENT_DESCRIPTION } from "./constants"
 import type { CallOmoAgentArgs } from "./types"
 import type { BackgroundManager } from "../../features/background-agent"
@@ -8,7 +9,7 @@ import { resolveAgentAlias } from "../../agents/utils"
 export function createCallOmoAgent(
   ctx: PluginInput,
   backgroundManager: BackgroundManager
-) {
+): ToolDefinition {
   const agentDescriptions = ALLOWED_AGENTS.map(
     (name) => `- ${name}: Specialized agent for ${name} tasks`
   ).join("\n")
