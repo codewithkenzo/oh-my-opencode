@@ -123,10 +123,11 @@ export function getLatestSignature(): string | undefined {
 
 /**
  * Get the most recent signature for a specific session.
- * Falls back to global latest if session has no signature.
+ * Falls back to global latest if session has no signature - this prevents API errors
+ * when thinking blocks require signatures but session-specific one isn't available.
  *
  * @param sessionID - The session ID to get signature for
- * @returns The signature for this session, or undefined
+ * @returns The signature for this session, or fallback to latest, or undefined
  */
 export function getSignatureForSession(sessionID: string): string | undefined {
   const entries = Array.from(sessionIdStore.entries())

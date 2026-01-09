@@ -28,13 +28,15 @@ describe("thought-signature-store", () => {
     })
 
     test("falls back to latest signature when session has no specific signature", () => {
+      // Cross-session fallback is required - Claude API returns errors when
+      // signatures are missing for thinking blocks with tool use
       const otherFetchId = "fetch_other_session"
       const signature = "sig_fallback"
 
       setThoughtSignature(otherFetchId, signature)
 
       const result = getSignatureForSession("ses_unknown")
-      expect(result).toBe(signature)
+      expect(result).toBe(signature) // Fallback, not undefined
     })
 
     test("returns undefined when no signatures exist", () => {
