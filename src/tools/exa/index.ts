@@ -1,4 +1,5 @@
 import { tool } from "@opencode-ai/plugin/tool"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 
 const WEBSEARCH_DESCRIPTION = `Search the web using Exa AI - performs real-time web searches and can scrape content from specific URLs. Supports configurable result counts and returns the content from the most relevant websites.
 
@@ -20,7 +21,7 @@ interface McpResponse {
   }
 }
 
-export const websearch = tool({
+export const websearch: ToolDefinition = tool({
   description: WEBSEARCH_DESCRIPTION,
   args: {
     query: tool.schema.string().describe("Websearch query"),

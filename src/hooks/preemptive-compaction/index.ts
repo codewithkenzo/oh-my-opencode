@@ -15,6 +15,7 @@ import {
 } from "../../features/hook-message-injector"
 import { log } from "../../shared/logger"
 import { showToast } from "../../shared/toast"
+import { clearSessionSignatures } from "../../auth/antigravity/thought-signature-store"
 import {
   isCompactionAllowed,
   markCompactionStart,
@@ -86,6 +87,19 @@ function createState(): PreemptiveCompactionState {
   }
 }
 
+const SESSION_ACTIVITY_TIMEOUT_MS = 30_000
+const sessionActivityMap = new Map<string, number>()
+
+function updateSessionActivity(sessionID: string): void {
+  sessionActivityMap.set(sessionID, Date.now())
+}
+
+function isSessionQuiet(sessionID: string): boolean {
+  const lastActivity = sessionActivityMap.get(sessionID)
+  if (!lastActivity) return true
+  return Date.now() - lastActivity > SESSION_ACTIVITY_TIMEOUT_MS
+}
+
 export function createPreemptiveCompactionHook(
   ctx: PluginInput,
   options?: PreemptiveCompactionOptions
@@ -140,6 +154,11 @@ export function createPreemptiveCompactionHook(
 
     const lastCompaction = state.lastCompactionTime.get(sessionID) ?? 0
     if (Date.now() - lastCompaction < COMPACTION_COOLDOWN_MS) return
+
+    if (!isSessionQuiet(sessionID)) {
+      log("[preemptive-compaction] skipping - session recently active", { sessionID })
+      return
+    }
 
     if (!isCompactionAllowed(sessionID)) {
       log("[preemptive-compaction] skipping - recent compaction in progress or cooling down", { sessionID })
@@ -226,33 +245,35 @@ export function createPreemptiveCompactionHook(
           }
         }
       }
+    } catch (err) {
+      log("[preemptive-compaction] pre-compaction failed", { sessionID, error: err })
+      markCompactionEnd(sessionID)
+      state.compactionInProgress.delete(sessionID)
+      return
+    }
 
-      await ctx.client.session.summarize({
-        path: { id: sessionID },
-        body: { providerID, modelID },
-        query: { directory: ctx.directory },
-      })
-
+    // Non-blocking: trigger compaction without awaiting to prevent streaming interruption
+    ctx.client.session.summarize({
+      path: { id: sessionID },
+      body: { providerID, modelID },
+      query: { directory: ctx.directory },
+    }).then(() => {
       showToast(ctx, {
         title: "Compaction Complete",
         message: "Session compacted. Send any message to continue.",
         variant: "success",
         duration: 2000,
       })
-
-      markCompactionEnd(sessionID)
-      state.compactionInProgress.delete(sessionID)
-
-      // Don't auto-continue - this was causing double compaction cascade
-      // Let user send any message to continue
       markPendingContinue(sessionID)
-      return
-    } catch (err) {
+    }).catch((err) => {
       log("[preemptive-compaction] compaction failed", { sessionID, error: err })
-    } finally {
+    }).finally(() => {
+      clearSessionSignatures(sessionID)
+      log("[preemptive-compaction] cleared session signatures post-compaction", { sessionID })
+      
       markCompactionEnd(sessionID)
       state.compactionInProgress.delete(sessionID)
-    }
+    })
   }
 
   const eventHandler = async ({ event }: { event: { type: string; properties?: unknown } }) => {
@@ -265,6 +286,17 @@ export function createPreemptiveCompactionHook(
         state.compactionInProgress.delete(sessionInfo.id)
         cleanupSession(sessionInfo.id)
         notifiedThresholds.delete(sessionInfo.id)
+        sessionActivityMap.delete(sessionInfo.id)
+        clearSessionSignatures(sessionInfo.id)
+        log("[preemptive-compaction] cleaned up session on delete", { sessionID: sessionInfo.id })
+      }
+      return
+    }
+
+    if (event.type === "message.created") {
+      const info = props?.info as MessageInfo | undefined
+      if (info?.sessionID) {
+        updateSessionActivity(info.sessionID)
       }
       return
     }

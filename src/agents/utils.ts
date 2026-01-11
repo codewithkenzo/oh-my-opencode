@@ -55,8 +55,36 @@ const DEPRECATED_ALIASES: Record<string, BuiltinAgentName> = {
   "s6 designer": "S6 - designer",
 }
 
+const CANONICAL_NAMES: Record<string, BuiltinAgentName> = {
+  "x1 - explorer": "X1 - explorer",
+  "r2 - researcher": "R2 - researcher",
+  "h3 - bulk builder": "H3 - bulk builder",
+  "t4 - frontend builder": "T4 - frontend builder",
+  "d5 - backend builder": "D5 - backend builder",
+  "f1 - fast builder": "F1 - fast builder",
+  "s6 - designer": "S6 - designer",
+  "g5 - debugger": "G5 - debugger",
+  "w7 - writer": "W7 - writer",
+  "k9 - advisor": "K9 - advisor",
+  "m10 - critic": "M10 - critic",
+  "b3 - router": "B3 - router",
+  "o9 - specialist": "O9 - specialist",
+  "senshi - distributor": "Senshi - distributor",
+  "seichou - growth": "Seichou - growth",
+  "tsunagi - networker": "Tsunagi - networker",
+  "musashi": "Musashi",
+}
+
 export function resolveAgentAlias(name: string): BuiltinAgentName {
-  return (DEPRECATED_ALIASES[name] || name) as BuiltinAgentName
+  const lower = name.toLowerCase()
+  if (CANONICAL_NAMES[lower]) {
+    return CANONICAL_NAMES[lower]
+  }
+  const deprecatedLower = Object.keys(DEPRECATED_ALIASES).find(k => k.toLowerCase() === lower)
+  if (deprecatedLower) {
+    return DEPRECATED_ALIASES[deprecatedLower]
+  }
+  return name as BuiltinAgentName
 }
 
 // Robot code naming: Letter + Number + Role

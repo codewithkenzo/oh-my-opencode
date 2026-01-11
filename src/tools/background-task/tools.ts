@@ -1,7 +1,9 @@
 import { tool, type PluginInput } from "@opencode-ai/plugin"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 import { existsSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 import type { BackgroundManager, BackgroundTask } from "../../features/background-agent"
+import { resolveAgentAlias } from "../../agents/utils"
 import type { BackgroundTaskArgs, BackgroundOutputArgs, BackgroundCancelArgs } from "./types"
 import { BACKGROUND_TASK_DESCRIPTION, BACKGROUND_OUTPUT_DESCRIPTION, BACKGROUND_CANCEL_DESCRIPTION } from "./constants"
 import { findNearestMessageWithFields, MESSAGE_STORAGE } from "../../features/hook-message-injector"
@@ -37,7 +39,7 @@ function formatDuration(start: Date, end?: Date): string {
   }
 }
 
-export function createBackgroundTask(manager: BackgroundManager) {
+export function createBackgroundTask(manager: BackgroundManager): ToolDefinition {
   return tool({
     description: BACKGROUND_TASK_DESCRIPTION,
     args: {
@@ -50,6 +52,8 @@ export function createBackgroundTask(manager: BackgroundManager) {
         return `❌ Agent parameter is required. Please specify which agent to use (e.g., "X1 - explorer", "R2 - researcher", "T4 - frontend builder", etc.)`
       }
 
+      const resolvedAgent = resolveAgentAlias(args.agent.trim())
+
       try {
         const messageDir = getMessageDir(toolContext.sessionID)
         const prevMessage = messageDir ? findNearestMessageWithFields(messageDir) : null
@@ -60,7 +64,7 @@ export function createBackgroundTask(manager: BackgroundManager) {
         const task = await manager.launch({
           description: args.description,
           prompt: args.prompt,
-          agent: args.agent.trim(),
+          agent: resolvedAgent,
           parentSessionID: toolContext.sessionID,
           parentMessageID: toolContext.messageID,
           parentModel,
@@ -188,7 +192,7 @@ Session ID: ${task.sessionID}
 ${textContent || "(No text output)"}`
 }
 
-export function createBackgroundOutput(manager: BackgroundManager, client: OpencodeClient) {
+export function createBackgroundOutput(manager: BackgroundManager, client: OpencodeClient): ToolDefinition {
   return tool({
     description: BACKGROUND_OUTPUT_DESCRIPTION,
     args: {
@@ -254,7 +258,7 @@ export function createBackgroundOutput(manager: BackgroundManager, client: Openc
   })
 }
 
-export function createBackgroundCancel(manager: BackgroundManager, client: OpencodeClient) {
+export function createBackgroundCancel(manager: BackgroundManager, client: OpencodeClient): ToolDefinition {
   return tool({
     description: BACKGROUND_CANCEL_DESCRIPTION,
     args: {

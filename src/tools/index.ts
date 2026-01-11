@@ -78,6 +78,8 @@ import {
   ripple_suggest,
 } from './raindrop'
 
+import { zread_search, zread_file, zread_structure } from './zread'
+
 export { interactive_bash, startBackgroundCheck as startTmuxCheck } from "./interactive-bash"
 export { getTmuxPath } from "./interactive-bash/utils"
 
@@ -88,6 +90,7 @@ import {
 } from "./background-task"
 
 import type { PluginInput } from "@opencode-ai/plugin"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 import type { BackgroundManager } from "../features/background-agent"
 
 type OpencodeClient = PluginInput["client"]
@@ -96,7 +99,7 @@ export { createCallOmoAgent } from "./call-omo-agent"
 export { createLookAt } from "./look-at"
 export { createSupermemoryTool } from "./supermemory"
 
-export function createBackgroundTools(manager: BackgroundManager, client: OpencodeClient) {
+export function createBackgroundTools(manager: BackgroundManager, client: OpencodeClient): Record<string, ToolDefinition> {
   return {
     background_task: createBackgroundTask(manager),
     background_output: createBackgroundOutput(manager, client),
@@ -104,7 +107,7 @@ export function createBackgroundTools(manager: BackgroundManager, client: Openco
   }
 }
 
-export const builtinTools = {
+export const builtinTools: Record<string, ToolDefinition> = {
   lsp_hover,
   lsp_goto_definition,
   lsp_find_references,
@@ -159,4 +162,7 @@ export const builtinTools = {
   civitai_get,
   civitai_tags,
   ...syncthingTools,
+  zread_search,
+  zread_file,
+  zread_structure,
 }

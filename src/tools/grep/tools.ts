@@ -1,8 +1,9 @@
 import { tool } from "@opencode-ai/plugin/tool"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 import { runRg } from "./cli"
 import { formatGrepResult } from "./utils"
 
-export const grep = tool({
+export const grep: ToolDefinition = tool({
   description:
     "Fast content search tool with safety limits (60s timeout, 10MB output). " +
     "Searches file contents using regular expressions. " +

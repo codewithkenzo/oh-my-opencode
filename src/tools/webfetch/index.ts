@@ -1,4 +1,5 @@
 import { tool } from "@opencode-ai/plugin/tool"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 
 const WEBFETCH_DESCRIPTION = `Fetches content from a specified URL. Takes a URL and fetches the content, converting HTML to markdown when requested. Use this tool when you need to retrieve and analyze web content.
 
@@ -13,7 +14,7 @@ const MAX_RESPONSE_SIZE = 5 * 1024 * 1024 // 5MB
 const DEFAULT_TIMEOUT = 30 * 1000 // 30 seconds
 const MAX_TIMEOUT = 120 * 1000 // 2 minutes
 
-export const webfetch = tool({
+export const webfetch: ToolDefinition = tool({
   description: WEBFETCH_DESCRIPTION,
   args: {
     url: tool.schema.string().describe("The URL to fetch content from"),

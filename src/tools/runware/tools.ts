@@ -1,4 +1,5 @@
 import { tool } from "@opencode-ai/plugin/tool"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 import { writeFileSync, mkdirSync, existsSync } from "fs"
 import { dirname } from "path"
 import {
@@ -19,7 +20,7 @@ import {
   generateVideo,
 } from "./client"
 
-export const runwareGenerate = tool({
+export const runwareGenerate: ToolDefinition = tool({
   description: TOOL_DESCRIPTION,
   args: {
     prompt: tool.schema.string().describe("Image generation prompt (be detailed)"),
@@ -69,7 +70,7 @@ export const runwareGenerate = tool({
   },
 })
 
-export const runwareRemoveBg = tool({
+export const runwareRemoveBg: ToolDefinition = tool({
   description: TOOL_DESCRIPTION_REMOVE_BG,
   args: {
     input_image: tool.schema.string().describe("URL or base64 of image"),
@@ -99,7 +100,7 @@ export const runwareRemoveBg = tool({
   },
 })
 
-export const runwareUpscale = tool({
+export const runwareUpscale: ToolDefinition = tool({
   description: TOOL_DESCRIPTION_UPSCALE,
   args: {
     input_image: tool.schema.string().describe("URL or base64 of image"),
@@ -131,7 +132,7 @@ export const runwareUpscale = tool({
   },
 })
 
-export const runwareModelSearch = tool({
+export const runwareModelSearch: ToolDefinition = tool({
   description: TOOL_DESCRIPTION_MODEL_SEARCH,
   args: {
     query: tool.schema.string().describe("Search query for models"),
@@ -163,7 +164,7 @@ export const runwareModelSearch = tool({
   },
 })
 
-export const runwareImg2Img = tool({
+export const runwareImg2Img: ToolDefinition = tool({
   description: TOOL_DESCRIPTION_IMG2IMG,
   args: {
     prompt: tool.schema.string().describe("Transformation prompt"),
@@ -200,7 +201,7 @@ export const runwareImg2Img = tool({
   },
 })
 
-export const runwareVideoGenerate = tool({
+export const runwareVideoGenerate: ToolDefinition = tool({
   description: TOOL_DESCRIPTION_VIDEO,
   args: {
     prompt: tool.schema.string().describe("Video generation prompt (describe action, scene, camera movement)"),
@@ -258,7 +259,7 @@ export const runwareVideoGenerate = tool({
   },
 })
 
-export const runwareVideoFromImage = tool({
+export const runwareVideoFromImage: ToolDefinition = tool({
   description: TOOL_DESCRIPTION_VIDEO_I2V,
   args: {
     prompt: tool.schema.string().describe("Animation prompt (describe motion, not just appearance)"),

@@ -1,4 +1,5 @@
 import { tool } from "@opencode-ai/plugin/tool";
+import type { ToolDefinition } from "@opencode-ai/plugin/tool";
 import * as api from "./client";
 import * as format from "./formatters";
 import { OutputFormat, RaindropAPIError, SearchParamsSchema } from "./types";
@@ -11,7 +12,7 @@ const formatArg = {
 };
 
 // === ripple_collections ===
-export const ripple_collections = tool({
+export const ripple_collections: ToolDefinition = tool({
   description:
     "List all Raindrop.io bookmark collections. Returns collection names, IDs, and bookmark counts.",
   args: {
@@ -31,7 +32,7 @@ export const ripple_collections = tool({
 });
 
 // === ripple_search ===
-export const ripple_search = tool({
+export const ripple_search: ToolDefinition = tool({
   description: `Search and filter Raindrop.io bookmarks. 
 Supports search operators: tag:name, type:link/article/image/video/document, domain:example.com, -notag, match:"phrase".
 Collection IDs: 0=all, -1=unsorted, -99=trash.`,
@@ -80,7 +81,7 @@ Collection IDs: 0=all, -1=unsorted, -99=trash.`,
 });
 
 // === ripple_get ===
-export const ripple_get = tool({
+export const ripple_get: ToolDefinition = tool({
   description: "Get detailed information about a single Raindrop bookmark by ID.",
   args: {
     id: tool.schema.number().describe("Raindrop bookmark ID"),
@@ -100,7 +101,7 @@ export const ripple_get = tool({
 });
 
 // === ripple_create ===
-export const ripple_create = tool({
+export const ripple_create: ToolDefinition = tool({
   description:
     "Create a new Raindrop bookmark. The server will automatically parse the URL for title, excerpt, and cover if not provided.",
   args: {
@@ -149,7 +150,7 @@ export const ripple_create = tool({
 });
 
 // === ripple_tags ===
-export const ripple_tags = tool({
+export const ripple_tags: ToolDefinition = tool({
   description: "List all tags or tags within a specific collection.",
   args: {
     collection: tool.schema
@@ -172,7 +173,7 @@ export const ripple_tags = tool({
 });
 
 // === ripple_tag_add ===
-export const ripple_tag_add = tool({
+export const ripple_tag_add: ToolDefinition = tool({
   description: "Add tags to an existing bookmark. Merges with existing tags.",
   args: {
     id: tool.schema.number().describe("Raindrop bookmark ID"),
@@ -197,7 +198,7 @@ export const ripple_tag_add = tool({
 });
 
 // === ripple_tag_remove ===
-export const ripple_tag_remove = tool({
+export const ripple_tag_remove: ToolDefinition = tool({
   description: "Remove tags from an existing bookmark.",
   args: {
     id: tool.schema.number().describe("Raindrop bookmark ID"),
@@ -221,7 +222,7 @@ export const ripple_tag_remove = tool({
 });
 
 // === ripple_bulk_create ===
-export const ripple_bulk_create = tool({
+export const ripple_bulk_create: ToolDefinition = tool({
   description: "Create multiple bookmarks at once (up to 100). URLs are auto-parsed for metadata.",
   args: {
     urls: tool.schema.array(tool.schema.string()).describe("Array of URLs to bookmark"),
@@ -248,7 +249,7 @@ export const ripple_bulk_create = tool({
 });
 
 // === ripple_bulk_update ===
-export const ripple_bulk_update = tool({
+export const ripple_bulk_update: ToolDefinition = tool({
   description: "Update multiple bookmarks at once. Filter by collection, search query, or specific IDs.",
   args: {
     collection: tool.schema.number().describe("Collection ID to update from"),
@@ -279,7 +280,7 @@ export const ripple_bulk_update = tool({
 });
 
 // === ripple_delete ===
-export const ripple_delete = tool({
+export const ripple_delete: ToolDefinition = tool({
   description: "Delete a single bookmark (moves to Trash, or permanently if already in Trash).",
   args: {
     id: tool.schema.number().describe("Bookmark ID to delete"),
@@ -296,7 +297,7 @@ export const ripple_delete = tool({
 });
 
 // === ripple_bulk_delete ===
-export const ripple_bulk_delete = tool({
+export const ripple_bulk_delete: ToolDefinition = tool({
   description: "Delete multiple bookmarks. Filter by IDs or search. Use collection -99 to permanently delete from Trash.",
   args: {
     collection: tool.schema.number().describe("Collection ID (-99 for permanent delete from Trash)"),
@@ -317,7 +318,7 @@ export const ripple_bulk_delete = tool({
 });
 
 // === ripple_suggest ===
-export const ripple_suggest = tool({
+export const ripple_suggest: ToolDefinition = tool({
   description: "Get AI-suggested collections and tags for a URL or existing bookmark.",
   args: {
     url: tool.schema.string().optional().describe("URL to get suggestions for"),
@@ -351,7 +352,7 @@ export const ripple_suggest = tool({
 });
 
 // === Export all tools ===
-export const rippleTools = {
+export const rippleTools: Record<string, ToolDefinition> = {
   ripple_collections,
   ripple_search,
   ripple_get,

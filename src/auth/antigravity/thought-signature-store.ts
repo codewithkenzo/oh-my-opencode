@@ -105,3 +105,58 @@ export function clearAllSignatures(): void {
   signatureStore.clear()
   sessionIdStore.clear()
 }
+/**
+ * Get the most recent signature regardless of session key.
+ * Used by thinking-block-validator to inject signatures into synthetic thinking blocks.
+ *
+ * @returns The most recently stored signature, or undefined
+ */
+export function getLatestSignature(): string | undefined {
+  if (signatureStore.size === 0) {
+    return undefined
+  }
+  // Return the last value in the map (most recently added)
+  const entries = Array.from(signatureStore.entries())
+  return entries[entries.length - 1]?.[1]
+}
+
+/**
+ * Get the most recent signature for a specific session.
+ * Falls back to global latest if session has no signature - this prevents API errors
+ * when thinking blocks require signatures but session-specific one isn't available.
+ *
+ * @param sessionID - The session ID to get signature for
+ * @returns The signature for this session, or fallback to latest, or undefined
+ */
+export function getSignatureForSession(sessionID: string): string | undefined {
+  const entries = Array.from(sessionIdStore.entries())
+  for (const [fetchInstanceId, storedSessionId] of entries) {
+    if (storedSessionId === sessionID || fetchInstanceId.includes(sessionID)) {
+      const sig = signatureStore.get(fetchInstanceId)
+      if (sig) return sig
+    }
+  }
+
+  return getLatestSignature()
+}
+
+/**
+ * Clear all signatures and session IDs associated with a session.
+ * Called when session is deleted to prevent memory leaks.
+ *
+ * @param sessionID - The session ID to clean up
+ */
+export function clearSessionSignatures(sessionID: string): void {
+  const keysToDelete: string[] = []
+  const entries = Array.from(sessionIdStore.entries())
+  for (const [key, storedSessionId] of entries) {
+    if (storedSessionId === sessionID || key.includes(sessionID)) {
+      keysToDelete.push(key)
+    }
+  }
+
+  for (const key of keysToDelete) {
+    signatureStore.delete(key)
+    sessionIdStore.delete(key)
+  }
+}

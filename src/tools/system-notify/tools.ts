@@ -1,4 +1,5 @@
 import { tool } from "@opencode-ai/plugin"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 import { TOOL_DESCRIPTION } from "./constants"
 import { detectPlatform, execCommand, openPath, convertToWindowsPath } from "./utils"
 
@@ -46,7 +47,7 @@ async function notifyWindows(title: string, message: string, imagePath?: string)
   return execCommand("powershell", ["-NoProfile", "-Command", psCommand])
 }
 
-export const system_notify = tool({
+export const system_notify: ToolDefinition = tool({
   description: TOOL_DESCRIPTION,
   args: {
     message: tool.schema.string().describe("Notification message"),

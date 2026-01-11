@@ -1,4 +1,5 @@
 import { tool } from "@opencode-ai/plugin/tool"
+import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 import {
   SESSION_LIST_DESCRIPTION,
   SESSION_READ_DESCRIPTION,
@@ -9,7 +10,7 @@ import { getAllSessions, getSessionInfo, readSessionMessages, readSessionTodos, 
 import { filterSessionsByDate, formatSessionInfo, formatSessionList, formatSessionMessages, formatSearchResults, searchInSession } from "./utils"
 import type { SessionListArgs, SessionReadArgs, SessionSearchArgs, SessionInfoArgs } from "./types"
 
-export const session_list = tool({
+export const session_list: ToolDefinition = tool({
   description: SESSION_LIST_DESCRIPTION,
   args: {
     limit: tool.schema.number().optional().describe("Maximum number of sessions to return"),
@@ -35,7 +36,7 @@ export const session_list = tool({
   },
 })
 
-export const session_read = tool({
+export const session_read: ToolDefinition = tool({
   description: SESSION_READ_DESCRIPTION,
   args: {
     session_id: tool.schema.string().describe("Session ID to read"),
@@ -64,7 +65,7 @@ export const session_read = tool({
   },
 })
 
-export const session_search = tool({
+export const session_search: ToolDefinition = tool({
   description: SESSION_SEARCH_DESCRIPTION,
   args: {
     query: tool.schema.string().describe("Search query string"),
@@ -87,7 +88,7 @@ export const session_search = tool({
   },
 })
 
-export const session_info = tool({
+export const session_info: ToolDefinition = tool({
   description: SESSION_INFO_DESCRIPTION,
   args: {
     session_id: tool.schema.string().describe("Session ID to inspect"),
