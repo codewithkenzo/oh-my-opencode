@@ -55,7 +55,7 @@ function parseAllowedTools(allowedTools: string | undefined): string[] | undefin
   return allowedTools.split(/\s+/).filter(Boolean)
 }
 
-async function loadSkillFromPath(
+export async function loadSkillFromPath(
   skillPath: string,
   resolvedPath: string,
   defaultName: string,

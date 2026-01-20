@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "bun:test"
 import { mkdirSync, writeFileSync, rmSync } from "fs"
 import { join } from "path"
 import { tmpdir } from "os"
+import { loadSkillFromPath } from "./loader"
 
 const TEST_DIR = join(tmpdir(), "skill-loader-test-" + Date.now())
 const SKILLS_DIR = join(TEST_DIR, ".opencode", "skill")
@@ -269,50 +270,28 @@ Skill body.
         process.chdir(originalCwd)
       }
     })
-    })
-    })
-    
+  })
+})
+
 describe("skill loader - recursive merge", () => {
-      const FIXTURES_DIR = join(__dirname, "__fixtures__")
-      
-      it("merges single subdir .md files", async () => {
-        const skillPath = join(FIXTURES_DIR, "multi-file-skill", "SKILL.md")
-        const resolvedPath = join(FIXTURES_DIR, "multi-file-skill")
-        
-        const skill = await loadSkillFromPath(skillPath, resolvedPath, "multi-file-skill", "opencode-project")
-        
-        expect(skill).not.toBeNull()
-        const template = skill!.definition.template
-        
-        // Should include SKILL.md content
-        expect(template).toContain("Base content here")
-        
-        // Should include merged subdir content
-        expect(template).toContain("API content here")
-        expect(template).toContain("Auth content here")
-        
-        // Should have merge comment (partial match - .toContain() is forgiving)
-        expect(template).toContain("<!-- Merged from subdirectories")
-      })
-    })
   const FIXTURES_DIR = join(__dirname, "__fixtures__")
-      
+
   it("merges single subdir .md files", async () => {
     const skillPath = join(FIXTURES_DIR, "multi-file-skill", "SKILL.md")
     const resolvedPath = join(FIXTURES_DIR, "multi-file-skill")
-        
+
     const skill = await loadSkillFromPath(skillPath, resolvedPath, "multi-file-skill", "opencode-project")
-        
+
     expect(skill).not.toBeNull()
     const template = skill!.definition.template
-        
+
     // Should include SKILL.md content
     expect(template).toContain("Base content here")
-        
+
     // Should include merged subdir content
     expect(template).toContain("API content here")
     expect(template).toContain("Auth content here")
-        
+
     // Should have merge comment (partial match - .toContain() is forgiving)
     expect(template).toContain("<!-- Merged from subdirectories")
   })
