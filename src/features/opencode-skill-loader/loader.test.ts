@@ -295,4 +295,42 @@ describe("skill loader - recursive merge", () => {
     // Should have merge comment (partial match - .toContain() is forgiving)
     expect(template).toContain("<!-- Merged from subdirectories")
   })
+
+  it("merges nested subdirs up to depth 3", async () => {
+    const skillPath = join(FIXTURES_DIR, "nested-skill", "SKILL.md")
+    const resolvedPath = join(FIXTURES_DIR, "nested-skill")
+
+    const skill = await loadSkillFromPath(skillPath, resolvedPath, "nested-skill", "opencode-project")
+
+    expect(skill).not.toBeNull()
+    const template = skill!.definition.template
+
+    // Should include SKILL.md content
+    expect(template).toContain("# Nested Main")
+
+    // Depth 1: rules/base.md
+    expect(template).toContain("Base rules")
+
+    // Depth 2: rules/auth/advanced.md
+    expect(template).toContain("Advanced auth")
+
+    // Depth 3: rules/auth/oauth/spec.md
+    expect(template).toContain("OAuth spec")
+  })
+
+  it("excludes files beyond depth 3", async () => {
+    const skillPath = join(FIXTURES_DIR, "depth-exceeded-skill", "SKILL.md")
+    const resolvedPath = join(FIXTURES_DIR, "depth-exceeded-skill")
+
+    const skill = await loadSkillFromPath(skillPath, resolvedPath, "depth-exceeded-skill", "opencode-project")
+
+    expect(skill).not.toBeNull()
+    const template = skill!.definition.template
+
+    // Should include SKILL.md content
+    expect(template).toContain("# Depth Test")
+
+    // Depth 4 file should NOT be included
+    expect(template).not.toContain("This should NOT appear")
+  })
 })
