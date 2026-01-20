@@ -178,6 +178,7 @@ export interface ExecuteResult {
   success: boolean
   replacementText?: string
   error?: string
+  isSkill?: boolean
 }
 
 export async function executeSlashCommand(parsed: ParsedSlashCommand, options?: ExecutorOptions): Promise<ExecuteResult> {
@@ -195,6 +196,7 @@ export async function executeSlashCommand(parsed: ParsedSlashCommand, options?: 
     return {
       success: true,
       replacementText: template,
+      isSkill: command.scope === "skill",
     }
   } catch (err) {
     return {

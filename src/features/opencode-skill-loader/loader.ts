@@ -220,6 +220,7 @@ export async function loadOpencodeProjectSkills(): Promise<Record<string, Comman
 
 export interface DiscoverSkillsOptions {
   includeClaudeCodePaths?: boolean
+  forCommandListing?: boolean
 }
 
 export async function discoverAllSkills(): Promise<LoadedSkill[]> {
@@ -234,23 +235,33 @@ export async function discoverAllSkills(): Promise<LoadedSkill[]> {
 }
 
 export async function discoverSkills(options: DiscoverSkillsOptions = {}): Promise<LoadedSkill[]> {
-  const { includeClaudeCodePaths = true } = options
+  const { includeClaudeCodePaths = true, forCommandListing = false } = options
 
   const [opencodeProjectSkills, opencodeGlobalSkills] = await Promise.all([
     discoverOpencodeProjectSkills(),
     discoverOpencodeGlobalSkills(),
   ])
 
+  let skills: LoadedSkill[]
+
   if (!includeClaudeCodePaths) {
-    return [...opencodeProjectSkills, ...opencodeGlobalSkills]
+    skills = [...opencodeProjectSkills, ...opencodeGlobalSkills]
+  } else {
+    const [projectSkills, userSkills] = await Promise.all([
+      discoverProjectClaudeSkills(),
+      discoverUserClaudeSkills(),
+    ])
+    skills = [...opencodeProjectSkills, ...projectSkills, ...opencodeGlobalSkills, ...userSkills]
   }
 
-  const [projectSkills, userSkills] = await Promise.all([
-    discoverProjectClaudeSkills(),
-    discoverUserClaudeSkills(),
-  ])
+  if (forCommandListing) {
+    skills = skills.filter(s => {
+      if (s.scope === "builtin") return true
+      return s.userInvocable !== false
+    })
+  }
 
-  return [...opencodeProjectSkills, ...projectSkills, ...opencodeGlobalSkills, ...userSkills]
+  return skills
 }
 
 export async function getSkillByName(name: string, options: DiscoverSkillsOptions = {}): Promise<LoadedSkill | undefined> {
