@@ -1,10 +1,15 @@
 import type { PluginInput } from "@opencode-ai/plugin"
+import { createSystemDirective, SystemDirectiveTypes } from "../shared/system-directive"
 
 const ANTHROPIC_DISPLAY_LIMIT = 1_000_000
-const ANTHROPIC_ACTUAL_LIMIT = 200_000
+const ANTHROPIC_ACTUAL_LIMIT =
+  process.env.ANTHROPIC_1M_CONTEXT === "true" ||
+  process.env.VERTEX_ANTHROPIC_1M_CONTEXT === "true"
+    ? 1_000_000
+    : 200_000
 const CONTEXT_WARNING_THRESHOLD = 0.70
 
-const CONTEXT_REMINDER = `[SYSTEM REMINDER - 1M Context Window]
+const CONTEXT_REMINDER = `${createSystemDirective(SystemDirectiveTypes.CONTEXT_WINDOW_MONITOR)}
 
 You are using Anthropic Claude with 1M context window.
 You have plenty of context remaining - do NOT rush or skip tasks.
@@ -50,12 +55,7 @@ export function createContextWindowMonitorHook(ctx: PluginInput) {
       if (assistantMessages.length === 0) return
 
       const lastAssistant = assistantMessages[assistantMessages.length - 1]
-
-      const modelID = (lastAssistant as { modelID?: string }).modelID
-
-      // Support direct Anthropic AND all Google/Antigravity models
-      const isSupported = lastAssistant.providerID === "anthropic" || lastAssistant.providerID === "google"
-      if (!isSupported) return
+      if (lastAssistant.providerID !== "anthropic") return
 
       // Use only the last assistant message's input tokens
       // This reflects the ACTUAL current context window usage (post-compaction)

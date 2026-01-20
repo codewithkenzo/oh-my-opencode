@@ -26,14 +26,18 @@ import {
 import { cacheToolInput, getToolInput } from "./tool-input-cache"
 import { recordToolUse, recordToolResult, getTranscriptPath, recordUserMessage } from "./transcript"
 import type { PluginConfig } from "./types"
-import { log, isHookDisabled, showToast } from "../../shared"
-import { injectHookMessage } from "../../features/hook-message-injector"
+import { log, isHookDisabled } from "../../shared"
+import type { ContextCollector } from "../../features/context-injector"
 
 const sessionFirstMessageProcessed = new Set<string>()
 const sessionErrorState = new Map<string, { hasError: boolean; errorMessage?: string }>()
 const sessionInterruptState = new Map<string, { interrupted: boolean }>()
 
-export function createClaudeCodeHooksHook(ctx: PluginInput, config: PluginConfig = {}) {
+export function createClaudeCodeHooksHook(
+  ctx: PluginInput,
+  config: PluginConfig = {},
+  contextCollector?: ContextCollector
+) {
   return {
     "experimental.session.compacting": async (
       input: { sessionID: string },
@@ -107,17 +111,10 @@ export function createClaudeCodeHooksHook(ctx: PluginInput, config: PluginConfig
           path: { id: input.sessionID },
         })
         parentSessionId = sessionInfo.data?.parentID
-      } catch (e) {
-        log(`[claude-code-hooks] Error getting parent session ID: ${e instanceof Error ? e.message : String(e)}`)
-      }
+      } catch {}
 
       const isFirstMessage = !sessionFirstMessageProcessed.has(input.sessionID)
       sessionFirstMessageProcessed.add(input.sessionID)
-
-      if (isFirstMessage) {
-        log("Skipping UserPromptSubmit hooks on first message for title generation", { sessionID: input.sessionID })
-        return
-      }
 
       if (!isHookDisabled(config, "UserPromptSubmit")) {
         const userPromptCtx: UserPromptSubmitContext = {
@@ -146,24 +143,26 @@ export function createClaudeCodeHooksHook(ctx: PluginInput, config: PluginConfig
 
         if (result.messages.length > 0) {
           const hookContent = result.messages.join("\n\n")
-          log(`[claude-code-hooks] Injecting ${result.messages.length} hook messages`, { sessionID: input.sessionID, contentLength: hookContent.length })
-          const message = output.message as {
-            agent?: string
-            model?: { modelID?: string; providerID?: string }
-            path?: { cwd?: string; root?: string }
-            tools?: Record<string, boolean>
+          log(`[claude-code-hooks] Injecting ${result.messages.length} hook messages`, { sessionID: input.sessionID, contentLength: hookContent.length, isFirstMessage })
+
+          if (contextCollector) {
+            log("[DEBUG] Registering hook content to contextCollector", {
+              sessionID: input.sessionID,
+              contentLength: hookContent.length,
+              contentPreview: hookContent.slice(0, 100),
+            })
+            contextCollector.register(input.sessionID, {
+              id: "hook-context",
+              source: "custom",
+              content: hookContent,
+              priority: "high",
+            })
+
+            log("Hook content registered for synthetic message injection", {
+              sessionID: input.sessionID,
+              contentLength: hookContent.length,
+            })
           }
-
-          const success = injectHookMessage(input.sessionID, hookContent, {
-            agent: message.agent,
-            model: message.model,
-            path: message.path ?? { cwd: ctx.directory, root: "/" },
-            tools: message.tools,
-          })
-
-          log(success ? "Hook message injected via file system" : "File injection failed", {
-            sessionID: input.sessionID,
-          })
         }
       }
     },
@@ -172,6 +171,30 @@ export function createClaudeCodeHooksHook(ctx: PluginInput, config: PluginConfig
       input: { tool: string; sessionID: string; callID: string },
       output: { args: Record<string, unknown> }
     ): Promise<void> => {
+      if (input.tool === "todowrite" && typeof output.args.todos === "string") {
+        let parsed: unknown
+        try {
+          parsed = JSON.parse(output.args.todos)
+        } catch (e) {
+          throw new Error(
+            `[todowrite ERROR] Failed to parse todos string as JSON. ` +
+            `Received: ${output.args.todos.length > 100 ? output.args.todos.slice(0, 100) + '...' : output.args.todos} ` +
+            `Expected: Valid JSON array. Pass todos as an array, not a string.`
+          )
+        }
+
+        if (!Array.isArray(parsed)) {
+          throw new Error(
+            `[todowrite ERROR] Parsed JSON is not an array. ` +
+            `Received type: ${typeof parsed}. ` +
+            `Expected: Array of todo objects. Pass todos as [{id, content, status, priority}, ...].`
+          )
+        }
+
+        output.args.todos = parsed
+        log("todowrite: parsed todos string to array", { sessionID: input.sessionID })
+      }
+
       const claudeConfig = await loadClaudeHooksConfig()
       const extendedConfig = await loadPluginExtendedConfig()
 
@@ -191,12 +214,16 @@ export function createClaudeCodeHooksHook(ctx: PluginInput, config: PluginConfig
         const result = await executePreToolUseHooks(preCtx, claudeConfig, extendedConfig)
 
         if (result.decision === "deny") {
-          showToast(ctx, {
-            title: "PreToolUse Hook Executed",
-            message: `✗ ${result.toolName ?? input.tool} ${result.hookName ?? "hook"}: BLOCKED ${result.elapsedMs ?? 0}ms\n${result.inputLines ?? ""}`,
-            variant: "error",
-            duration: 4000,
-          })
+          ctx.client.tui
+            .showToast({
+              body: {
+                title: "PreToolUse Hook Executed",
+                message: `✗ ${result.toolName ?? input.tool} ${result.hookName ?? "hook"}: BLOCKED ${result.elapsedMs ?? 0}ms\n${result.inputLines ?? ""}`,
+                variant: "error",
+                duration: 4000,
+              },
+            })
+            .catch(() => {})
           throw new Error(result.reason ?? "Hook blocked the operation")
         }
 
@@ -216,7 +243,7 @@ export function createClaudeCodeHooksHook(ctx: PluginInput, config: PluginConfig
       const cachedInput = getToolInput(input.sessionID, input.tool, input.callID) || {}
 
       // Use metadata if available and non-empty, otherwise wrap output.output in a structured object
-      // This ensures plugin tools (call_omo_agent, background_task, task) that return strings
+      // This ensures plugin tools (call_omo_agent, delegate_task, task) that return strings
       // get their results properly recorded in transcripts instead of empty {}
       const metadata = output.metadata as Record<string, unknown> | undefined
       const hasMetadata = metadata && typeof metadata === "object" && Object.keys(metadata).length > 0
@@ -249,12 +276,16 @@ export function createClaudeCodeHooksHook(ctx: PluginInput, config: PluginConfig
         const result = await executePostToolUseHooks(postCtx, claudeConfig, extendedConfig)
 
         if (result.block) {
-          showToast(ctx, {
-            title: "PostToolUse Hook Warning",
-            message: result.reason ?? "Hook returned warning",
-            variant: "warning",
-            duration: 4000,
-          })
+          ctx.client.tui
+            .showToast({
+              body: {
+                title: "PostToolUse Hook Warning",
+                message: result.reason ?? "Hook returned warning",
+                variant: "warning",
+                duration: 4000,
+              },
+            })
+            .catch(() => {})
         }
 
         if (result.warnings && result.warnings.length > 0) {
@@ -266,12 +297,16 @@ export function createClaudeCodeHooksHook(ctx: PluginInput, config: PluginConfig
         }
 
         if (result.hookName) {
-          showToast(ctx, {
-            title: "PostToolUse Hook Executed",
-            message: `▶ ${result.toolName ?? input.tool} ${result.hookName}: ${result.elapsedMs ?? 0}ms`,
-            variant: "success",
-            duration: 2000,
-          })
+          ctx.client.tui
+            .showToast({
+              body: {
+                title: "PostToolUse Hook Executed",
+                message: `▶ ${result.toolName ?? input.tool} ${result.hookName}: ${result.elapsedMs ?? 0}ms`,
+                variant: "success",
+                duration: 2000,
+              },
+            })
+            .catch(() => {})
         }
       }
     },
@@ -322,9 +357,7 @@ export function createClaudeCodeHooksHook(ctx: PluginInput, config: PluginConfig
             path: { id: sessionID },
           })
           parentSessionId = sessionInfo.data?.parentID
-        } catch (e) {
-          log(`[claude-code-hooks] Error getting parent session ID for stop hooks: ${e instanceof Error ? e.message : String(e)}`)
-        }
+        } catch {}
 
         if (!isHookDisabled(config, "Stop")) {
           const stopCtx: StopContext = {

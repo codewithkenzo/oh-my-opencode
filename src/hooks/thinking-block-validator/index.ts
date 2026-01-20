@@ -15,7 +15,6 @@
  */
 
 import type { Message, Part } from "@opencode-ai/sdk"
-import { getSignatureForSession } from "../../auth/antigravity/thought-signature-store"
 
 interface MessageWithParts {
   info: Message
@@ -52,6 +51,19 @@ function isExtendedThinkingModel(modelID: string): boolean {
 }
 
 /**
+ * Check if a message has any content parts (tool_use, text, or other non-thinking content)
+ */
+function hasContentParts(parts: Part[]): boolean {
+  if (!parts || parts.length === 0) return false
+
+  return parts.some((part: Part) => {
+    const type = part.type as string
+    // Include tool parts and text parts (anything that's not thinking/reasoning)
+    return type === "tool" || type === "tool_use" || type === "text"
+  })
+}
+
+/**
  * Check if a message starts with a thinking/reasoning block
  */
 function startsWithThinkingBlock(parts: Part[]): boolean {
@@ -60,11 +72,6 @@ function startsWithThinkingBlock(parts: Part[]): boolean {
   const firstPart = parts[0]
   const type = firstPart.type as string
   return type === "thinking" || type === "reasoning"
-}
-
-function hasSyntheticThinkingBlock(parts: Part[]): boolean {
-  if (!parts || parts.length === 0) return false
-  return parts.some((p: Part) => (p as any).synthetic === true)
 }
 
 /**
@@ -100,33 +107,20 @@ function findPreviousThinkingContent(
  */
 function prependThinkingBlock(
   message: MessageWithParts,
-  thinkingContent: string,
-  sessionID: string
+  thinkingContent: string
 ): void {
   if (!message.parts) {
     message.parts = []
   }
 
-  // Get the signature for this session
-  const signature = getSignatureForSession(sessionID)
-
-  // Only inject signature if available - prevents invalid signature errors
-  // If no signature available, the thinking block will still work but may not
-  // maintain full reasoning continuity with previous turns
-
-  // Create synthetic thinking part with unique ID per message
-  const thinkingPart: Record<string, unknown> = {
-    type: "thinking",
-    id: `prt_${message.info.id}_synthetic`,
+  // Create synthetic thinking part
+  const thinkingPart = {
+    type: "thinking" as const,
+    id: `prt_0000000000_synthetic_thinking`,
     sessionID: (message.info as any).sessionID || "",
     messageID: message.info.id,
     thinking: thinkingContent,
     synthetic: true,
-  }
-
-  // Inject signature for Claude extended thinking continuity
-  if (signature) {
-    thinkingPart.signature = signature
   }
 
   // Prepend to parts array
@@ -161,18 +155,15 @@ export function createThinkingBlockValidatorHook(): MessagesTransformHook {
         // Only check assistant messages
         if (msg.info.role !== "assistant") continue
 
-        // Check if message doesn't start with thinking (fixes both tool_use AND text errors)
-        // Claude API requires ALL assistant messages to start with thinking when enabled
-        // Skip if already has synthetic block to prevent loops
-        if (msg.parts && msg.parts.length > 0 && !startsWithThinkingBlock(msg.parts) && !hasSyntheticThinkingBlock(msg.parts)) {
+        // Check if message has content parts but doesn't start with thinking
+        if (hasContentParts(msg.parts) && !startsWithThinkingBlock(msg.parts)) {
           // Find thinking content from previous turns
           const previousThinking = findPreviousThinkingContent(messages, i)
 
           // Prepend thinking block with content from previous turn or placeholder
           const thinkingContent = previousThinking || "[Continuing from previous reasoning]"
 
-          const sessionID = (msg.info as any).sessionID || ""
-          prependThinkingBlock(msg, thinkingContent, sessionID)
+          prependThinkingBlock(msg, thinkingContent)
         }
       }
     },

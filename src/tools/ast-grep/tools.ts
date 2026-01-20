@@ -1,5 +1,4 @@
-import { tool } from "@opencode-ai/plugin/tool"
-import type { ToolDefinition } from "@opencode-ai/plugin/tool"
+import { tool, type ToolDefinition } from "@opencode-ai/plugin/tool"
 import { CLI_LANGUAGES } from "./constants"
 import { runSg } from "./cli"
 import { formatSearchResult, formatReplaceResult } from "./utils"

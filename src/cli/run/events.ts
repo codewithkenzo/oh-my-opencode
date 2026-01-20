@@ -11,6 +11,51 @@ import type {
   ToolResultProps,
 } from "./types"
 
+export function serializeError(error: unknown): string {
+  if (!error) return "Unknown error"
+
+  if (error instanceof Error) {
+    const parts = [error.message]
+    if (error.cause) {
+      parts.push(`Cause: ${serializeError(error.cause)}`)
+    }
+    return parts.join(" | ")
+  }
+
+  if (typeof error === "string") {
+    return error
+  }
+
+  if (typeof error === "object") {
+    const obj = error as Record<string, unknown>
+
+    const messagePaths = [
+      obj.message,
+      obj.error,
+      (obj.data as Record<string, unknown>)?.message,
+      (obj.data as Record<string, unknown>)?.error,
+      (obj.error as Record<string, unknown>)?.message,
+    ]
+
+    for (const msg of messagePaths) {
+      if (typeof msg === "string" && msg.length > 0) {
+        return msg
+      }
+    }
+
+    try {
+      const json = JSON.stringify(error, null, 2)
+      if (json !== "{}") {
+        return json
+      }
+    } catch (_) {
+      void _
+    }
+  }
+
+  return String(error)
+}
+
 export interface EventState {
   mainSessionIdle: boolean
   mainSessionError: boolean
@@ -79,15 +124,11 @@ function logEventVerbose(ctx: RunContext, payload: EventPayload): void {
     }
 
     case "message.part.updated": {
+      // Skip verbose logging for partial message updates
+      // Only log tool invocation state changes, not text streaming
       const partProps = props as MessagePartUpdatedProps | undefined
-      const role = partProps?.info?.role ?? "unknown"
       const part = partProps?.part
-      if (part?.type === "text" && part.text) {
-        const preview = part.text.slice(0, 100).replace(/\n/g, "\\n")
-        console.error(
-          pc.dim(`${sessionTag} message.part (${role}): "${preview}${part.text.length > 100 ? "..." : ""}"`)
-        )
-      } else if (part?.type === "tool-invocation") {
+      if (part?.type === "tool-invocation") {
         const toolPart = part as { toolName?: string; state?: string }
         console.error(
           pc.dim(`${sessionTag} message.part (tool): ${toolPart.toolName} [${toolPart.state}]`)
@@ -126,6 +167,13 @@ function logEventVerbose(ctx: RunContext, payload: EventPayload): void {
       console.error(
         pc.green(`${sessionTag} ✓ TOOL.RESULT: "${preview}${output.length > 200 ? "..." : ""}"`)
       )
+      break
+    }
+
+    case "session.error": {
+      const errorProps = props as SessionErrorProps | undefined
+      const errorMsg = serializeError(errorProps?.error)
+      console.error(pc.red(`${sessionTag} ❌ SESSION.ERROR: ${errorMsg}`))
       break
     }
 
@@ -170,9 +218,7 @@ function handleSessionError(
   const props = payload.properties as SessionErrorProps | undefined
   if (props?.sessionID === ctx.sessionID) {
     state.mainSessionError = true
-    state.lastError = props?.error
-      ? String(props.error instanceof Error ? props.error.message : props.error)
-      : "Unknown error"
+    state.lastError = serializeError(props?.error)
     console.error(pc.red(`\n[session.error] ${state.lastError}`))
   }
 }

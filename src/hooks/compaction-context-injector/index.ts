@@ -1,8 +1,16 @@
-import type { SummarizeContext } from "../preemptive-compaction"
 import { injectHookMessage } from "../../features/hook-message-injector"
 import { log } from "../../shared/logger"
+import { createSystemDirective, SystemDirectiveTypes } from "../../shared/system-directive"
 
-const SUMMARIZE_CONTEXT_PROMPT = `[COMPACTION CONTEXT INJECTION]
+export interface SummarizeContext {
+  sessionID: string
+  providerID: string
+  modelID: string
+  usageRatio: number
+  directory: string
+}
+
+const SUMMARIZE_CONTEXT_PROMPT = `${createSystemDirective(SystemDirectiveTypes.COMPACTION_CONTEXT)}
 
 When summarizing this session, you MUST include the following sections in your summary:
 
@@ -39,7 +47,7 @@ export function createCompactionContextInjector() {
     log("[compaction-context-injector] injecting context", { sessionID: ctx.sessionID })
 
     const success = injectHookMessage(ctx.sessionID, SUMMARIZE_CONTEXT_PROMPT, {
-      agent: "Musashi",
+      agent: "general",
       model: { providerID: ctx.providerID, modelID: ctx.modelID },
       path: { cwd: ctx.directory },
     })

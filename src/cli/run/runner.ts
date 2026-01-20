@@ -2,7 +2,7 @@ import { createOpencode } from "@opencode-ai/sdk"
 import pc from "picocolors"
 import type { RunOptions, RunContext } from "./types"
 import { checkCompletionConditions } from "./completion"
-import { createEventState, processEvents } from "./events"
+import { createEventState, processEvents, serializeError } from "./events"
 
 const POLL_INTERVAL_MS = 500
 const DEFAULT_TIMEOUT_MS = 0
@@ -91,19 +91,15 @@ export async function run(options: RunOptions): Promise<number> {
         if (eventState.mainSessionError) {
           console.error(pc.red(`\n\nSession ended with error: ${eventState.lastError}`))
           console.error(pc.yellow("Check if todos were completed before the error."))
-          abortController.abort()
-          await eventProcessor.catch(() => {})
           cleanup()
-          return 1
+          process.exit(1)
         }
 
         const shouldExit = await checkCompletionConditions(ctx)
         if (shouldExit) {
           console.log(pc.green("\n\nAll tasks completed."))
-          abortController.abort()
-          await eventProcessor.catch(() => {})
           cleanup()
-          return 0
+          process.exit(0)
         }
       }
 
@@ -119,7 +115,7 @@ export async function run(options: RunOptions): Promise<number> {
     if (err instanceof Error && err.name === "AbortError") {
       return 130
     }
-    console.error(pc.red(`Error: ${err}`))
+    console.error(pc.red(`Error: ${serializeError(err)}`))
     return 1
   }
 }

@@ -1,12 +1,13 @@
-import { tool, type PluginInput } from "@opencode-ai/plugin"
-import type { ToolDefinition } from "@opencode-ai/plugin/tool"
+import { tool, type PluginInput, type ToolDefinition } from "@opencode-ai/plugin"
 import { existsSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 import type { BackgroundManager, BackgroundTask } from "../../features/background-agent"
-import { resolveAgentAlias } from "../../agents/utils"
 import type { BackgroundTaskArgs, BackgroundOutputArgs, BackgroundCancelArgs } from "./types"
 import { BACKGROUND_TASK_DESCRIPTION, BACKGROUND_OUTPUT_DESCRIPTION, BACKGROUND_CANCEL_DESCRIPTION } from "./constants"
-import { findNearestMessageWithFields, MESSAGE_STORAGE } from "../../features/hook-message-injector"
+import { findNearestMessageWithFields, findFirstMessageWithAgent, MESSAGE_STORAGE } from "../../features/hook-message-injector"
+import { getSessionAgent } from "../../features/claude-code-session-state"
+import { log } from "../../shared/logger"
+import { consumeNewMessages } from "../../shared/session-cursor"
 
 type OpencodeClient = PluginInput["client"]
 
@@ -39,24 +40,45 @@ function formatDuration(start: Date, end?: Date): string {
   }
 }
 
+type ToolContextWithMetadata = {
+  sessionID: string
+  messageID: string
+  agent: string
+  abort: AbortSignal
+  metadata?: (input: { title?: string; metadata?: Record<string, unknown> }) => void
+}
+
 export function createBackgroundTask(manager: BackgroundManager): ToolDefinition {
   return tool({
     description: BACKGROUND_TASK_DESCRIPTION,
     args: {
-      description: tool.schema.string().describe("Short task description (3-5 words, shown in UI)"),
-      prompt: tool.schema.string().describe("Detailed instructions for the agent (not shown in UI preview)"),
-      agent: tool.schema.string().describe("Agent type to use"),
+      description: tool.schema.string().describe("Short task description (shown in status)"),
+      prompt: tool.schema.string().describe("Full detailed prompt for the agent"),
+      agent: tool.schema.string().describe("Agent type to use (any registered agent)"),
     },
     async execute(args: BackgroundTaskArgs, toolContext) {
+      const ctx = toolContext as ToolContextWithMetadata
+
       if (!args.agent || args.agent.trim() === "") {
-        return `❌ Agent parameter is required. Please specify which agent to use (e.g., "X1 - explorer", "R2 - researcher", "T4 - frontend builder", etc.)`
+        return `❌ Agent parameter is required. Please specify which agent to use (e.g., "explore", "librarian", "build", etc.)`
       }
 
-      const resolvedAgent = resolveAgentAlias(args.agent.trim())
-
       try {
-        const messageDir = getMessageDir(toolContext.sessionID)
+        const messageDir = getMessageDir(ctx.sessionID)
         const prevMessage = messageDir ? findNearestMessageWithFields(messageDir) : null
+        const firstMessageAgent = messageDir ? findFirstMessageWithAgent(messageDir) : null
+        const sessionAgent = getSessionAgent(ctx.sessionID)
+        const parentAgent = ctx.agent ?? sessionAgent ?? firstMessageAgent ?? prevMessage?.agent
+        
+        log("[background_task] parentAgent resolution", {
+          sessionID: ctx.sessionID,
+          ctxAgent: ctx.agent,
+          sessionAgent,
+          firstMessageAgent,
+          prevMessageAgent: prevMessage?.agent,
+          resolvedParentAgent: parentAgent,
+        })
+        
         const parentModel = prevMessage?.model?.providerID && prevMessage?.model?.modelID
           ? { providerID: prevMessage.model.providerID, modelID: prevMessage.model.modelID }
           : undefined
@@ -64,16 +86,30 @@ export function createBackgroundTask(manager: BackgroundManager): ToolDefinition
         const task = await manager.launch({
           description: args.description,
           prompt: args.prompt,
-          agent: resolvedAgent,
-          parentSessionID: toolContext.sessionID,
-          parentMessageID: toolContext.messageID,
+          agent: args.agent.trim(),
+          parentSessionID: ctx.sessionID,
+          parentMessageID: ctx.messageID,
           parentModel,
+          parentAgent,
         })
 
-        return `✓ Task ${task.id} launched (${task.agent}): ${task.description}
+        ctx.metadata?.({
+          title: args.description,
+          metadata: { sessionId: task.sessionID },
+        })
+
+        return `Background task launched successfully.
+
+Task ID: ${task.id}
+Session ID: ${task.sessionID}
+Description: ${task.description}
+Agent: ${task.agent}
+Status: ${task.status}
 
 The system will notify you when the task completes.
-Use \`background_output\` tool with task_id="${task.id}" to check progress.`
+Use \`background_output\` tool with task_id="${task.id}" to check progress:
+- block=false (default): Check status immediately - returns full status info
+- block=true: Wait for completion (rarely needed since system notifies)`
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
         return `❌ Failed to launch background task: ${message}`
@@ -92,23 +128,52 @@ function truncateText(text: string, maxLength: number): string {
 }
 
 function formatTaskStatus(task: BackgroundTask): string {
-  const duration = formatDuration(task.startedAt, task.completedAt)
+  let duration: string
+  if (task.status === "pending" && task.queuedAt) {
+    duration = formatDuration(task.queuedAt, undefined)
+  } else if (task.startedAt) {
+    duration = formatDuration(task.startedAt, task.completedAt)
+  } else {
+    duration = "N/A"
+  }
+  const promptPreview = truncateText(task.prompt, 500)
   
   let progressSection = ""
   if (task.progress?.lastTool) {
     progressSection = `\n| Last tool | ${task.progress.lastTool} |`
   }
 
+  let lastMessageSection = ""
+  if (task.progress?.lastMessage) {
+    const truncated = truncateText(task.progress.lastMessage, 500)
+    const messageTime = task.progress.lastMessageAt 
+      ? task.progress.lastMessageAt.toISOString()
+      : "N/A"
+    lastMessageSection = `
+
+## Last Message (${messageTime})
+
+\`\`\`
+${truncated}
+\`\`\``
+  }
+
   let statusNote = ""
-  if (task.status === "running") {
+  if (task.status === "pending") {
+    statusNote = `
+
+> **Queued**: Task is waiting for a concurrency slot to become available.`
+  } else if (task.status === "running") {
     statusNote = `
 
 > **Note**: No need to wait explicitly - the system will notify you when this task completes.`
   } else if (task.status === "error") {
     statusNote = `
 
-> **Failed**: The task encountered an error.`
+> **Failed**: The task encountered an error. Check the last message for details.`
   }
+
+  const durationLabel = task.status === "pending" ? "Queued for" : "Duration"
 
   return `# Task Status
 
@@ -118,12 +183,21 @@ function formatTaskStatus(task: BackgroundTask): string {
 | Description | ${task.description} |
 | Agent | ${task.agent} |
 | Status | **${task.status}** |
-| Duration | ${duration} |
+| ${durationLabel} | ${duration} |
 | Session ID | \`${task.sessionID}\` |${progressSection}
-${statusNote}`
+${statusNote}
+## Original Prompt
+
+\`\`\`
+${promptPreview}
+\`\`\`${lastMessageSection}`
 }
 
 async function formatTaskResult(task: BackgroundTask, client: OpencodeClient): Promise<string> {
+  if (!task.sessionID) {
+    return `Error: Task has no sessionID`
+  }
+  
   const messagesResult = await client.session.messages({
     path: { id: task.sessionID },
   })
@@ -135,8 +209,13 @@ async function formatTaskResult(task: BackgroundTask, client: OpencodeClient): P
   // Handle both SDK response structures: direct array or wrapped in .data
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const messages = ((messagesResult as any).data ?? messagesResult) as Array<{
-    info?: { role?: string }
-    parts?: Array<{ type?: string; text?: string }>
+    info?: { role?: string; time?: string }
+    parts?: Array<{ 
+      type?: string
+      text?: string
+      content?: string | Array<{ type: string; text?: string }>
+      name?: string
+    }>
   }>
 
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -144,7 +223,7 @@ async function formatTaskResult(task: BackgroundTask, client: OpencodeClient): P
 
 Task ID: ${task.id}
 Description: ${task.description}
-Duration: ${formatDuration(task.startedAt, task.completedAt)}
+Duration: ${formatDuration(task.startedAt ?? new Date(), task.completedAt)}
 Session ID: ${task.sessionID}
 
 ---
@@ -152,33 +231,79 @@ Session ID: ${task.sessionID}
 (No messages found)`
   }
 
-  const assistantMessages = messages.filter(
-    (m) => m.info?.role === "assistant"
+  // Include both assistant messages AND tool messages
+  // Tool results (grep, glob, bash output) come from role "tool"
+  const relevantMessages = messages.filter(
+    (m) => m.info?.role === "assistant" || m.info?.role === "tool"
   )
 
-  if (assistantMessages.length === 0) {
+  if (relevantMessages.length === 0) {
     return `Task Result
 
 Task ID: ${task.id}
 Description: ${task.description}
-Duration: ${formatDuration(task.startedAt, task.completedAt)}
+Duration: ${formatDuration(task.startedAt ?? new Date(), task.completedAt)}
 Session ID: ${task.sessionID}
 
 ---
 
-(No assistant response found)`
+(No assistant or tool response found)`
   }
 
-  const lastMessage = assistantMessages[assistantMessages.length - 1]
-  const textParts = lastMessage?.parts?.filter(
-    (p) => p.type === "text"
-  ) ?? []
-  const textContent = textParts
-    .map((p) => p.text ?? "")
-    .filter((text) => text.length > 0)
-    .join("\n")
+  // Sort by time ascending (oldest first) to process messages in order
+  const sortedMessages = [...relevantMessages].sort((a, b) => {
+    const timeA = String((a as { info?: { time?: string } }).info?.time ?? "")
+    const timeB = String((b as { info?: { time?: string } }).info?.time ?? "")
+    return timeA.localeCompare(timeB)
+  })
+  
+  const newMessages = consumeNewMessages(task.sessionID, sortedMessages)
+  if (newMessages.length === 0) {
+    const duration = formatDuration(task.startedAt ?? new Date(), task.completedAt)
+    return `Task Result
 
-  const duration = formatDuration(task.startedAt, task.completedAt)
+Task ID: ${task.id}
+Description: ${task.description}
+Duration: ${duration}
+Session ID: ${task.sessionID}
+
+---
+
+(No new output since last check)`
+  }
+
+  // Extract content from ALL messages, not just the last one
+  // Tool results may be in earlier messages while the final message is empty
+  const extractedContent: string[] = []
+  
+  for (const message of newMessages) {
+    for (const part of message.parts ?? []) {
+      // Handle both "text" and "reasoning" parts (thinking models use "reasoning")
+      if ((part.type === "text" || part.type === "reasoning") && part.text) {
+        extractedContent.push(part.text)
+      } else if (part.type === "tool_result") {
+        // Tool results contain the actual output from tool calls
+        const toolResult = part as { content?: string | Array<{ type: string; text?: string }> }
+        if (typeof toolResult.content === "string" && toolResult.content) {
+          extractedContent.push(toolResult.content)
+        } else if (Array.isArray(toolResult.content)) {
+          // Handle array of content blocks
+          for (const block of toolResult.content) {
+            // Handle both "text" and "reasoning" parts (thinking models use "reasoning")
+            if ((block.type === "text" || block.type === "reasoning") && block.text) {
+              extractedContent.push(block.text)
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  const textContent = extractedContent
+    .filter((text) => text.length > 0)
+    .join("\n\n")
+
+  const duration = formatDuration(task.startedAt ?? new Date(), task.completedAt)
 
   return `Task Result
 
@@ -275,24 +400,31 @@ export function createBackgroundCancel(manager: BackgroundManager, client: Openc
 
         if (cancelAll) {
           const tasks = manager.getAllDescendantTasks(toolContext.sessionID)
-          const runningTasks = tasks.filter(t => t.status === "running")
+          const cancellableTasks = tasks.filter(t => t.status === "running" || t.status === "pending")
 
-          if (runningTasks.length === 0) {
-            return `✅ No running background tasks to cancel.`
+          if (cancellableTasks.length === 0) {
+            return `✅ No running or pending background tasks to cancel.`
           }
 
           const results: string[] = []
-          for (const task of runningTasks) {
-            client.session.abort({
-              path: { id: task.sessionID },
-            }).catch(() => {})
+          for (const task of cancellableTasks) {
+            if (task.status === "pending") {
+              // Pending task: use manager method (no session to abort)
+              manager.cancelPendingTask(task.id)
+              results.push(`- ${task.id}: ${task.description} (pending)`)
+            } else if (task.sessionID) {
+              // Running task: abort session
+              client.session.abort({
+                path: { id: task.sessionID },
+              }).catch(() => {})
 
-            task.status = "cancelled"
-            task.completedAt = new Date()
-            results.push(`- ${task.id}: ${task.description}`)
+              task.status = "cancelled"
+              task.completedAt = new Date()
+              results.push(`- ${task.id}: ${task.description} (running)`)
+            }
           }
 
-          return `✅ Cancelled ${runningTasks.length} background task(s):
+          return `✅ Cancelled ${cancellableTasks.length} background task(s):
 
 ${results.join("\n")}`
         }
@@ -302,16 +434,33 @@ ${results.join("\n")}`
           return `❌ Task not found: ${args.taskId}`
         }
 
-        if (task.status !== "running") {
+        if (task.status !== "running" && task.status !== "pending") {
           return `❌ Cannot cancel task: current status is "${task.status}".
-Only running tasks can be cancelled.`
+Only running or pending tasks can be cancelled.`
         }
 
+        if (task.status === "pending") {
+          // Pending task: use manager method (no session to abort, no slot to release)
+          const cancelled = manager.cancelPendingTask(task.id)
+          if (!cancelled) {
+            return `❌ Failed to cancel pending task: ${task.id}`
+          }
+
+          return `✅ Pending task cancelled successfully
+
+Task ID: ${task.id}
+Description: ${task.description}
+Status: ${task.status}`
+        }
+
+        // Running task: abort session
         // Fire-and-forget: abort 요청을 보내고 await 하지 않음
         // await 하면 메인 세션까지 abort 되는 문제 발생
-        client.session.abort({
-          path: { id: task.sessionID },
-        }).catch(() => {})
+        if (task.sessionID) {
+          client.session.abort({
+            path: { id: task.sessionID },
+          }).catch(() => {})
+        }
 
         task.status = "cancelled"
         task.completedAt = new Date()

@@ -24,6 +24,6 @@ export interface UpdateCheckResult {
 
 export interface AutoUpdateCheckerOptions {
   showStartupToast?: boolean
-  isMusashiEnabled?: boolean
+  isSisyphusEnabled?: boolean
   autoUpdate?: boolean
 }

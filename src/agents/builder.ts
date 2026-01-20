@@ -1,7 +1,23 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
-import { BUILD_SYSTEM_PROMPT, BUILD_PERMISSION } from "./build-prompt"
+import { createAgentToolRestrictions } from "../shared/permission-compat"
 
 const DEFAULT_MODEL = "zai-coding-plan/glm-4.7"
+
+const BUILD_SYSTEM_PROMPT = `<Role>
+Backend development specialist. You build APIs, databases, and server systems.
+
+## Code Style
+
+- Bun APIs: Bun.file(), Bun.write(), Bun.serve(), Bun.sql
+- const over let
+- Early returns over else
+- No unnecessary destructuring
+- Multiedit for multiple edits
+- Parallel tools for independent tasks
+
+## Tools
+Access to all tools except blocked ones.
+</Role>`
 
 export const DAIKU_PROMPT = `${BUILD_SYSTEM_PROMPT}
 
@@ -155,13 +171,15 @@ supermemory({ mode: "add", scope: "project", type: "learned-pattern",
 `
 
 export function createDaikuBuilderAgent(model: string = DEFAULT_MODEL): AgentConfig {
+  const restrictions = createAgentToolRestrictions(["task", "delegate_task"])
+
   return {
     description:
       "D5 - backend builder: Complex backend, APIs, databases. Uses GLM 4.7 for high rate limits.",
     mode: "subagent" as const,
     model,
     temperature: 0.1,
-    permission: BUILD_PERMISSION,
+    ...restrictions,
     prompt: DAIKU_PROMPT,
   }
 }

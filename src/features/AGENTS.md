@@ -2,77 +2,76 @@
 
 ## OVERVIEW
 
-Claude Code compatibility layer and core feature modules. Enables Claude Code configs/commands/skills/MCPs/hooks to work seamlessly in OpenCode.
+Core feature modules + Claude Code compatibility layer. Background agents, skill MCP, builtin skills/commands, and 5 loaders for Claude Code compat.
 
 ## STRUCTURE
 
 ```
 features/
-├── background-agent/           # Background task management
-│   ├── manager.ts              # Task lifecycle, notifications
-│   ├── manager.test.ts
-│   └── types.ts
-├── claude-code-agent-loader/   # Load agents from ~/.claude/agents/*.md
-├── claude-code-command-loader/ # Load commands from ~/.claude/commands/*.md
-├── claude-code-mcp-loader/     # Load MCPs from .mcp.json
-│   └── env-expander.ts         # ${VAR} expansion
+├── background-agent/           # Task lifecycle (1165 lines manager.ts)
+│   ├── manager.ts              # Launch → poll → complete orchestration
+│   ├── concurrency.ts          # Per-provider/model limits
+│   └── types.ts                # BackgroundTask, LaunchInput
+├── skill-mcp-manager/          # MCP client lifecycle
+│   ├── manager.ts              # Lazy loading, idle cleanup
+│   └── types.ts                # SkillMcpConfig, transports
+├── builtin-skills/             # Playwright, git-master, frontend-ui-ux
+│   └── skills.ts               # 1203 lines of skill definitions
+├── builtin-commands/           # ralph-loop, refactor, init-deep
+│   └── templates/              # Command implementations
+├── claude-code-agent-loader/   # ~/.claude/agents/*.md
+├── claude-code-command-loader/ # ~/.claude/commands/*.md
+├── claude-code-mcp-loader/     # .mcp.json with ${VAR} expansion
+├── claude-code-plugin-loader/  # installed_plugins.json
 ├── claude-code-session-state/  # Session state persistence
-├── claude-code-skill-loader/   # Load skills from ~/.claude/skills/*/SKILL.md
-└── hook-message-injector/      # Inject messages into conversation
+├── opencode-skill-loader/      # Skills from 6 directories
+├── context-injector/           # AGENTS.md/README.md injection
+├── boulder-state/              # Todo state persistence
+├── task-toast-manager/         # Toast notifications
+└── hook-message-injector/      # Message injection
 ```
 
 ## LOADER PRIORITY
 
-Each loader reads from multiple directories (highest priority first):
-
-| Loader | Priority Order |
-|--------|---------------|
+| Type | Priority (highest first) |
+|------|--------------------------|
 | Commands | `.opencode/command/` > `~/.config/opencode/command/` > `.claude/commands/` > `~/.claude/commands/` |
-| Skills | `.claude/skills/` > `~/.claude/skills/` |
+| Skills | `.opencode/skill/` > `~/.config/opencode/skill/` > `.claude/skills/` > `~/.claude/skills/` |
 | Agents | `.claude/agents/` > `~/.claude/agents/` |
 | MCPs | `.claude/.mcp.json` > `.mcp.json` > `~/.claude/.mcp.json` |
 
-## HOW TO ADD A LOADER
+## BACKGROUND AGENT
 
-1. Create directory: `src/features/claude-code-my-loader/`
-2. Create files:
-   - `loader.ts`: Main loader logic with `load()` function
-   - `types.ts`: TypeScript interfaces
-   - `index.ts`: Barrel export
-3. Pattern: Read from multiple dirs, merge with priority, return normalized config
+- **Lifecycle**: `launch` → `poll` (2s interval) → `complete`
+- **Stability**: 3 consecutive polls with same message count = idle
+- **Concurrency**: Per-provider/model limits (e.g., max 3 Opus, max 10 Gemini)
+- **Notification**: Batched system reminders to parent session
+- **Cleanup**: 30m TTL, 3m stale timeout, signal handlers
 
-## BACKGROUND AGENT SPECIFICS
+## SKILL MCP
 
-- **Task lifecycle**: pending → running → completed/failed
-- **Notifications**: OS notification on task complete (configurable)
-- **Result retrieval**: `background_output` tool with task_id
-- **Cancellation**: `background_cancel` with task_id or all=true
+- **Lazy**: Clients created on first tool call
+- **Transports**: stdio (local process), http (SSE/Streamable)
+- **Environment**: `${VAR}` expansion in config
+- **Lifecycle**: 5m idle cleanup, session-scoped
 
 ## CONFIG TOGGLES
 
-Disable features in `oh-my-opencode.json`:
-
-```json
+```jsonc
 {
   "claude_code": {
-    "mcp": false,      // Skip .mcp.json loading
-    "commands": false, // Skip commands/*.md loading
-    "skills": false,   // Skip skills/*/SKILL.md loading
-    "agents": false,   // Skip agents/*.md loading
+    "mcp": false,      // Skip .mcp.json
+    "commands": false, // Skip commands/*.md
+    "skills": false,   // Skip skills/*/SKILL.md
+    "agents": false,   // Skip agents/*.md
     "hooks": false     // Skip settings.json hooks
   }
 }
 ```
 
-## HOOK MESSAGE INJECTOR
+## ANTI-PATTERNS
 
-- **Purpose**: Inject system messages into conversation at specific points
-- **Timing**: PreToolUse, PostToolUse, UserPromptSubmit, Stop
-- **Format**: Returns `{ messages: [{ role: "user", content: "..." }] }`
-
-## ANTI-PATTERNS (FEATURES)
-
-- **Blocking on load**: Loaders run at startup, keep them fast
-- **No error handling**: Always try/catch, log failures, return empty on error
-- **Ignoring priority**: Higher priority dirs must override lower
-- **Modifying user files**: Loaders read-only, never write to ~/.claude/
+- **Sequential delegation**: Use `delegate_task` for parallel
+- **Trust self-reports**: ALWAYS verify agent outputs
+- **Main thread blocks**: No heavy I/O in loader init
+- **Manual versioning**: CI manages package.json version

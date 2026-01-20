@@ -3,11 +3,13 @@ import { Command } from "commander"
 import { install } from "./install"
 import { run } from "./run"
 import { getLocalVersion } from "./get-local-version"
+import { doctor } from "./doctor"
 import type { InstallArgs } from "./types"
 import type { RunOptions } from "./run"
 import type { GetLocalVersionOptions } from "./get-local-version/types"
+import type { DoctorOptions } from "./doctor"
+import packageJson from "../../package.json" with { type: "json" }
 
-const packageJson = await import("../../package.json")
 const VERSION = packageJson.version
 
 const program = new Command()
@@ -24,15 +26,16 @@ program
   .option("--claude <value>", "Claude subscription: no, yes, max20")
   .option("--chatgpt <value>", "ChatGPT subscription: no, yes")
   .option("--gemini <value>", "Gemini integration: no, yes")
+  .option("--copilot <value>", "GitHub Copilot subscription: no, yes")
   .option("--skip-auth", "Skip authentication setup hints")
   .addHelpText("after", `
 Examples:
   $ bunx oh-my-opencode install
-  $ bunx oh-my-opencode install --no-tui --claude=max20 --chatgpt=yes --gemini=yes
-  $ bunx oh-my-opencode install --no-tui --claude=no --chatgpt=no --gemini=no
+  $ bunx oh-my-opencode install --no-tui --claude=max20 --chatgpt=yes --gemini=yes --copilot=no
+  $ bunx oh-my-opencode install --no-tui --claude=no --chatgpt=no --gemini=no --copilot=yes
 
 Model Providers:
-  Claude      Required for Musashi (main orchestrator) and Librarian agents
+  Claude      Required for Sisyphus (main orchestrator) and Librarian agents
   ChatGPT     Powers the Oracle agent for debugging and architecture
   Gemini      Powers frontend, documentation, and multimodal agents
 `)
@@ -42,6 +45,7 @@ Model Providers:
       claude: options.claude,
       chatgpt: options.chatgpt,
       gemini: options.gemini,
+      copilot: options.copilot,
       skipAuth: options.skipAuth ?? false,
     }
     const exitCode = await install(args)
@@ -51,13 +55,13 @@ Model Providers:
 program
   .command("run <message>")
   .description("Run opencode with todo/background task completion enforcement")
-  .option("-a, --agent <name>", "Agent to use (default: Musashi)")
+  .option("-a, --agent <name>", "Agent to use (default: Sisyphus)")
   .option("-d, --directory <path>", "Working directory")
   .option("-t, --timeout <ms>", "Timeout in milliseconds (default: 30 minutes)", parseInt)
   .addHelpText("after", `
 Examples:
   $ bunx oh-my-opencode run "Fix the bug in index.ts"
-  $ bunx oh-my-opencode run --agent Musashi "Implement feature X"
+  $ bunx oh-my-opencode run --agent Sisyphus "Implement feature X"
   $ bunx oh-my-opencode run --timeout 3600000 "Large refactoring task"
 
 Unlike 'opencode run', this command waits until:
@@ -98,6 +102,37 @@ This command shows:
       json: options.json ?? false,
     }
     const exitCode = await getLocalVersion(versionOptions)
+    process.exit(exitCode)
+  })
+
+program
+  .command("doctor")
+  .description("Check oh-my-opencode installation health and diagnose issues")
+  .option("--verbose", "Show detailed diagnostic information")
+  .option("--json", "Output results in JSON format")
+  .option("--category <category>", "Run only specific category")
+  .addHelpText("after", `
+Examples:
+  $ bunx oh-my-opencode doctor
+  $ bunx oh-my-opencode doctor --verbose
+  $ bunx oh-my-opencode doctor --json
+  $ bunx oh-my-opencode doctor --category authentication
+
+Categories:
+  installation     Check OpenCode and plugin installation
+  configuration    Validate configuration files
+  authentication   Check auth provider status
+  dependencies     Check external dependencies
+  tools            Check LSP and MCP servers
+  updates          Check for version updates
+`)
+  .action(async (options) => {
+    const doctorOptions: DoctorOptions = {
+      verbose: options.verbose ?? false,
+      json: options.json ?? false,
+      category: options.category,
+    }
+    const exitCode = await doctor(doctorOptions)
     process.exit(exitCode)
   })
 

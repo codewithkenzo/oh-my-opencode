@@ -23,6 +23,19 @@ function getBinaryName(): string {
 function findCommentCheckerPathSync(): string | null {
   const binaryName = getBinaryName()
 
+  // Check cached binary first (safest path - no module resolution needed)
+  const cachedPath = getCachedBinaryPath()
+  if (cachedPath) {
+    debugLog("found binary in cache:", cachedPath)
+    return cachedPath
+  }
+
+  // Guard against undefined import.meta.url (can happen on Windows during plugin loading)
+  if (!import.meta.url) {
+    debugLog("import.meta.url is undefined, skipping package resolution")
+    return null
+  }
+
   try {
     const require = createRequire(import.meta.url)
     const cliPkgPath = require.resolve("@code-yeongyu/comment-checker/package.json")
@@ -33,14 +46,8 @@ function findCommentCheckerPathSync(): string | null {
       debugLog("found binary in main package:", binaryPath)
       return binaryPath
     }
-  } catch {
-    debugLog("main package not installed")
-  }
-
-  const cachedPath = getCachedBinaryPath()
-  if (cachedPath) {
-    debugLog("found binary in cache:", cachedPath)
-    return cachedPath
+  } catch (err) {
+    debugLog("main package not installed or resolution failed:", err)
   }
 
   debugLog("no binary found in known locations")
@@ -114,9 +121,6 @@ export function startBackgroundInit(): void {
   }
 }
 
-// Legacy export for backwards compatibility (sync, no download)
-export const COMMENT_CHECKER_CLI_PATH = findCommentCheckerPathSync()
-
 export interface HookInput {
   session_id: string
   tool_name: string
@@ -142,9 +146,10 @@ export interface CheckResult {
  * Run comment-checker CLI with given input.
  * @param input Hook input to check
  * @param cliPath Optional explicit path to CLI binary
+ * @param customPrompt Optional custom prompt to replace default warning message
  */
-export async function runCommentChecker(input: HookInput, cliPath?: string): Promise<CheckResult> {
-  const binaryPath = cliPath ?? resolvedCliPath ?? COMMENT_CHECKER_CLI_PATH
+export async function runCommentChecker(input: HookInput, cliPath?: string, customPrompt?: string): Promise<CheckResult> {
+  const binaryPath = cliPath ?? resolvedCliPath ?? getCommentCheckerPathSync()
   
   if (!binaryPath) {
     debugLog("comment-checker binary not found")
@@ -160,7 +165,12 @@ export async function runCommentChecker(input: HookInput, cliPath?: string): Pro
   debugLog("running comment-checker with input:", jsonInput.substring(0, 200))
 
   try {
-    const proc = spawn([binaryPath], {
+    const args = [binaryPath]
+    if (customPrompt) {
+      args.push("--prompt", customPrompt)
+    }
+    
+    const proc = spawn(args, {
       stdin: "pipe",
       stdout: "pipe",
       stderr: "pipe",

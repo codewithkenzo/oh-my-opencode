@@ -5,8 +5,10 @@ export {
   McpNameSchema,
   AgentNameSchema,
   HookNameSchema,
-  MusashiAgentConfigSchema,
+  BuiltinCommandNameSchema,
+  SisyphusAgentConfigSchema,
   ExperimentalConfigSchema,
+  RalphLoopConfigSchema,
 } from "./schema"
 
 export type {
@@ -16,7 +18,9 @@ export type {
   McpName,
   AgentName,
   HookName,
-  MusashiAgentConfig,
+  BuiltinCommandName,
+  SisyphusAgentConfig,
   ExperimentalConfig,
   DynamicContextPruningConfig,
+  RalphLoopConfig,
 } from "./schema"

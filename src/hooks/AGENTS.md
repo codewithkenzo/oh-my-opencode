@@ -2,83 +2,72 @@
 
 ## OVERVIEW
 
-Lifecycle hooks that intercept/modify agent behavior. Inject context, enforce rules, recover from errors, notify on events.
+31 lifecycle hooks intercepting/modifying agent behavior. Events: PreToolUse, PostToolUse, UserPromptSubmit, Stop, onSummarize.
 
 ## STRUCTURE
 
 ```
 hooks/
-├── agent-usage-reminder/       # Remind to use specialized agents
-├── anthropic-auto-compact/     # Auto-compact Claude at token limit
-├── auto-update-checker/        # Version update notifications
-├── background-notification/    # OS notify on background task complete
-├── claude-code-hooks/          # Claude Code settings.json integration
-├── comment-checker/            # Prevent excessive AI comments
-│   ├── filters/                # Filtering rules (docstring, directive, bdd, etc.)
-│   └── output/                 # Output formatting
-├── compaction-context-injector/ # Inject context during compaction
-├── directory-agents-injector/  # Auto-inject AGENTS.md files
-├── directory-readme-injector/  # Auto-inject README.md files
-├── empty-message-sanitizer/    # Sanitize empty messages
-├── interactive-bash-session/   # Tmux session management
-├── keyword-detector/           # Detect ultrawork/search keywords
-├── non-interactive-env/        # CI/headless environment handling
-├── preemptive-compaction/      # Pre-emptive session compaction
+├── sisyphus-orchestrator/      # Main orchestration & delegation (771 lines)
+├── anthropic-context-window-limit-recovery/  # Auto-summarize at token limit
+├── todo-continuation-enforcer.ts # Force TODO completion
+├── ralph-loop/                 # Self-referential dev loop until done
+├── claude-code-hooks/          # settings.json hook compat layer (13 files)
+├── comment-checker/            # Prevents AI slop/excessive comments
+├── auto-slash-command/         # Detects /command patterns
 ├── rules-injector/             # Conditional rules from .claude/rules/
-├── session-recovery/           # Recover from session errors
-├── skill-enforcer/            # Suggest skill loading based on file patterns
-├── think-mode/                 # Auto-detect thinking triggers
-├── context-window-monitor.ts   # Monitor context usage (standalone)
-├── empty-task-response-detector.ts
-├── session-notification.ts     # OS notify on idle (standalone)
-├── todo-continuation-enforcer.ts # Force TODO completion (standalone)
-└── tool-output-truncator.ts    # Truncate verbose outputs (standalone)
+├── directory-agents-injector/  # Auto-injects AGENTS.md files
+├── directory-readme-injector/  # Auto-injects README.md files
+├── preemptive-compaction/      # Triggers summary at 85% context
+├── edit-error-recovery/        # Recovers from tool failures
+├── thinking-block-validator/   # Ensures valid <thinking> format
+├── context-window-monitor.ts   # Reminds agents of remaining headroom
+├── session-recovery/           # Auto-recovers from crashes
+├── think-mode/                 # Dynamic thinking budget
+├── keyword-detector/           # ultrawork/search/analyze modes
+├── background-notification/    # OS notification on task completion
+└── tool-output-truncator.ts    # Prevents context bloat
 ```
-
-## HOOK CATEGORIES
-
-| Category | Hooks | Purpose |
-|----------|-------|---------|
-| Context Injection | directory-agents-injector, directory-readme-injector, rules-injector, compaction-context-injector, skill-enforcer | Auto-inject relevant context |
-| Session Management | session-recovery, anthropic-auto-compact, preemptive-compaction, empty-message-sanitizer | Handle session lifecycle |
-| Output Control | comment-checker, tool-output-truncator | Control agent output quality |
-| Notifications | session-notification, background-notification, auto-update-checker | OS/user notifications |
-| Behavior Enforcement | todo-continuation-enforcer, keyword-detector, think-mode, agent-usage-reminder, skill-enforcer | Enforce agent behavior |
-| Environment | non-interactive-env, interactive-bash-session, context-window-monitor | Adapt to runtime environment |
-| Compatibility | claude-code-hooks | Claude Code settings.json support |
-
-## HOW TO ADD A HOOK
-
-1. Create directory: `src/hooks/my-hook/`
-2. Create files:
-   - `index.ts`: Export `createMyHook(input: PluginInput)`
-   - `constants.ts`: Hook name constant
-   - `types.ts`: TypeScript interfaces (optional)
-   - `storage.ts`: Persistent state (optional)
-3. Return event handlers: `{ PreToolUse?, PostToolUse?, UserPromptSubmit?, Stop?, onSummarize? }`
-4. Export from `src/hooks/index.ts`
-5. Register in main plugin
 
 ## HOOK EVENTS
 
 | Event | Timing | Can Block | Use Case |
 |-------|--------|-----------|----------|
-| PreToolUse | Before tool exec | Yes | Validate, modify input |
-| PostToolUse | After tool exec | No | Add context, warnings |
-| UserPromptSubmit | On user prompt | Yes | Inject messages, block |
-| Stop | Session idle | No | Inject follow-ups |
-| onSummarize | During compaction | No | Preserve critical context |
+| PreToolUse | Before tool | Yes | Validate/modify inputs, inject context |
+| PostToolUse | After tool | No | Append warnings, truncate output |
+| UserPromptSubmit | On prompt | Yes | Keyword detection, mode switching |
+| Stop | Session idle | No | Auto-continue (todo-continuation, ralph-loop) |
+| onSummarize | Compaction | No | Preserve critical state |
 
-## COMMON PATTERNS
+## EXECUTION ORDER
 
-- **Storage**: Use `storage.ts` with JSON file for persistent state across sessions
-- **Once-per-session**: Track injected paths in Set to avoid duplicate injection
-- **Message injection**: Return `{ messages: [...] }` from event handlers
-- **Blocking**: Return `{ blocked: true, message: "reason" }` from PreToolUse
+**chat.message**: keywordDetector → claudeCodeHooks → autoSlashCommand → startWork → ralphLoop
 
-## ANTI-PATTERNS (HOOKS)
+**tool.execute.before**: claudeCodeHooks → nonInteractiveEnv → commentChecker → directoryAgentsInjector → directoryReadmeInjector → rulesInjector
 
-- **Heavy computation** in PreToolUse: Slows every tool call
-- **Blocking without clear reason**: Always provide actionable message
-- **Duplicate injection**: Track what's already injected per session
-- **Ignoring errors**: Always try/catch, log failures, don't crash session
+**tool.execute.after**: editErrorRecovery → delegateTaskRetry → commentChecker → toolOutputTruncator → emptyTaskResponseDetector → claudeCodeHooks
+
+## HOW TO ADD
+
+1. Create `src/hooks/name/` with `index.ts` exporting `createMyHook(ctx)`
+2. Implement event handlers: `"tool.execute.before"`, `"tool.execute.after"`, etc.
+3. Add hook name to `HookNameSchema` in `src/config/schema.ts`
+4. Register in `src/index.ts`:
+   ```typescript
+   const myHook = isHookEnabled("my-hook") ? createMyHook(ctx) : null
+   // Add to event handlers
+   ```
+
+## PATTERNS
+
+- **Session-scoped state**: `Map<sessionID, Set<string>>` for tracking per-session
+- **Conditional execution**: Check `input.tool` before processing
+- **Output modification**: `output.output += "\n${REMINDER}"` to append context
+- **Async state**: Use promises for CLI path resolution, cache results
+
+## ANTI-PATTERNS
+
+- **Blocking non-critical**: Use PostToolUse warnings instead of PreToolUse blocks
+- **Heavy computation**: Keep PreToolUse light - slows every tool call
+- **Redundant injection**: Track injected files to prevent duplicates
+- **Verbose output**: Keep hook messages technical, brief

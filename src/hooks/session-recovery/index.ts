@@ -1,7 +1,6 @@
 import type { PluginInput } from "@opencode-ai/plugin"
 import type { createOpencodeClient } from "@opencode-ai/sdk"
 import type { ExperimentalConfig } from "../../config"
-import { showToast } from "../../shared/toast"
 import {
   findEmptyMessages,
   findEmptyMessageByIndex,
@@ -123,7 +122,7 @@ function extractMessageIndex(error: unknown): number | null {
   return match ? parseInt(match[1], 10) : null
 }
 
-function detectErrorType(error: unknown): RecoveryErrorType {
+export function detectErrorType(error: unknown): RecoveryErrorType {
   const message = getErrorMessage(error)
 
   if (message.includes("tool_use") && message.includes("tool_result")) {
@@ -135,6 +134,8 @@ function detectErrorType(error: unknown): RecoveryErrorType {
     (message.includes("first block") ||
       message.includes("must start with") ||
       message.includes("preceeding") ||
+      message.includes("final block") ||
+      message.includes("cannot be thinking") ||
       (message.includes("expected") && message.includes("found")))
   ) {
     return "thinking_block_order"
@@ -377,12 +378,16 @@ export function createSessionRecoveryHook(ctx: PluginInput, options?: SessionRec
         thinking_disabled_violation: "Stripping thinking blocks...",
       }
 
-      showToast(ctx, {
-        title: toastTitles[errorType],
-        message: toastMessages[errorType],
-        variant: "warning",
-        duration: 3000,
-      })
+      await ctx.client.tui
+        .showToast({
+          body: {
+            title: toastTitles[errorType],
+            message: toastMessages[errorType],
+            variant: "warning",
+            duration: 3000,
+          },
+        })
+        .catch(() => {})
 
       let success = false
 

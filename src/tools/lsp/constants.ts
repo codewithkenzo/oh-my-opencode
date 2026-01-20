@@ -40,8 +40,51 @@ export const DEFAULT_MAX_REFERENCES = 200
 export const DEFAULT_MAX_SYMBOLS = 200
 export const DEFAULT_MAX_DIAGNOSTICS = 200
 
+export const LSP_INSTALL_HINTS: Record<string, string> = {
+  typescript: "npm install -g typescript-language-server typescript",
+  deno: "Install Deno from https://deno.land",
+  vue: "npm install -g @vue/language-server",
+  eslint: "npm install -g vscode-langservers-extracted",
+  oxlint: "npm install -g oxlint",
+  biome: "npm install -g @biomejs/biome",
+  gopls: "go install golang.org/x/tools/gopls@latest",
+  "ruby-lsp": "gem install ruby-lsp",
+  basedpyright: "pip install basedpyright",
+  pyright: "pip install pyright",
+  ty: "pip install ty",
+  ruff: "pip install ruff",
+  "elixir-ls": "See https://github.com/elixir-lsp/elixir-ls",
+  zls: "See https://github.com/zigtools/zls",
+  csharp: "dotnet tool install -g csharp-ls",
+  fsharp: "dotnet tool install -g fsautocomplete",
+  "sourcekit-lsp": "Included with Xcode or Swift toolchain",
+  rust: "rustup component add rust-analyzer",
+  clangd: "See https://clangd.llvm.org/installation",
+  svelte: "npm install -g svelte-language-server",
+  astro: "npm install -g @astrojs/language-server",
+  "bash-ls": "npm install -g bash-language-server",
+  jdtls: "See https://github.com/eclipse-jdtls/eclipse.jdt.ls",
+  "yaml-ls": "npm install -g yaml-language-server",
+  "lua-ls": "See https://github.com/LuaLS/lua-language-server",
+  php: "npm install -g intelephense",
+  dart: "Included with Dart SDK",
+  "terraform-ls": "See https://github.com/hashicorp/terraform-ls",
+  terraform: "See https://github.com/hashicorp/terraform-ls",
+  prisma: "npm install -g prisma",
+  "ocaml-lsp": "opam install ocaml-lsp-server",
+  texlab: "See https://github.com/latex-lsp/texlab",
+  dockerfile: "npm install -g dockerfile-language-server-nodejs",
+  gleam: "See https://gleam.run/getting-started/installing/",
+  "clojure-lsp": "See https://clojure-lsp.io/installation/",
+  nixd: "nix profile install nixpkgs#nixd",
+  tinymist: "See https://github.com/Myriad-Dreamin/tinymist",
+  "haskell-language-server": "ghcup install hls",
+  bash: "npm install -g bash-language-server",
+  "kotlin-ls": "See https://github.com/Kotlin/kotlin-lsp",
+}
+
 // Synced with OpenCode's server.ts
-// https://github.com/sst/opencode/blob/main/packages/opencode/src/lsp/server.ts
+// https://github.com/sst/opencode/blob/dev/packages/opencode/src/lsp/server.ts
 export const BUILTIN_SERVERS: Record<string, Omit<LSPServerConfig, "id">> = {
   typescript: {
     command: ["typescript-language-server", "--stdio"],
@@ -130,6 +173,11 @@ export const BUILTIN_SERVERS: Record<string, Omit<LSPServerConfig, "id">> = {
     command: ["astro-ls", "--stdio"],
     extensions: [".astro"],
   },
+  bash: {
+    command: ["bash-language-server", "start"],
+    extensions: [".sh", ".bash", ".zsh", ".ksh"],
+  },
+  // Keep legacy alias for backward compatibility
   "bash-ls": {
     command: ["bash-language-server", "start"],
     extensions: [".sh", ".bash", ".zsh", ".ksh"],
@@ -154,14 +202,59 @@ export const BUILTIN_SERVERS: Record<string, Omit<LSPServerConfig, "id">> = {
     command: ["dart", "language-server", "--lsp"],
     extensions: [".dart"],
   },
+  terraform: {
+    command: ["terraform-ls", "serve"],
+    extensions: [".tf", ".tfvars"],
+  },
+  // Legacy alias for backward compatibility
   "terraform-ls": {
     command: ["terraform-ls", "serve"],
     extensions: [".tf", ".tfvars"],
   },
+  prisma: {
+    command: ["prisma", "language-server"],
+    extensions: [".prisma"],
+  },
+  "ocaml-lsp": {
+    command: ["ocamllsp"],
+    extensions: [".ml", ".mli"],
+  },
+  texlab: {
+    command: ["texlab"],
+    extensions: [".tex", ".bib"],
+  },
+  dockerfile: {
+    command: ["docker-langserver", "--stdio"],
+    extensions: [".dockerfile"],
+  },
+  gleam: {
+    command: ["gleam", "lsp"],
+    extensions: [".gleam"],
+  },
+  "clojure-lsp": {
+    command: ["clojure-lsp", "listen"],
+    extensions: [".clj", ".cljs", ".cljc", ".edn"],
+  },
+  nixd: {
+    command: ["nixd"],
+    extensions: [".nix"],
+  },
+  tinymist: {
+    command: ["tinymist"],
+    extensions: [".typ", ".typc"],
+  },
+  "haskell-language-server": {
+    command: ["haskell-language-server-wrapper", "--lsp"],
+    extensions: [".hs", ".lhs"],
+  },
+  "kotlin-ls": {
+    command: ["kotlin-lsp"],
+    extensions: [".kt", ".kts"],
+  },
 }
 
 // Synced with OpenCode's language.ts
-// https://github.com/sst/opencode/blob/main/packages/opencode/src/lsp/language.ts
+// https://github.com/sst/opencode/blob/dev/packages/opencode/src/lsp/language.ts
 export const EXT_TO_LANG: Record<string, string> = {
   ".abap": "abap",
   ".bat": "bat",
@@ -275,6 +368,14 @@ export const EXT_TO_LANG: Record<string, string> = {
   ".tf": "terraform",
   ".tfvars": "terraform-vars",
   ".hcl": "hcl",
+  ".nix": "nix",
+  ".typ": "typst",
+  ".typc": "typst",
+  ".ets": "typescript",
+  ".lhs": "haskell",
+  ".kt": "kotlin",
+  ".kts": "kotlin",
+  ".prisma": "prisma",
   // Additional extensions not in OpenCode
   ".h": "c",
   ".hpp": "cpp",

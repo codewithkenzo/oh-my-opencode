@@ -16,7 +16,7 @@ Analyze the issue and determine the debugging mode:
 
 | Symptoms | Mode | Approach |
 |----------|------|----------|
-| CSS, layout, visual glitches | Visual | Use glare screenshots |
+| CSS, layout, visual glitches | Visual | Use browser_screenshot + look_at |
 | API errors, 500s, DB issues | Backend | Use logs, traces |
 | Both/unclear | Hybrid | Start with backend, verify visually |
 
@@ -31,7 +31,7 @@ skill(name: "backend-debugging")     // For API/DB issues
 ## UNIFIED DEBUG PROTOCOL
 
 ### Phase 1: EVIDENCE
-- **Visual**: glare(action="screenshot") + look_at
+- **Visual**: browser_screenshot() + look_at
 - **Backend**: Read error logs, stack traces
 - **Both**: Capture both before proceeding
 
@@ -42,7 +42,7 @@ Form 1-3 ranked hypotheses:
 - What's the data flow?
 
 ### Phase 3: ISOLATION
-- **Visual**: Inspect specific elements with glare(action="styles", selector="...")
+- **Visual**: Get snapshot with browser_snapshot(interactive=true), inspect elements
 - **Backend**: Add strategic logging, test single endpoint
 - Reproduce the issue in isolation
 
@@ -60,11 +60,11 @@ Trace backwards from symptom to source:
 ## VISUAL DEBUGGING TOOLS
 
 \`\`\`ts
-glare(action="navigate", url="http://localhost:3000")
-glare(action="screenshot", output_path="tmp/debug.png")
+browser_open(url="http://localhost:3000")
+browser_screenshot(output_path="tmp/debug.png")
 look_at(file_path="tmp/debug.png", goal="Identify visual issues")
-glare(action="console", level="error")
-glare(action="styles", selector=".problematic-element")
+browser_snapshot(interactive=true)  // Get element refs
+browser_eval(script="getComputedStyle(document.querySelector('.element'))")
 \`\`\`
 
 ## BACKEND DEBUGGING TOOLS

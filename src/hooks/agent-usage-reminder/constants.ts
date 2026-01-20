@@ -1,7 +1,7 @@
 import { join } from "node:path";
-import { xdgData } from "xdg-basedir";
+import { getOpenCodeStorageDir } from "../../shared/data-path";
 
-export const OPENCODE_STORAGE = join(xdgData ?? "", "opencode", "storage");
+export const OPENCODE_STORAGE = getOpenCodeStorageDir();
 export const AGENT_USAGE_REMINDER_STORAGE = join(
   OPENCODE_STORAGE,
   "agent-usage-reminder",
@@ -15,15 +15,16 @@ export const TARGET_TOOLS = new Set([
   "safe_glob",
   "webfetch",
   "context7_resolve-library-id",
+  "context7_query-docs",
+  "websearch_web_search_exa",
   "context7_get-library-docs",
-  "websearch_exa_web_search_exa",
   "grep_app_searchgithub",
 ]);
 
 export const AGENT_TOOLS = new Set([
   "task",
   "call_omo_agent",
-  "background_task",
+  "delegate_task",
 ]);
 
 export const REMINDER_MESSAGE = `
@@ -31,13 +32,13 @@ export const REMINDER_MESSAGE = `
 
 You called a search/fetch tool directly without leveraging specialized agents.
 
-RECOMMENDED: Use background_task with explore/researcher agents for better results:
+RECOMMENDED: Use delegate_task with explore/librarian agents for better results:
 
 \`\`\`
 // Parallel exploration - fire multiple agents simultaneously
-background_task(agent="X1 - explorer", prompt="Find all files matching pattern X")
-background_task(agent="X1 - explorer", prompt="Search for implementation of Y")
-background_task(agent="R2 - researcher", prompt="Lookup documentation for Z")
+delegate_task(agent="explore", prompt="Find all files matching pattern X")
+delegate_task(agent="explore", prompt="Search for implementation of Y") 
+delegate_task(agent="librarian", prompt="Lookup documentation for Z")
 
 // Then continue your work while they run in background
 // System will notify you when each completes
@@ -49,5 +50,5 @@ WHY:
 - Specialized agents have domain expertise
 - Reduces context window usage in main session
 
-ALWAYS prefer: Multiple parallel background_task calls > Direct tool calls
+ALWAYS prefer: Multiple parallel delegate_task calls > Direct tool calls
 `;

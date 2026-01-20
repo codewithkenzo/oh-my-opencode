@@ -1,20 +1,23 @@
-import { existsSync, readdirSync } from "node:fs"
-import { basename, dirname, extname, join } from "node:path"
 import type { PluginInput } from "@opencode-ai/plugin"
-import { getMainSessionID } from "../features/claude-code-session-state"
-import {
-  findNearestMessageWithFields,
-  MESSAGE_STORAGE,
-} from "../features/hook-message-injector"
+import { existsSync, readdirSync } from "node:fs"
+import { join } from "node:path"
 import type { BackgroundManager } from "../features/background-agent"
+import { getMainSessionID, subagentSessions } from "../features/claude-code-session-state"
+import {
+    findNearestMessageWithFields,
+    MESSAGE_STORAGE,
+    type ToolPermission,
+} from "../features/hook-message-injector"
 import { log } from "../shared/logger"
-import { showToast } from "../shared/toast"
-import { isNonInteractive } from "./non-interactive-env/detector"
+import { createSystemDirective, SystemDirectiveTypes } from "../shared/system-directive"
 
 const HOOK_NAME = "todo-continuation-enforcer"
 
+const DEFAULT_SKIP_AGENTS = ["Musashi - plan"]
+
 export interface TodoContinuationEnforcerOptions {
   backgroundManager?: BackgroundManager
+  skipAgents?: string[]
 }
 
 export interface TodoContinuationEnforcer {
@@ -30,7 +33,15 @@ interface Todo {
   id: string
 }
 
-const CONTINUATION_PROMPT = `[SYSTEM REMINDER - TODO CONTINUATION]
+interface SessionState {
+  countdownTimer?: ReturnType<typeof setTimeout>
+  countdownInterval?: ReturnType<typeof setInterval>
+  isRecovering?: boolean
+  countdownStartedAt?: number
+  abortDetectedAt?: number
+}
+
+const CONTINUATION_PROMPT = `${createSystemDirective(SystemDirectiveTypes.TODO_CONTINUATION)}
 
 Incomplete tasks remain in your todo list. Continue working on the next pending task.
 
@@ -38,21 +49,9 @@ Incomplete tasks remain in your todo list. Continue working on the next pending 
 - Mark each task complete when finished
 - Do not stop until all tasks are done`
 
-const TDD_REMINDER = `[TDD VALIDATION REQUIRED]
-Before marking this task complete, ensure tests exist:
-- Write tests for new functionality
-- Run tests to verify: bun test
-- Tests should cover the changes made
-
-Without tests, the task cannot be verified as complete.`
-
-const TEST_FILE_PATTERNS = [
-  ".test.ts",
-  ".spec.ts",
-  ".test.tsx",
-  ".spec.tsx",
-  "_test.ts"
-]
+const COUNTDOWN_SECONDS = 2
+const TOAST_DURATION_MS = 900
+const COUNTDOWN_GRACE_PERIOD_MS = 500
 
 function getMessageDir(sessionID: string): string | null {
   if (!existsSync(MESSAGE_STORAGE)) return null
@@ -68,73 +67,211 @@ function getMessageDir(sessionID: string): string | null {
   return null
 }
 
-function hasRelatedTests(changedFiles: Set<string>): boolean {
-  for (const file of changedFiles) {
-    if (TEST_FILE_PATTERNS.some(p => file.includes(p))) continue
-
-    const baseName = file.replace(/\.(ts|tsx)$/, "")
-    for (const pattern of TEST_FILE_PATTERNS) {
-      const testFile = baseName + pattern
-      if (existsSync(testFile)) return true
-    }
-
-    const dir = dirname(file)
-    const fileName = basename(file, extname(file))
-    const testsDir = join(dir, "__tests__")
-    if (existsSync(testsDir)) {
-      for (const pattern of TEST_FILE_PATTERNS) {
-        const testFile = join(testsDir, fileName + pattern)
-        if (existsSync(testFile)) return true
-      }
-    }
-  }
-  return false
+function getIncompleteCount(todos: Todo[]): number {
+  return todos.filter(t => t.status !== "completed" && t.status !== "cancelled").length
 }
 
-function detectInterrupt(error: unknown): boolean {
-  if (!error) return false
-  if (typeof error === "object") {
-    const errObj = error as Record<string, unknown>
-    const name = errObj.name as string | undefined
-    const message = (errObj.message as string | undefined)?.toLowerCase() ?? ""
-    if (name === "MessageAbortedError" || name === "AbortError") return true
-    if (name === "DOMException" && message.includes("abort")) return true
-    if (message.includes("aborted") || message.includes("cancelled") || message.includes("interrupted")) return true
-  }
-  if (typeof error === "string") {
-    const lower = error.toLowerCase()
-    return lower.includes("abort") || lower.includes("cancel") || lower.includes("interrupt")
-  }
-  return false
+interface MessageInfo {
+  id?: string
+  role?: string
+  error?: { name?: string; data?: unknown }
 }
 
-const COUNTDOWN_SECONDS = 7
-const TOAST_DURATION_MS = 900 // Slightly less than 1s so toasts don't overlap
+function isLastAssistantMessageAborted(messages: Array<{ info?: MessageInfo }>): boolean {
+  if (!messages || messages.length === 0) return false
 
-interface CountdownState {
-  secondsRemaining: number
-  intervalId: ReturnType<typeof setInterval>
+  const assistantMessages = messages.filter(m => m.info?.role === "assistant")
+  if (assistantMessages.length === 0) return false
+
+  const lastAssistant = assistantMessages[assistantMessages.length - 1]
+  const errorName = lastAssistant.info?.error?.name
+
+  if (!errorName) return false
+
+  return errorName === "MessageAbortedError" || errorName === "AbortError"
 }
 
 export function createTodoContinuationEnforcer(
   ctx: PluginInput,
   options: TodoContinuationEnforcerOptions = {}
 ): TodoContinuationEnforcer {
-  const { backgroundManager } = options
-  const remindedSessions = new Set<string>()
-  const interruptedSessions = new Set<string>()
-  const errorSessions = new Set<string>()
-  const recoveringSessions = new Set<string>()
-  const pendingCountdowns = new Map<string, CountdownState>()
-  const preemptivelyInjectedSessions = new Set<string>()
-  const changedFilesPerSession = new Map<string, Set<string>>()
+  const { backgroundManager, skipAgents = DEFAULT_SKIP_AGENTS } = options
+  const sessions = new Map<string, SessionState>()
+
+  function getState(sessionID: string): SessionState {
+    let state = sessions.get(sessionID)
+    if (!state) {
+      state = {}
+      sessions.set(sessionID, state)
+    }
+    return state
+  }
+
+  function cancelCountdown(sessionID: string): void {
+    const state = sessions.get(sessionID)
+    if (!state) return
+
+    if (state.countdownTimer) {
+      clearTimeout(state.countdownTimer)
+      state.countdownTimer = undefined
+    }
+    if (state.countdownInterval) {
+      clearInterval(state.countdownInterval)
+      state.countdownInterval = undefined
+    }
+    state.countdownStartedAt = undefined
+  }
+
+  function cleanup(sessionID: string): void {
+    cancelCountdown(sessionID)
+    sessions.delete(sessionID)
+  }
 
   const markRecovering = (sessionID: string): void => {
-    recoveringSessions.add(sessionID)
+    const state = getState(sessionID)
+    state.isRecovering = true
+    cancelCountdown(sessionID)
+    log(`[${HOOK_NAME}] Session marked as recovering`, { sessionID })
   }
 
   const markRecoveryComplete = (sessionID: string): void => {
-    recoveringSessions.delete(sessionID)
+    const state = sessions.get(sessionID)
+    if (state) {
+      state.isRecovering = false
+      log(`[${HOOK_NAME}] Session recovery complete`, { sessionID })
+    }
+  }
+
+  async function showCountdownToast(seconds: number, incompleteCount: number): Promise<void> {
+    await ctx.client.tui.showToast({
+      body: {
+        title: "Todo Continuation",
+        message: `Resuming in ${seconds}s... (${incompleteCount} tasks remaining)`,
+        variant: "warning" as const,
+        duration: TOAST_DURATION_MS,
+      },
+    }).catch(() => {})
+  }
+
+  interface ResolvedMessageInfo {
+    agent?: string
+    model?: { providerID: string; modelID: string }
+    tools?: Record<string, ToolPermission>
+  }
+
+  async function injectContinuation(
+    sessionID: string,
+    incompleteCount: number,
+    total: number,
+    resolvedInfo?: ResolvedMessageInfo
+  ): Promise<void> {
+    const state = sessions.get(sessionID)
+
+    if (state?.isRecovering) {
+      log(`[${HOOK_NAME}] Skipped injection: in recovery`, { sessionID })
+      return
+    }
+
+    const hasRunningBgTasks = backgroundManager
+      ? backgroundManager.getTasksByParentSession(sessionID).some(t => t.status === "running")
+      : false
+
+    if (hasRunningBgTasks) {
+      log(`[${HOOK_NAME}] Skipped injection: background tasks running`, { sessionID })
+      return
+    }
+
+    let todos: Todo[] = []
+    try {
+      const response = await ctx.client.session.todo({ path: { id: sessionID } })
+      todos = (response.data ?? response) as Todo[]
+    } catch (err) {
+      log(`[${HOOK_NAME}] Failed to fetch todos`, { sessionID, error: String(err) })
+      return
+    }
+
+    const freshIncompleteCount = getIncompleteCount(todos)
+    if (freshIncompleteCount === 0) {
+      log(`[${HOOK_NAME}] Skipped injection: no incomplete todos`, { sessionID })
+      return
+    }
+
+    let agentName = resolvedInfo?.agent
+    let model = resolvedInfo?.model
+    let tools = resolvedInfo?.tools
+
+    if (!agentName || !model) {
+      const messageDir = getMessageDir(sessionID)
+      const prevMessage = messageDir ? findNearestMessageWithFields(messageDir) : null
+      agentName = agentName ?? prevMessage?.agent
+      model = model ?? (prevMessage?.model?.providerID && prevMessage?.model?.modelID
+        ? { providerID: prevMessage.model.providerID, modelID: prevMessage.model.modelID }
+        : undefined)
+      tools = tools ?? prevMessage?.tools
+    }
+
+    if (agentName && skipAgents.includes(agentName)) {
+      log(`[${HOOK_NAME}] Skipped: agent in skipAgents list`, { sessionID, agent: agentName })
+      return
+    }
+
+    const editPermission = tools?.edit
+    const writePermission = tools?.write
+    const hasWritePermission = !tools ||
+      ((editPermission !== false && editPermission !== "deny") &&
+       (writePermission !== false && writePermission !== "deny"))
+    if (!hasWritePermission) {
+      log(`[${HOOK_NAME}] Skipped: agent lacks write permission`, { sessionID, agent: agentName })
+      return
+    }
+
+    const prompt = `${CONTINUATION_PROMPT}\n\n[Status: ${todos.length - freshIncompleteCount}/${todos.length} completed, ${freshIncompleteCount} remaining]`
+
+    try {
+      log(`[${HOOK_NAME}] Injecting continuation`, { sessionID, agent: agentName, model, incompleteCount: freshIncompleteCount })
+
+      await ctx.client.session.prompt({
+        path: { id: sessionID },
+        body: {
+          agent: agentName,
+          ...(model !== undefined ? { model } : {}),
+          parts: [{ type: "text", text: prompt }],
+        },
+        query: { directory: ctx.directory },
+      })
+
+      log(`[${HOOK_NAME}] Injection successful`, { sessionID })
+    } catch (err) {
+      log(`[${HOOK_NAME}] Injection failed`, { sessionID, error: String(err) })
+    }
+  }
+
+  function startCountdown(
+    sessionID: string,
+    incompleteCount: number,
+    total: number,
+    resolvedInfo?: ResolvedMessageInfo
+  ): void {
+    const state = getState(sessionID)
+    cancelCountdown(sessionID)
+
+    let secondsRemaining = COUNTDOWN_SECONDS
+    showCountdownToast(secondsRemaining, incompleteCount)
+    state.countdownStartedAt = Date.now()
+
+    state.countdownInterval = setInterval(() => {
+      secondsRemaining--
+      if (secondsRemaining > 0) {
+        showCountdownToast(secondsRemaining, incompleteCount)
+      }
+    }, 1000)
+
+    state.countdownTimer = setTimeout(() => {
+      cancelCountdown(sessionID)
+      injectContinuation(sessionID, incompleteCount, total, resolvedInfo)
+    }, COUNTDOWN_SECONDS * 1000)
+
+    log(`[${HOOK_NAME}] Countdown started`, { sessionID, seconds: COUNTDOWN_SECONDS, incompleteCount })
   }
 
   const handler = async ({ event }: { event: { type: string; properties?: unknown } }): Promise<void> => {
@@ -142,20 +279,17 @@ export function createTodoContinuationEnforcer(
 
     if (event.type === "session.error") {
       const sessionID = props?.sessionID as string | undefined
-      if (sessionID) {
-        const isInterrupt = detectInterrupt(props?.error)
-        errorSessions.add(sessionID)
-        if (isInterrupt) {
-          interruptedSessions.add(sessionID)
-        }
-        log(`[${HOOK_NAME}] session.error received`, { sessionID, isInterrupt, error: props?.error })
-        
-        const countdown = pendingCountdowns.get(sessionID)
-        if (countdown) {
-          clearInterval(countdown.intervalId)
-          pendingCountdowns.delete(sessionID)
-        }
+      if (!sessionID) return
+
+      const error = props?.error as { name?: string } | undefined
+      if (error?.name === "MessageAbortedError" || error?.name === "AbortError") {
+        const state = getState(sessionID)
+        state.abortDetectedAt = Date.now()
+        log(`[${HOOK_NAME}] Abort detected via session.error`, { sessionID, errorName: error.name })
       }
+
+      cancelCountdown(sessionID)
+      log(`[${HOOK_NAME}] session.error`, { sessionID })
       return
     }
 
@@ -163,330 +297,178 @@ export function createTodoContinuationEnforcer(
       const sessionID = props?.sessionID as string | undefined
       if (!sessionID) return
 
-      log(`[${HOOK_NAME}] session.idle received`, { sessionID })
+      log(`[${HOOK_NAME}] session.idle`, { sessionID })
 
       const mainSessionID = getMainSessionID()
-      if (mainSessionID && sessionID !== mainSessionID) {
-        log(`[${HOOK_NAME}] Skipped: not main session`, { sessionID, mainSessionID })
+      const isMainSession = sessionID === mainSessionID
+      const isBackgroundTaskSession = subagentSessions.has(sessionID)
+
+      if (mainSessionID && !isMainSession && !isBackgroundTaskSession) {
+        log(`[${HOOK_NAME}] Skipped: not main or background task session`, { sessionID })
         return
       }
 
-      const existingCountdown = pendingCountdowns.get(sessionID)
-      if (existingCountdown) {
-        clearInterval(existingCountdown.intervalId)
-        pendingCountdowns.delete(sessionID)
-        log(`[${HOOK_NAME}] Cancelled existing countdown`, { sessionID })
-      }
+      const state = getState(sessionID)
 
-      // Check if session is in recovery mode - if so, skip entirely without clearing state
-      if (recoveringSessions.has(sessionID)) {
-        log(`[${HOOK_NAME}] Skipped: session in recovery mode`, { sessionID })
+      if (state.isRecovering) {
+        log(`[${HOOK_NAME}] Skipped: in recovery`, { sessionID })
         return
       }
 
-      const shouldBypass = interruptedSessions.has(sessionID) || errorSessions.has(sessionID)
-      
-      if (shouldBypass) {
-        interruptedSessions.delete(sessionID)
-        errorSessions.delete(sessionID)
-        log(`[${HOOK_NAME}] Skipped: error/interrupt bypass`, { sessionID })
+      // Check 1: Event-based abort detection (primary, most reliable)
+      if (state.abortDetectedAt) {
+        const timeSinceAbort = Date.now() - state.abortDetectedAt
+        const ABORT_WINDOW_MS = 3000
+        if (timeSinceAbort < ABORT_WINDOW_MS) {
+          log(`[${HOOK_NAME}] Skipped: abort detected via event ${timeSinceAbort}ms ago`, { sessionID })
+          state.abortDetectedAt = undefined
+          return
+        }
+        state.abortDetectedAt = undefined
+      }
+
+      const hasRunningBgTasks = backgroundManager
+        ? backgroundManager.getTasksByParentSession(sessionID).some(t => t.status === "running")
+        : false
+
+      if (hasRunningBgTasks) {
+        log(`[${HOOK_NAME}] Skipped: background tasks running`, { sessionID })
         return
       }
 
-      if (remindedSessions.has(sessionID)) {
-        log(`[${HOOK_NAME}] Skipped: already reminded this session`, { sessionID })
-        return
+      // Check 2: API-based abort detection (fallback, for cases where event was missed)
+      try {
+        const messagesResp = await ctx.client.session.messages({
+          path: { id: sessionID },
+          query: { directory: ctx.directory },
+        })
+        const messages = (messagesResp as { data?: Array<{ info?: MessageInfo }> }).data ?? []
+
+        if (isLastAssistantMessageAborted(messages)) {
+          log(`[${HOOK_NAME}] Skipped: last assistant message was aborted (API fallback)`, { sessionID })
+          return
+        }
+      } catch (err) {
+        log(`[${HOOK_NAME}] Messages fetch failed, continuing`, { sessionID, error: String(err) })
       }
 
-      // Check for incomplete todos BEFORE starting countdown
       let todos: Todo[] = []
       try {
-        log(`[${HOOK_NAME}] Fetching todos for session`, { sessionID })
-        const response = await ctx.client.session.todo({
-          path: { id: sessionID },
-        })
+        const response = await ctx.client.session.todo({ path: { id: sessionID } })
         todos = (response.data ?? response) as Todo[]
-        log(`[${HOOK_NAME}] Todo API response`, { sessionID, todosCount: todos?.length ?? 0 })
       } catch (err) {
-        log(`[${HOOK_NAME}] Todo API error`, { sessionID, error: String(err) })
+        log(`[${HOOK_NAME}] Todo fetch failed`, { sessionID, error: String(err) })
         return
       }
 
       if (!todos || todos.length === 0) {
-        log(`[${HOOK_NAME}] No todos found`, { sessionID })
+        log(`[${HOOK_NAME}] No todos`, { sessionID })
         return
       }
 
-      const incomplete = todos.filter(
-        (t) => t.status !== "completed" && t.status !== "cancelled"
-      )
-
-      if (incomplete.length === 0) {
-        log(`[${HOOK_NAME}] All todos completed`, { sessionID, total: todos.length })
+      const incompleteCount = getIncompleteCount(todos)
+      if (incompleteCount === 0) {
+        log(`[${HOOK_NAME}] All todos complete`, { sessionID, total: todos.length })
         return
       }
 
-      log(`[${HOOK_NAME}] Found incomplete todos, starting countdown`, { sessionID, incomplete: incomplete.length, total: todos.length })
-
-      const showCountdownToast = async (seconds: number): Promise<void> => {
-        showToast(ctx, {
-          title: "Todo Continuation",
-          message: `Resuming in ${seconds}s... (${incomplete.length} tasks remaining)`,
-          variant: "warning",
-          duration: TOAST_DURATION_MS,
+      let resolvedInfo: ResolvedMessageInfo | undefined
+      try {
+        const messagesResp = await ctx.client.session.messages({
+          path: { id: sessionID },
         })
+        const messages = (messagesResp.data ?? []) as Array<{
+          info?: {
+            agent?: string
+            model?: { providerID: string; modelID: string }
+            modelID?: string
+            providerID?: string
+            tools?: Record<string, ToolPermission>
+          }
+        }>
+        for (let i = messages.length - 1; i >= 0; i--) {
+          const info = messages[i].info
+          if (info?.agent || info?.model || (info?.modelID && info?.providerID)) {
+            resolvedInfo = {
+              agent: info.agent,
+              model: info.model ?? (info.providerID && info.modelID ? { providerID: info.providerID, modelID: info.modelID } : undefined),
+              tools: info.tools,
+            }
+            break
+          }
+        }
+      } catch (err) {
+        log(`[${HOOK_NAME}] Failed to fetch messages for agent check`, { sessionID, error: String(err) })
       }
 
-      const executeAfterCountdown = async (): Promise<void> => {
-        pendingCountdowns.delete(sessionID)
-        log(`[${HOOK_NAME}] Countdown finished, executing continuation`, { sessionID })
-
-        // Re-check conditions after countdown
-        if (recoveringSessions.has(sessionID)) {
-          log(`[${HOOK_NAME}] Abort: session entered recovery mode during countdown`, { sessionID })
-          return
-        }
-
-        if (interruptedSessions.has(sessionID) || errorSessions.has(sessionID)) {
-          log(`[${HOOK_NAME}] Abort: error/interrupt occurred during countdown`, { sessionID })
-          interruptedSessions.delete(sessionID)
-          errorSessions.delete(sessionID)
-          return
-        }
-
-        let freshTodos: Todo[] = []
-        try {
-          log(`[${HOOK_NAME}] Re-verifying todos after countdown`, { sessionID })
-          const response = await ctx.client.session.todo({
-            path: { id: sessionID },
-          })
-          freshTodos = (response.data ?? response) as Todo[]
-          log(`[${HOOK_NAME}] Fresh todo count`, { sessionID, todosCount: freshTodos?.length ?? 0 })
-        } catch (err) {
-          log(`[${HOOK_NAME}] Failed to re-verify todos`, { sessionID, error: String(err) })
-          return
-        }
-
-        const freshIncomplete = freshTodos.filter(
-          (t) => t.status !== "completed" && t.status !== "cancelled"
-        )
-
-        if (freshIncomplete.length === 0) {
-          log(`[${HOOK_NAME}] Abort: no incomplete todos after countdown`, { sessionID, total: freshTodos.length })
-          return
-        }
-
-        log(`[${HOOK_NAME}] Confirmed incomplete todos, proceeding with injection`, { sessionID, incomplete: freshIncomplete.length, total: freshTodos.length })
-
-        remindedSessions.add(sessionID)
-
-        try {
-          // Get previous message's agent info to respect agent mode
-          const messageDir = getMessageDir(sessionID)
-          const prevMessage = messageDir ? findNearestMessageWithFields(messageDir) : null
-
-          const agentHasWritePermission = !prevMessage?.tools || (prevMessage.tools.write !== false && prevMessage.tools.edit !== false)
-          if (!agentHasWritePermission) {
-            log(`[${HOOK_NAME}] Skipped: previous agent lacks write permission`, { sessionID, agent: prevMessage?.agent, tools: prevMessage?.tools })
-            remindedSessions.delete(sessionID)
-            return
-          }
-
-          // Plan mode agents only analyze and plan, not implement - skip todo continuation
-          const agentName = prevMessage?.agent?.toLowerCase() ?? ""
-          const isPlanModeAgent = agentName === "plan" || agentName === "planner-musashi" || agentName === "planner-sisyphus"
-          if (isPlanModeAgent) {
-            log(`[${HOOK_NAME}] Skipped: plan mode agent detected`, { sessionID, agent: prevMessage?.agent })
-            remindedSessions.delete(sessionID)
-            return
-          }
-
-          const sessionFiles = changedFilesPerSession.get(sessionID) || new Set()
-          let prompt = `${CONTINUATION_PROMPT}\n\n[Status: ${freshTodos.length - freshIncomplete.length}/${freshTodos.length} completed, ${freshIncomplete.length} remaining]`
-
-          if (sessionFiles.size > 0 && !hasRelatedTests(sessionFiles)) {
-            log(`[${HOOK_NAME}] No tests found for changed files, adding TDD reminder`, { sessionID, fileCount: sessionFiles.size })
-            prompt = `${prompt}\n\n${TDD_REMINDER}`
-
-            showToast(ctx, {
-              title: "TDD Validation",
-              message: "Tests required before task completion",
-              variant: "warning",
-              duration: TOAST_DURATION_MS,
-            })
-          }
-
-          log(`[${HOOK_NAME}] Injecting continuation prompt`, { sessionID, agent: prevMessage?.agent })
-          await ctx.client.session.prompt({
-            path: { id: sessionID },
-            body: {
-              agent: prevMessage?.agent,
-              parts: [
-                {
-                  type: "text",
-                  text: prompt,
-                },
-              ],
-            },
-            query: { directory: ctx.directory },
-          })
-          log(`[${HOOK_NAME}] Continuation prompt injected successfully`, { sessionID })
-        } catch (err) {
-          log(`[${HOOK_NAME}] Prompt injection failed`, { sessionID, error: String(err) })
-          remindedSessions.delete(sessionID)
-        }
+      log(`[${HOOK_NAME}] Agent check`, { sessionID, agentName: resolvedInfo?.agent, skipAgents })
+      if (resolvedInfo?.agent && skipAgents.includes(resolvedInfo.agent)) {
+        log(`[${HOOK_NAME}] Skipped: agent in skipAgents list`, { sessionID, agent: resolvedInfo.agent })
+        return
       }
 
-      let secondsRemaining = COUNTDOWN_SECONDS
-      showCountdownToast(secondsRemaining).catch(() => {})
-
-      const intervalId = setInterval(() => {
-        secondsRemaining--
-        
-        if (secondsRemaining <= 0) {
-          clearInterval(intervalId)
-          pendingCountdowns.delete(sessionID)
-          executeAfterCountdown()
-          return
-        }
-
-        const countdown = pendingCountdowns.get(sessionID)
-        if (!countdown) {
-          clearInterval(intervalId)
-          return
-        }
-
-        countdown.secondsRemaining = secondsRemaining
-        showCountdownToast(secondsRemaining).catch(() => {})
-      }, 1000)
-
-      pendingCountdowns.set(sessionID, { secondsRemaining, intervalId })
+      startCountdown(sessionID, incompleteCount, todos.length, resolvedInfo)
+      return
     }
 
     if (event.type === "message.updated") {
       const info = props?.info as Record<string, unknown> | undefined
       const sessionID = info?.sessionID as string | undefined
       const role = info?.role as string | undefined
-      const finish = info?.finish as string | undefined
-      log(`[${HOOK_NAME}] message.updated received`, { sessionID, role, finish })
-      
-      if (sessionID && role === "user") {
-        const countdown = pendingCountdowns.get(sessionID)
-        if (countdown) {
-          clearInterval(countdown.intervalId)
-          pendingCountdowns.delete(sessionID)
-          log(`[${HOOK_NAME}] Cancelled countdown on user message`, { sessionID })
-        }
-        remindedSessions.delete(sessionID)
-        preemptivelyInjectedSessions.delete(sessionID)
-      }
 
-      if (sessionID && role === "assistant" && finish) {
-        remindedSessions.delete(sessionID)
-        preemptivelyInjectedSessions.delete(sessionID)
-        log(`[${HOOK_NAME}] Cleared reminded/preemptive state on assistant finish`, { sessionID })
+      if (!sessionID) return
 
-        const isTerminalFinish = finish && !["tool-calls", "unknown"].includes(finish)
-        if (isTerminalFinish && isNonInteractive()) {
-          log(`[${HOOK_NAME}] Terminal finish in non-interactive mode`, { sessionID, finish })
-
-          const mainSessionID = getMainSessionID()
-          if (mainSessionID && sessionID !== mainSessionID) {
-            log(`[${HOOK_NAME}] Skipped preemptive: not main session`, { sessionID, mainSessionID })
+      if (role === "user") {
+        const state = sessions.get(sessionID)
+        if (state?.countdownStartedAt) {
+          const elapsed = Date.now() - state.countdownStartedAt
+          if (elapsed < COUNTDOWN_GRACE_PERIOD_MS) {
+            log(`[${HOOK_NAME}] Ignoring user message in grace period`, { sessionID, elapsed })
             return
-          }
-
-          if (preemptivelyInjectedSessions.has(sessionID)) {
-            log(`[${HOOK_NAME}] Skipped preemptive: already injected`, { sessionID })
-            return
-          }
-
-          if (recoveringSessions.has(sessionID) || errorSessions.has(sessionID) || interruptedSessions.has(sessionID)) {
-            log(`[${HOOK_NAME}] Skipped preemptive: session in error/recovery state`, { sessionID })
-            return
-          }
-
-          const hasRunningBgTasks = backgroundManager
-            ? backgroundManager.getTasksByParentSession(sessionID).some((t) => t.status === "running")
-            : false
-
-          let hasIncompleteTodos = false
-          try {
-            const response = await ctx.client.session.todo({ path: { id: sessionID } })
-            const todos = (response.data ?? response) as Todo[]
-            hasIncompleteTodos = todos?.some((t) => t.status !== "completed" && t.status !== "cancelled") ?? false
-          } catch {
-            log(`[${HOOK_NAME}] Failed to fetch todos for preemptive check`, { sessionID })
-          }
-
-          if (hasRunningBgTasks || hasIncompleteTodos) {
-            log(`[${HOOK_NAME}] Preemptive injection needed`, { sessionID, hasRunningBgTasks, hasIncompleteTodos })
-            preemptivelyInjectedSessions.add(sessionID)
-
-            try {
-              const messageDir = getMessageDir(sessionID)
-              const prevMessage = messageDir ? findNearestMessageWithFields(messageDir) : null
-
-              // Plan mode agents only analyze and plan, not implement - skip todo continuation
-              const preemptiveAgentName = prevMessage?.agent?.toLowerCase() ?? ""
-              const isPlanModeAgent = preemptiveAgentName === "plan" || preemptiveAgentName === "planner-musashi" || preemptiveAgentName === "planner-sisyphus"
-              if (isPlanModeAgent) {
-                log(`[${HOOK_NAME}] Skipped preemptive: plan mode agent detected`, { sessionID, agent: prevMessage?.agent })
-                preemptivelyInjectedSessions.delete(sessionID)
-                return
-              }
-
-              const prompt = hasRunningBgTasks
-                ? "[SYSTEM] Background tasks are still running. Wait for their completion before proceeding."
-                : CONTINUATION_PROMPT
-
-              await ctx.client.session.prompt({
-                path: { id: sessionID },
-                body: {
-                  agent: prevMessage?.agent,
-                  parts: [{ type: "text", text: prompt }],
-                },
-                query: { directory: ctx.directory },
-              })
-              log(`[${HOOK_NAME}] Preemptive injection successful`, { sessionID })
-            } catch (err) {
-              log(`[${HOOK_NAME}] Preemptive injection failed`, { sessionID, error: String(err) })
-              preemptivelyInjectedSessions.delete(sessionID)
-            }
           }
         }
+        if (state) state.abortDetectedAt = undefined
+        cancelCountdown(sessionID)
       }
+
+      if (role === "assistant") {
+        const state = sessions.get(sessionID)
+        if (state) state.abortDetectedAt = undefined
+        cancelCountdown(sessionID)
+      }
+      return
+    }
+
+    if (event.type === "message.part.updated") {
+      const info = props?.info as Record<string, unknown> | undefined
+      const sessionID = info?.sessionID as string | undefined
+      const role = info?.role as string | undefined
+
+      if (sessionID && role === "assistant") {
+        const state = sessions.get(sessionID)
+        if (state) state.abortDetectedAt = undefined
+        cancelCountdown(sessionID)
+      }
+      return
+    }
+
+    if (event.type === "tool.execute.before" || event.type === "tool.execute.after") {
+      const sessionID = props?.sessionID as string | undefined
+      if (sessionID) {
+        const state = sessions.get(sessionID)
+        if (state) state.abortDetectedAt = undefined
+        cancelCountdown(sessionID)
+      }
+      return
     }
 
     if (event.type === "session.deleted") {
       const sessionInfo = props?.info as { id?: string } | undefined
       if (sessionInfo?.id) {
-        remindedSessions.delete(sessionInfo.id)
-        interruptedSessions.delete(sessionInfo.id)
-        errorSessions.delete(sessionInfo.id)
-        recoveringSessions.delete(sessionInfo.id)
-        preemptivelyInjectedSessions.delete(sessionInfo.id)
-        changedFilesPerSession.delete(sessionInfo.id)
-
-        const countdown = pendingCountdowns.get(sessionInfo.id)
-        if (countdown) {
-          clearInterval(countdown.intervalId)
-          pendingCountdowns.delete(sessionInfo.id)
-        }
+        cleanup(sessionInfo.id)
+        log(`[${HOOK_NAME}] Session deleted: cleaned up`, { sessionID: sessionInfo.id })
       }
-    }
-
-    if (event.type === "tool.execute.after") {
-      const toolInfo = props as { sessionID?: string; tool?: string; args?: Record<string, unknown> } | undefined
-      if (toolInfo?.sessionID && (toolInfo.tool === "edit" || toolInfo.tool === "write")) {
-        const filePath = toolInfo.args?.filePath as string | undefined
-        if (filePath) {
-          const sessionFiles = changedFilesPerSession.get(toolInfo.sessionID) || new Set()
-          sessionFiles.add(filePath)
-          changedFilesPerSession.set(toolInfo.sessionID, sessionFiles)
-          log(`[${HOOK_NAME}] Tracked changed file`, { sessionID: toolInfo.sessionID, filePath })
-        }
-      }
+      return
     }
   }
 

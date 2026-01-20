@@ -27,7 +27,7 @@ async function findCommand(commandName: string): Promise<string | null> {
   try {
     const proc = spawn([cmd, commandName], {
       stdout: "pipe",
-      stderr: "ignore",
+      stderr: "pipe",
     })
 
     const exitCode = await proc.exited
@@ -35,13 +35,7 @@ async function findCommand(commandName: string): Promise<string | null> {
       return null
     }
 
-    let stdout: string
-    try {
-      stdout = await new Response(proc.stdout).text()
-    } catch {
-      return null
-    }
-    
+    const stdout = await new Response(proc.stdout).text()
     const path = stdout.trim().split("\n")[0]
 
     if (!path) {

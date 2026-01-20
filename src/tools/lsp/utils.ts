@@ -1,22 +1,21 @@
 import { extname, resolve } from "path"
+import { fileURLToPath } from "node:url"
 import { existsSync, readFileSync, writeFileSync } from "fs"
 import { LSPClient, lspManager } from "./client"
 import { findServerForExtension } from "./config"
 import { SYMBOL_KIND_MAP, SEVERITY_MAP } from "./constants"
 import type {
-  HoverResult,
-  DocumentSymbol,
-  SymbolInfo,
   Location,
   LocationLink,
+  DocumentSymbol,
+  SymbolInfo,
   Diagnostic,
   PrepareRenameResult,
   PrepareRenameDefaultBehavior,
   Range,
   WorkspaceEdit,
   TextEdit,
-  CodeAction,
-  Command,
+  ServerLookupResult,
 } from "./types"
 
 export function findWorkspaceRoot(filePath: string): string {
@@ -28,27 +27,68 @@ export function findWorkspaceRoot(filePath: string): string {
 
   const markers = [".git", "package.json", "pyproject.toml", "Cargo.toml", "go.mod", "pom.xml", "build.gradle"]
 
-  while (dir !== "/") {
+  let prevDir = ""
+  while (dir !== prevDir) {
     for (const marker of markers) {
       if (existsSync(require("path").join(dir, marker))) {
         return dir
       }
     }
+    prevDir = dir
     dir = require("path").dirname(dir)
   }
 
   return require("path").dirname(resolve(filePath))
 }
 
+export function uriToPath(uri: string): string {
+  return fileURLToPath(uri)
+}
+
+export function formatServerLookupError(result: Exclude<ServerLookupResult, { status: "found" }>): string {
+  if (result.status === "not_installed") {
+    const { server, installHint } = result
+    return [
+      `LSP server '${server.id}' is configured but NOT INSTALLED.`,
+      ``,
+      `Command not found: ${server.command[0]}`,
+      ``,
+      `To install:`,
+      `  ${installHint}`,
+      ``,
+      `Supported extensions: ${server.extensions.join(", ")}`,
+      ``,
+      `After installation, the server will be available automatically.`,
+      `Run 'LspServers' tool to verify installation status.`,
+    ].join("\n")
+  }
+
+  return [
+    `No LSP server configured for extension: ${result.extension}`,
+    ``,
+    `Available servers: ${result.availableServers.slice(0, 10).join(", ")}${result.availableServers.length > 10 ? "..." : ""}`,
+    ``,
+    `To add a custom server, configure 'lsp' in oh-my-opencode.json:`,
+    `  {`,
+    `    "lsp": {`,
+    `      "my-server": {`,
+    `        "command": ["my-lsp", "--stdio"],`,
+    `        "extensions": ["${result.extension}"]`,
+    `      }`,
+    `    }`,
+  ].join("\n")
+}
+
 export async function withLspClient<T>(filePath: string, fn: (client: LSPClient) => Promise<T>): Promise<T> {
   const absPath = resolve(filePath)
   const ext = extname(absPath)
-  const server = findServerForExtension(ext)
+  const result = findServerForExtension(ext)
 
-  if (!server) {
-    throw new Error(`No LSP server configured for extension: ${ext}`)
+  if (result.status !== "found") {
+    throw new Error(formatServerLookupError(result))
   }
 
+  const server = result.server
   const root = findWorkspaceRoot(absPath)
   const client = await lspManager.getClient(root, server)
 
@@ -70,37 +110,15 @@ export async function withLspClient<T>(filePath: string, fn: (client: LSPClient)
   }
 }
 
-export function formatHoverResult(result: HoverResult | null): string {
-  if (!result) return "No hover information available"
-
-  const contents = result.contents
-  if (typeof contents === "string") {
-    return contents
-  }
-
-  if (Array.isArray(contents)) {
-    return contents
-      .map((c) => (typeof c === "string" ? c : c.value))
-      .filter(Boolean)
-      .join("\n\n")
-  }
-
-  if (typeof contents === "object" && "value" in contents) {
-    return contents.value
-  }
-
-  return "No hover information available"
-}
-
 export function formatLocation(loc: Location | LocationLink): string {
   if ("targetUri" in loc) {
-    const uri = loc.targetUri.replace("file://", "")
+    const uri = uriToPath(loc.targetUri)
     const line = loc.targetRange.start.line + 1
     const char = loc.targetRange.start.character
     return `${uri}:${line}:${char}`
   }
 
-  const uri = loc.uri.replace("file://", "")
+  const uri = uriToPath(loc.uri)
   const line = loc.range.start.line + 1
   const char = loc.range.start.character
   return `${uri}:${line}:${char}`
@@ -216,7 +234,7 @@ export function formatWorkspaceEdit(edit: WorkspaceEdit | null): string {
 
   if (edit.changes) {
     for (const [uri, edits] of Object.entries(edit.changes)) {
-      const filePath = uri.replace("file://", "")
+      const filePath = uriToPath(uri)
       lines.push(`File: ${filePath}`)
       for (const textEdit of edits) {
         lines.push(formatTextEdit(textEdit))
@@ -235,7 +253,7 @@ export function formatWorkspaceEdit(edit: WorkspaceEdit | null): string {
           lines.push(`Delete: ${change.uri}`)
         }
       } else {
-        const filePath = change.textDocument.uri.replace("file://", "")
+        const filePath = uriToPath(change.textDocument.uri)
         lines.push(`File: ${filePath}`)
         for (const textEdit of change.edits) {
           lines.push(formatTextEdit(textEdit))
@@ -245,38 +263,6 @@ export function formatWorkspaceEdit(edit: WorkspaceEdit | null): string {
   }
 
   if (lines.length === 0) return "No changes"
-
-  return lines.join("\n")
-}
-
-export function formatCodeAction(action: CodeAction): string {
-  let result = `[${action.kind || "action"}] ${action.title}`
-
-  if (action.isPreferred) {
-    result += " ⭐"
-  }
-
-  if (action.disabled) {
-    result += ` (disabled: ${action.disabled.reason})`
-  }
-
-  return result
-}
-
-export function formatCodeActions(actions: (CodeAction | Command)[] | null): string {
-  if (!actions || actions.length === 0) return "No code actions available"
-
-  const lines: string[] = []
-
-  for (let i = 0; i < actions.length; i++) {
-    const action = actions[i]
-
-    if ("command" in action && typeof action.command === "string" && !("kind" in action)) {
-      lines.push(`${i + 1}. [command] ${(action as Command).title}`)
-    } else {
-      lines.push(`${i + 1}. ${formatCodeAction(action as CodeAction)}`)
-    }
-  }
 
   return lines.join("\n")
 }
@@ -333,7 +319,7 @@ export function applyWorkspaceEdit(edit: WorkspaceEdit | null): ApplyResult {
 
   if (edit.changes) {
     for (const [uri, edits] of Object.entries(edit.changes)) {
-      const filePath = uri.replace("file://", "")
+      const filePath = uriToPath(uri)
       const applyResult = applyTextEditsToFile(filePath, edits)
 
       if (applyResult.success) {
@@ -351,7 +337,7 @@ export function applyWorkspaceEdit(edit: WorkspaceEdit | null): ApplyResult {
       if ("kind" in change) {
         if (change.kind === "create") {
           try {
-            const filePath = change.uri.replace("file://", "")
+            const filePath = uriToPath(change.uri)
             writeFileSync(filePath, "", "utf-8")
             result.filesModified.push(filePath)
           } catch (err) {
@@ -360,8 +346,8 @@ export function applyWorkspaceEdit(edit: WorkspaceEdit | null): ApplyResult {
           }
         } else if (change.kind === "rename") {
           try {
-            const oldPath = change.oldUri.replace("file://", "")
-            const newPath = change.newUri.replace("file://", "")
+            const oldPath = uriToPath(change.oldUri)
+            const newPath = uriToPath(change.newUri)
             const content = readFileSync(oldPath, "utf-8")
             writeFileSync(newPath, content, "utf-8")
             require("fs").unlinkSync(oldPath)
@@ -372,7 +358,7 @@ export function applyWorkspaceEdit(edit: WorkspaceEdit | null): ApplyResult {
           }
         } else if (change.kind === "delete") {
           try {
-            const filePath = change.uri.replace("file://", "")
+            const filePath = uriToPath(change.uri)
             require("fs").unlinkSync(filePath)
             result.filesModified.push(filePath)
           } catch (err) {
@@ -381,7 +367,7 @@ export function applyWorkspaceEdit(edit: WorkspaceEdit | null): ApplyResult {
           }
         }
       } else {
-        const filePath = change.textDocument.uri.replace("file://", "")
+        const filePath = uriToPath(change.textDocument.uri)
         const applyResult = applyTextEditsToFile(filePath, change.edits)
 
         if (applyResult.success) {

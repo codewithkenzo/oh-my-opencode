@@ -2,7 +2,6 @@ import { join } from "path"
 import { mkdirSync, writeFileSync, readFileSync, existsSync, unlinkSync } from "fs"
 import { getClaudeConfigDir } from "../../shared"
 import type { TodoFile, TodoItem, ClaudeCodeTodoItem } from "./types"
-import { log } from "../../shared/logger"
 
 const TODO_DIR = join(getClaudeConfigDir(), "todos")
 
@@ -48,12 +47,11 @@ export function loadTodoFile(sessionId: string): TodoFile | null {
          created_at: new Date().toISOString(),
          updated_at: new Date().toISOString(),
        }
-      }
-      return content
-    } catch (e) {
-      log(`[claude-code-hooks] Error reading todo file: ${e instanceof Error ? e.message : String(e)}`)
-      return null
-    }
+     }
+     return content
+   } catch {
+     return null
+   }
 }
 
 export function saveTodoFile(sessionId: string, file: TodoFile): void {

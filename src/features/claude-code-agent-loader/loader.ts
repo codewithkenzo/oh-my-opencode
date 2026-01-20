@@ -1,5 +1,4 @@
 import { existsSync, readdirSync, readFileSync } from "fs"
-import { homedir } from "os"
 import { join, basename } from "path"
 import type { AgentConfig } from "@opencode-ai/sdk"
 import { parseFrontmatter } from "../../shared/frontmatter"
@@ -66,28 +65,6 @@ function loadAgentsFromDir(agentsDir: string, scope: AgentScope): LoadedAgent[] 
   }
 
   return agents
-}
-
-export function loadOpenCodeGlobalAgents(): Record<string, AgentConfig> {
-  const openCodeAgentsDir = join(homedir(), ".opencode", "agent")
-  const agents = loadAgentsFromDir(openCodeAgentsDir, "opencode")
-
-  const result: Record<string, AgentConfig> = {}
-  for (const agent of agents) {
-    result[agent.name] = agent.config
-  }
-  return result
-}
-
-export function loadOpenCodeProjectAgents(): Record<string, AgentConfig> {
-  const projectAgentsDir = join(process.cwd(), ".opencode", "agent")
-  const agents = loadAgentsFromDir(projectAgentsDir, "opencode-project")
-
-  const result: Record<string, AgentConfig> = {}
-  for (const agent of agents) {
-    result[agent.name] = agent.config
-  }
-  return result
 }
 
 export function loadUserAgents(): Record<string, AgentConfig> {

@@ -1,31 +1,13 @@
 # Dependencies
+.sisyphus/
 node_modules/
 
 # Build output
 dist/
 
-# Session/continuation files (AI dev artifacts)
-session-*.md
-docs/session-continuation*.md
-*.blueprint.md
-
-# Local dev files
-docs/dev/
-tmp/
-
-# OpenCode/Claude artifacts
-.opencode/
-.tickets/
-.claude/
-
-# Syncthing
-.stfolder/
-.stversions/
-
-# Environment
-.env
-.env.*
-!.env.example
+# Platform binaries (built, not committed)
+packages/*/bin/oh-my-opencode
+packages/*/bin/oh-my-opencode.exe
 
 # IDE
 .idea/
@@ -41,5 +23,13 @@ Thumbs.db
 *.log
 npm-debug.log*
 
-# Test coverage
-coverage/
+# Lock files (use bun.lockb instead)
+package-lock.json
+yarn.lock
+
+# Environment
+.env
+.env.local
+test-injection/
+notepad.md
+oauth-success.html

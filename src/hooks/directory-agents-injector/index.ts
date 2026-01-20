@@ -1,6 +1,5 @@
 import type { PluginInput } from "@opencode-ai/plugin";
 import { existsSync, readFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import {
   loadInjectedPaths,
@@ -9,8 +8,6 @@ import {
 } from "./storage";
 import { AGENTS_FILENAME } from "./constants";
 import { createDynamicTruncator } from "../../shared/dynamic-truncator";
-
-const GLOBAL_AGENTS_PATH = join(homedir(), ".config", "opencode", "AGENTS.md");
 
 interface ToolExecuteInput {
   tool: string;
@@ -63,12 +60,17 @@ export function createDirectoryAgentsInjectorHook(ctx: PluginInput) {
     let current = startDir;
 
     while (true) {
-      const agentsPath = join(current, AGENTS_FILENAME);
-      if (existsSync(agentsPath)) {
-        found.push(agentsPath);
+      // Skip root AGENTS.md - OpenCode's system.ts already loads it via custom()
+      // See: https://github.com/code-yeongyu/oh-my-opencode/issues/379
+      const isRootDir = current === ctx.directory;
+      if (!isRootDir) {
+        const agentsPath = join(current, AGENTS_FILENAME);
+        if (existsSync(agentsPath)) {
+          found.push(agentsPath);
+        }
       }
 
-      if (current === ctx.directory) break;
+      if (isRootDir) break;
       const parent = dirname(current);
       if (parent === current) break;
       if (!parent.startsWith(ctx.directory)) break;
@@ -83,30 +85,11 @@ export function createDirectoryAgentsInjectorHook(ctx: PluginInput) {
     sessionID: string,
     output: ToolExecuteOutput,
   ): Promise<void> {
-    const cache = getSessionCache(sessionID);
-
-    const globalCacheKey = "__global__";
-    if (!cache.has(globalCacheKey)) {
-      if (existsSync(GLOBAL_AGENTS_PATH)) {
-        try {
-          const content = readFileSync(GLOBAL_AGENTS_PATH, "utf-8");
-          const { result, truncated } = await truncator.truncate(
-            sessionID,
-            content,
-          );
-          const truncationNotice = truncated
-            ? `\n\n[Note: Content was truncated. Full context: ${GLOBAL_AGENTS_PATH}]`
-            : "";
-          output.output += `\n\n[Global Context: ${GLOBAL_AGENTS_PATH}]\n${result}${truncationNotice}`;
-        } catch {}
-      }
-      cache.add(globalCacheKey);
-    }
-
     const resolved = resolveFilePath(filePath);
     if (!resolved) return;
 
     const dir = dirname(resolved);
+    const cache = getSessionCache(sessionID);
     const agentsPaths = findAgentsMdUp(dir);
 
     for (const agentsPath of agentsPaths) {

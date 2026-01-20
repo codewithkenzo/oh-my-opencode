@@ -1,13 +1,13 @@
 import type { PluginInput } from "@opencode-ai/plugin"
 import { platform } from "os"
-import { basename } from "path"
 import { subagentSessions, getMainSessionID } from "../features/claude-code-session-state"
-import { sendSystemNotification } from "../tools/system-notify"
 import {
+  getOsascriptPath,
+  getNotifySendPath,
+  getPowershellPath,
   getAfplayPath,
   getPaplayPath,
   getAplayPath,
-  getPowershellPath,
   startBackgroundCheck,
 } from "./session-notification-utils"
 
@@ -19,10 +19,15 @@ interface Todo {
 }
 
 interface SessionNotificationConfig {
+  title?: string
+  message?: string
   playSound?: boolean
   soundPath?: string
+  /** Delay in ms before sending notification to confirm session is still idle (default: 1500) */
   idleConfirmationDelay?: number
+  /** Skip notification if there are incomplete todos (default: true) */
   skipIfIncompleteTodos?: boolean
+  /** Maximum number of sessions to track before cleanup (default: 100) */
   maxTrackedSessions?: number
 }
 
@@ -47,18 +52,51 @@ function getDefaultSoundPath(p: Platform): string {
   }
 }
 
-async function sendNotificationWithContext(
-  directory: string,
-  agentName?: string
+async function sendNotification(
+  ctx: PluginInput,
+  p: Platform,
+  title: string,
+  message: string
 ): Promise<void> {
-  const projectName = basename(directory)
-  const agent = agentName || "Agent"
-  const message = `${agent} needs your attention in ${projectName}`
-  
-  await sendSystemNotification({
-    title: "OpenCode",
-    message,
-  })
+  switch (p) {
+    case "darwin": {
+      const osascriptPath = await getOsascriptPath()
+      if (!osascriptPath) return
+
+      const esTitle = title.replace(/\\/g, "\\\\").replace(/"/g, '\\"')
+      const esMessage = message.replace(/\\/g, "\\\\").replace(/"/g, '\\"')
+      await ctx.$`${osascriptPath} -e ${"display notification \"" + esMessage + "\" with title \"" + esTitle + "\""}`.catch(() => {})
+      break
+    }
+    case "linux": {
+      const notifySendPath = await getNotifySendPath()
+      if (!notifySendPath) return
+
+      await ctx.$`${notifySendPath} ${title} ${message} 2>/dev/null`.catch(() => {})
+      break
+    }
+    case "win32": {
+      const powershellPath = await getPowershellPath()
+      if (!powershellPath) return
+
+      const psTitle = title.replace(/'/g, "''")
+      const psMessage = message.replace(/'/g, "''")
+      const toastScript = `
+[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
+$Template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02)
+$RawXml = [xml] $Template.GetXml()
+($RawXml.toast.visual.binding.text | Where-Object {$_.id -eq '1'}).AppendChild($RawXml.CreateTextNode('${psTitle}')) | Out-Null
+($RawXml.toast.visual.binding.text | Where-Object {$_.id -eq '2'}).AppendChild($RawXml.CreateTextNode('${psMessage}')) | Out-Null
+$SerializedXml = New-Object Windows.Data.Xml.Dom.XmlDocument
+$SerializedXml.LoadXml($RawXml.OuterXml)
+$Toast = [Windows.UI.Notifications.ToastNotification]::new($SerializedXml)
+$Notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('OpenCode')
+$Notifier.Show($Toast)
+`.trim().replace(/\n/g, "; ")
+      await ctx.$`${powershellPath} -Command ${toastScript}`.catch(() => {})
+      break
+    }
+  }
 }
 
 async function playSound(ctx: PluginInput, p: Platform, soundPath: string): Promise<void> {
@@ -84,7 +122,7 @@ async function playSound(ctx: PluginInput, p: Platform, soundPath: string): Prom
     case "win32": {
       const powershellPath = await getPowershellPath()
       if (!powershellPath) return
-      ctx.$`${powershellPath} -Command ${"(New-Object Media.SoundPlayer '" + soundPath + "').PlaySync()"}`.catch(() => {})
+      ctx.$`${powershellPath} -Command ${"(New-Object Media.SoundPlayer '" + soundPath.replace(/'/g, "''") + "').PlaySync()"}`.catch(() => {})
       break
     }
   }
@@ -111,6 +149,8 @@ export function createSessionNotification(
   startBackgroundCheck(currentPlatform)
 
   const mergedConfig = {
+    title: "OpenCode",
+    message: "Agent is ready for input",
     playSound: false,
     soundPath: defaultSoundPath,
     idleConfirmationDelay: 1500,
@@ -206,7 +246,7 @@ export function createSessionNotification(
 
       notifiedSessions.add(sessionID)
 
-      await sendNotificationWithContext(ctx.directory)
+      await sendNotification(ctx, currentPlatform, mergedConfig.title, mergedConfig.message)
 
       if (mergedConfig.playSound && mergedConfig.soundPath) {
         await playSound(ctx, currentPlatform, mergedConfig.soundPath)

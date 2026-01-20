@@ -36,8 +36,8 @@ export function getToolInput(
   return entry.toolInput
 }
 
-// Periodic cleanup (every minute) - unref'd so it doesn't prevent process exit
-const cleanupInterval = setInterval(() => {
+// Periodic cleanup (every minute)
+setInterval(() => {
   const now = Date.now()
   for (const [key, entry] of cache.entries()) {
     if (now - entry.timestamp > CACHE_TTL) {
@@ -45,4 +45,3 @@ const cleanupInterval = setInterval(() => {
     }
   }
 }, CACHE_TTL)
-cleanupInterval.unref()

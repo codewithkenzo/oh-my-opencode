@@ -1,5 +1,4 @@
-import { tool } from "@opencode-ai/plugin/tool"
-import type { ToolDefinition } from "@opencode-ai/plugin/tool"
+import { tool, type ToolDefinition } from "@opencode-ai/plugin/tool"
 import { BLOCKED_TMUX_SUBCOMMANDS, DEFAULT_TIMEOUT_MS, INTERACTIVE_BASH_DESCRIPTION } from "./constants"
 import { getCachedTmuxPath } from "./utils"
 
@@ -65,7 +64,29 @@ export const interactive_bash: ToolDefinition = tool({
 
       const subcommand = parts[0].toLowerCase()
       if (BLOCKED_TMUX_SUBCOMMANDS.includes(subcommand)) {
-        return `Error: '${parts[0]}' is blocked. Use bash tool instead for capturing/printing terminal output.`
+        const sessionIdx = parts.findIndex(p => p === "-t" || p.startsWith("-t"))
+        let sessionName = "omo-session"
+        if (sessionIdx !== -1) {
+          if (parts[sessionIdx] === "-t" && parts[sessionIdx + 1]) {
+            sessionName = parts[sessionIdx + 1]
+          } else if (parts[sessionIdx].startsWith("-t")) {
+            sessionName = parts[sessionIdx].slice(2)
+          }
+        }
+
+        return `Error: '${parts[0]}' is blocked in interactive_bash.
+
+**USE BASH TOOL INSTEAD:**
+
+\`\`\`bash
+# Capture terminal output
+tmux capture-pane -p -t ${sessionName}
+
+# Or capture with history (last 1000 lines)
+tmux capture-pane -p -t ${sessionName} -S -1000
+\`\`\`
+
+The Bash tool can execute these commands directly. Do NOT retry with interactive_bash.`
       }
 
       const proc = Bun.spawn([tmuxPath, ...parts], {

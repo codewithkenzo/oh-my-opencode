@@ -2,7 +2,6 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFile
 import { join } from "node:path"
 import { MESSAGE_STORAGE, PART_STORAGE, THINKING_TYPES, META_TYPES } from "./constants"
 import type { StoredMessageMeta, StoredPart, StoredTextPart } from "./types"
-import { log } from "../../shared/logger"
 
 export function generatePartId(): string {
   const timestamp = Date.now().toString(16)
@@ -38,8 +37,7 @@ export function readMessages(sessionID: string): StoredMessageMeta[] {
     try {
       const content = readFileSync(join(messageDir, file), "utf-8")
       messages.push(JSON.parse(content))
-    } catch (e) {
-      log(`[session-recovery] Error reading message file: ${e instanceof Error ? e.message : String(e)}`)
+    } catch {
       continue
     }
   }
@@ -62,8 +60,7 @@ export function readParts(messageID: string): StoredPart[] {
     try {
       const content = readFileSync(join(partDir, file), "utf-8")
       parts.push(JSON.parse(content))
-    } catch (e) {
-      log(`[session-recovery] Error reading part file: ${e instanceof Error ? e.message : String(e)}`)
+    } catch {
       continue
     }
   }
@@ -116,8 +113,7 @@ export function injectTextPart(sessionID: string, messageID: string, text: strin
   try {
     writeFileSync(join(partDir, `${partId}.json`), JSON.stringify(part, null, 2))
     return true
-  } catch (e) {
-    log(`[session-recovery] Error writing part file: ${e instanceof Error ? e.message : String(e)}`)
+  } catch {
     return false
   }
 }
@@ -139,7 +135,16 @@ export function findEmptyMessageByIndex(sessionID: string, targetIndex: number):
   const messages = readMessages(sessionID)
 
   // API index may differ from storage index due to system messages
-  const indicesToTry = [targetIndex, targetIndex - 1, targetIndex - 2]
+  const indicesToTry = [
+    targetIndex,
+    targetIndex - 1,
+    targetIndex + 1,
+    targetIndex - 2,
+    targetIndex + 2,
+    targetIndex - 3,
+    targetIndex - 4,
+    targetIndex - 5,
+  ]
 
   for (const idx of indicesToTry) {
     if (idx < 0 || idx >= messages.length) continue
@@ -285,8 +290,7 @@ export function prependThinkingPart(sessionID: string, messageID: string): boole
   try {
     writeFileSync(join(partDir, `${partId}.json`), JSON.stringify(part, null, 2))
     return true
-  } catch (e) {
-    log(`[session-recovery] Error writing thinking part file: ${e instanceof Error ? e.message : String(e)}`)
+  } catch {
     return false
   }
 }
@@ -306,8 +310,7 @@ export function stripThinkingParts(messageID: string): boolean {
         unlinkSync(filePath)
         anyRemoved = true
       }
-    } catch (e) {
-      log(`[session-recovery] Error processing part file for removal: ${e instanceof Error ? e.message : String(e)}`)
+    } catch {
       continue
     }
   }
@@ -336,8 +339,7 @@ export function replaceEmptyTextParts(messageID: string, replacementText: string
           anyReplaced = true
         }
       }
-    } catch (e) {
-      log(`[session-recovery] Error processing part file for replacement: ${e instanceof Error ? e.message : String(e)}`)
+    } catch {
       continue
     }
   }

@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, chmodSync, unlinkSync, appendFileSync } from "fs
 import { join } from "path"
 import { homedir, tmpdir } from "os"
 import { createRequire } from "module"
+import { extractZip } from "../../shared"
 
 const DEBUG = process.env.COMMENT_CHECKER_DEBUG === "1"
 const DEBUG_FILE = join(tmpdir(), "comment-checker-debug.log")
@@ -32,9 +33,16 @@ const PLATFORM_MAP: Record<string, PlatformInfo> = {
 
 /**
  * Get the cache directory for oh-my-opencode binaries.
- * Follows XDG Base Directory Specification.
+ * On Windows: Uses %LOCALAPPDATA% or %APPDATA% (Windows conventions)
+ * On Unix: Follows XDG Base Directory Specification
  */
 export function getCacheDir(): string {
+  if (process.platform === "win32") {
+    const localAppData = process.env.LOCALAPPDATA || process.env.APPDATA
+    const base = localAppData || join(homedir(), "AppData", "Local")
+    return join(base, "oh-my-opencode", "bin")
+  }
+
   const xdgCache = process.env.XDG_CACHE_HOME
   const base = xdgCache || join(homedir(), ".cache")
   return join(base, "oh-my-opencode", "bin")
@@ -88,29 +96,7 @@ async function extractTarGz(archivePath: string, destDir: string): Promise<void>
   }
 }
 
-/**
- * Extract zip archive using system commands.
- */
-async function extractZip(archivePath: string, destDir: string): Promise<void> {
-  debugLog("Extracting zip:", archivePath, "to", destDir)
-  
-  const proc = process.platform === "win32"
-    ? spawn(["powershell", "-command", `Expand-Archive -Path '${archivePath}' -DestinationPath '${destDir}' -Force`], {
-        stdout: "pipe",
-        stderr: "pipe",
-      })
-    : spawn(["unzip", "-o", archivePath, "-d", destDir], {
-        stdout: "pipe",
-        stderr: "pipe",
-      })
-  
-  const exitCode = await proc.exited
-  
-  if (exitCode !== 0) {
-    const stderr = await new Response(proc.stderr).text()
-    throw new Error(`zip extraction failed (exit ${exitCode}): ${stderr}`)
-  }
-}
+
 
 /**
  * Download the comment-checker binary from GitHub Releases.

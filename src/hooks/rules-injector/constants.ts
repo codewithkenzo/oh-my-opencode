@@ -1,7 +1,7 @@
 import { join } from "node:path";
-import { xdgData } from "xdg-basedir";
+import { getOpenCodeStorageDir } from "../../shared/data-path";
 
-export const OPENCODE_STORAGE = join(xdgData ?? "", "opencode", "storage");
+export const OPENCODE_STORAGE = getOpenCodeStorageDir();
 export const RULES_INJECTOR_STORAGE = join(OPENCODE_STORAGE, "rules-injector");
 
 export const PROJECT_MARKERS = [
@@ -14,9 +14,16 @@ export const PROJECT_MARKERS = [
 ];
 
 export const PROJECT_RULE_SUBDIRS: [string, string][] = [
+  [".github", "instructions"],
   [".cursor", "rules"],
   [".claude", "rules"],
 ];
+
+export const PROJECT_RULE_FILES: string[] = [
+  ".github/copilot-instructions.md",
+];
+
+export const GITHUB_INSTRUCTIONS_PATTERN = /\.instructions\.md$/;
 
 export const USER_RULE_DIR = ".claude/rules";
 

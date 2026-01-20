@@ -4,19 +4,53 @@ import { invalidatePackage } from "./cache"
 import { PACKAGE_NAME } from "./constants"
 import { log } from "../../shared/logger"
 import { getConfigLoadErrors, clearConfigLoadErrors } from "../../shared/config-errors"
-import { showToast } from "../../shared/toast"
+import { runBunInstall } from "../../cli/config-manager"
 import type { AutoUpdateCheckerOptions } from "./types"
 
 const SISYPHUS_SPINNER = ["·", "•", "●", "○", "◌", "◦", " "]
 
+export function isPrereleaseVersion(version: string): boolean {
+  return version.includes("-")
+}
+
+export function isDistTag(version: string): boolean {
+  const startsWithDigit = /^\d/.test(version)
+  return !startsWithDigit
+}
+
+export function isPrereleaseOrDistTag(pinnedVersion: string | null): boolean {
+  if (!pinnedVersion) return false
+  return isPrereleaseVersion(pinnedVersion) || isDistTag(pinnedVersion)
+}
+
+export function extractChannel(version: string | null): string {
+  if (!version) return "latest"
+  
+  if (isDistTag(version)) {
+    return version
+  }
+  
+  if (isPrereleaseVersion(version)) {
+    const prereleasePart = version.split("-")[1]
+    if (prereleasePart) {
+      const channelMatch = prereleasePart.match(/^(alpha|beta|rc|canary|next)/)
+      if (channelMatch) {
+        return channelMatch[1]
+      }
+    }
+  }
+  
+  return "latest"
+}
+
 export function createAutoUpdateCheckerHook(ctx: PluginInput, options: AutoUpdateCheckerOptions = {}) {
-  const { showStartupToast = true, isMusashiEnabled = false, autoUpdate = true } = options
+  const { showStartupToast = true, isSisyphusEnabled = false, autoUpdate = true } = options
 
   const getToastMessage = (isUpdate: boolean, latestVersion?: string): string => {
-    if (isMusashiEnabled) {
+    if (isSisyphusEnabled) {
       return isUpdate
-        ? `Musashi on steroids is steering OpenCode.\nv${latestVersion} available. Restart to apply.`
-        : `Musashi on steroids is steering OpenCode.`
+        ? `Sisyphus on steroids is steering OpenCode.\nv${latestVersion} available. Restart to apply.`
+        : `Sisyphus on steroids is steering OpenCode.`
     }
     return isUpdate
       ? `OpenCode is now on Steroids. oMoMoMoMo...\nv${latestVersion} available. Restart OpenCode to apply.`
@@ -35,16 +69,16 @@ export function createAutoUpdateCheckerHook(ctx: PluginInput, options: AutoUpdat
 
       hasChecked = true
 
-      setTimeout(() => {
+      setTimeout(async () => {
         const cachedVersion = getCachedVersion()
         const localDevVersion = getLocalDevVersion(ctx.directory)
         const displayVersion = localDevVersion ?? cachedVersion
 
-        showConfigErrorsIfAny(ctx).catch(() => {})
+        await showConfigErrorsIfAny(ctx)
 
         if (localDevVersion) {
           if (showStartupToast) {
-            showLocalDevToast(ctx, displayVersion, isMusashiEnabled).catch(() => {})
+            showLocalDevToast(ctx, displayVersion, isSisyphusEnabled).catch(() => {})
           }
           log("[auto-update-checker] Local development mode")
           return
@@ -63,7 +97,7 @@ export function createAutoUpdateCheckerHook(ctx: PluginInput, options: AutoUpdat
 }
 
 async function runBackgroundUpdateCheck(
-  ctx: PluginInput, 
+  ctx: PluginInput,
   autoUpdate: boolean,
   getToastMessage: (isUpdate: boolean, latestVersion?: string) => string
 ): Promise<void> {
@@ -80,18 +114,19 @@ async function runBackgroundUpdateCheck(
     return
   }
 
-  const latestVersion = await getLatestVersion()
+  const channel = extractChannel(pluginInfo.pinnedVersion ?? currentVersion)
+  const latestVersion = await getLatestVersion(channel)
   if (!latestVersion) {
-    log("[auto-update-checker] Failed to fetch latest version")
+    log("[auto-update-checker] Failed to fetch latest version for channel:", channel)
     return
   }
 
   if (currentVersion === latestVersion) {
-    log("[auto-update-checker] Already on latest version")
+    log("[auto-update-checker] Already on latest version for channel:", channel)
     return
   }
 
-  log(`[auto-update-checker] Update available: ${currentVersion} → ${latestVersion}`)
+  log(`[auto-update-checker] Update available (${channel}): ${currentVersion} → ${latestVersion}`)
 
   if (!autoUpdate) {
     await showUpdateAvailableToast(ctx, latestVersion, getToastMessage)
@@ -101,16 +136,34 @@ async function runBackgroundUpdateCheck(
 
   if (pluginInfo.isPinned) {
     const updated = updatePinnedVersion(pluginInfo.configPath, pluginInfo.entry, latestVersion)
-    if (updated) {
-      invalidatePackage(PACKAGE_NAME)
-      await showAutoUpdatedToast(ctx, currentVersion, latestVersion)
-      log(`[auto-update-checker] Config updated: ${pluginInfo.entry} → ${PACKAGE_NAME}@${latestVersion}`)
-    } else {
+    if (!updated) {
       await showUpdateAvailableToast(ctx, latestVersion, getToastMessage)
+      log("[auto-update-checker] Failed to update pinned version in config")
+      return
     }
+    log(`[auto-update-checker] Config updated: ${pluginInfo.entry} → ${PACKAGE_NAME}@${latestVersion}`)
+  }
+
+  invalidatePackage(PACKAGE_NAME)
+
+  const installSuccess = await runBunInstallSafe()
+
+  if (installSuccess) {
+    await showAutoUpdatedToast(ctx, currentVersion, latestVersion)
+    log(`[auto-update-checker] Update installed: ${currentVersion} → ${latestVersion}`)
   } else {
-    invalidatePackage(PACKAGE_NAME)
     await showUpdateAvailableToast(ctx, latestVersion, getToastMessage)
+    log("[auto-update-checker] bun install failed; update not installed (falling back to notification-only)")
+  }
+}
+
+async function runBunInstallSafe(): Promise<boolean> {
+  try {
+    return await runBunInstall()
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    log("[auto-update-checker] bun install error:", errorMessage)
+    return false
   }
 }
 
@@ -119,12 +172,16 @@ async function showConfigErrorsIfAny(ctx: PluginInput): Promise<void> {
   if (errors.length === 0) return
 
   const errorMessages = errors.map(e => `${e.path}: ${e.error}`).join("\n")
-  showToast(ctx, {
-    title: "Config Load Error",
-    message: `Failed to load config:\n${errorMessages}`,
-    variant: "error",
-    duration: 10000,
-  })
+  await ctx.client.tui
+    .showToast({
+      body: {
+        title: "Config Load Error",
+        message: `Failed to load config:\n${errorMessages}`,
+        variant: "error" as const,
+        duration: 10000,
+      },
+    })
+    .catch(() => {})
 
   log(`[auto-update-checker] Config load errors shown: ${errors.length} error(s)`)
   clearConfigLoadErrors()
@@ -143,44 +200,56 @@ async function showSpinnerToast(ctx: PluginInput, version: string, message: stri
 
   for (let i = 0; i < totalFrames; i++) {
     const spinner = SISYPHUS_SPINNER[i % SISYPHUS_SPINNER.length]
-    showToast(ctx, {
-      title: `${spinner} OhMyOpenCode ${version}`,
-      message,
-      variant: "info",
-      duration: frameInterval + 50,
-    })
+    await ctx.client.tui
+      .showToast({
+        body: {
+          title: `${spinner} OhMyOpenCode ${version}`,
+          message,
+          variant: "info" as const,
+          duration: frameInterval + 50,
+        },
+      })
+      .catch(() => { })
     await new Promise(resolve => setTimeout(resolve, frameInterval))
   }
 }
 
 async function showUpdateAvailableToast(
-  ctx: PluginInput, 
+  ctx: PluginInput,
   latestVersion: string,
   getToastMessage: (isUpdate: boolean, latestVersion?: string) => string
 ): Promise<void> {
-  showToast(ctx, {
-    title: `OhMyOpenCode ${latestVersion}`,
-    message: getToastMessage(true, latestVersion),
-    variant: "info",
-    duration: 8000,
-  })
+  await ctx.client.tui
+    .showToast({
+      body: {
+        title: `OhMyOpenCode ${latestVersion}`,
+        message: getToastMessage(true, latestVersion),
+        variant: "info" as const,
+        duration: 8000,
+      },
+    })
+    .catch(() => {})
   log(`[auto-update-checker] Update available toast shown: v${latestVersion}`)
 }
 
 async function showAutoUpdatedToast(ctx: PluginInput, oldVersion: string, newVersion: string): Promise<void> {
-  showToast(ctx, {
-    title: `OhMyOpenCode Updated!`,
-    message: `v${oldVersion} → v${newVersion}\nRestart OpenCode to apply.`,
-    variant: "success",
-    duration: 8000,
-  })
+  await ctx.client.tui
+    .showToast({
+      body: {
+        title: `OhMyOpenCode Updated!`,
+        message: `v${oldVersion} → v${newVersion}\nRestart OpenCode to apply.`,
+        variant: "success" as const,
+        duration: 8000,
+      },
+    })
+    .catch(() => {})
   log(`[auto-update-checker] Auto-updated toast shown: v${oldVersion} → v${newVersion}`)
 }
 
-async function showLocalDevToast(ctx: PluginInput, version: string | null, isMusashiEnabled: boolean): Promise<void> {
+async function showLocalDevToast(ctx: PluginInput, version: string | null, isSisyphusEnabled: boolean): Promise<void> {
   const displayVersion = version ?? "dev"
-  const message = isMusashiEnabled
-    ? "Musashi running in local development mode."
+  const message = isSisyphusEnabled
+    ? "Sisyphus running in local development mode."
     : "Running in local development mode. oMoMoMo..."
   await showSpinnerToast(ctx, `${displayVersion} (dev)`, message)
   log(`[auto-update-checker] Local dev toast shown: v${displayVersion}`)

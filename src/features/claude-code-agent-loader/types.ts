@@ -1,6 +1,6 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 
-export type AgentScope = "user" | "project" | "opencode" | "opencode-project"
+export type AgentScope = "user" | "project"
 
 export interface AgentFrontmatter {
   name?: string

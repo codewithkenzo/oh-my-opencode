@@ -1,11 +1,30 @@
 import { extname, basename } from "node:path"
 import { pathToFileURL } from "node:url"
-import { existsSync } from "fs"
-import { tool, type PluginInput } from "@opencode-ai/plugin"
-import type { ToolDefinition } from "@opencode-ai/plugin/tool"
+import { tool, type PluginInput, type ToolDefinition } from "@opencode-ai/plugin"
 import { LOOK_AT_DESCRIPTION, MULTIMODAL_LOOKER_AGENT } from "./constants"
 import type { LookAtArgs } from "./types"
 import { log } from "../../shared/logger"
+
+interface LookAtArgsWithAlias extends LookAtArgs {
+  path?: string
+}
+
+export function normalizeArgs(args: LookAtArgsWithAlias): LookAtArgs {
+  return {
+    file_path: args.file_path ?? args.path ?? "",
+    goal: args.goal ?? "",
+  }
+}
+
+export function validateArgs(args: LookAtArgs): string | null {
+  if (!args.file_path) {
+    return `Error: Missing required parameter 'file_path'. Usage: look_at(file_path="/path/to/file", goal="what to extract")`
+  }
+  if (!args.goal) {
+    return `Error: Missing required parameter 'goal'. Usage: look_at(file_path="/path/to/file", goal="what to extract")`
+  }
+  return null
+}
 
 function inferMimeType(filePath: string): string {
   const ext = extname(filePath).toLowerCase()
@@ -13,20 +32,34 @@ function inferMimeType(filePath: string): string {
     ".jpg": "image/jpeg",
     ".jpeg": "image/jpeg",
     ".png": "image/png",
-    ".gif": "image/gif",
     ".webp": "image/webp",
-    ".svg": "image/svg+xml",
-    ".bmp": "image/bmp",
-    ".ico": "image/x-icon",
+    ".heic": "image/heic",
+    ".heif": "image/heif",
+    ".mp4": "video/mp4",
+    ".mpeg": "video/mpeg",
+    ".mpg": "video/mpeg",
+    ".mov": "video/mov",
+    ".avi": "video/avi",
+    ".flv": "video/x-flv",
+    ".webm": "video/webm",
+    ".wmv": "video/wmv",
+    ".3gpp": "video/3gpp",
+    ".3gp": "video/3gpp",
+    ".wav": "audio/wav",
+    ".mp3": "audio/mp3",
+    ".aiff": "audio/aiff",
+    ".aac": "audio/aac",
+    ".ogg": "audio/ogg",
+    ".flac": "audio/flac",
     ".pdf": "application/pdf",
     ".txt": "text/plain",
-    ".md": "text/markdown",
+    ".csv": "text/csv",
+    ".md": "text/md",
+    ".html": "text/html",
     ".json": "application/json",
     ".xml": "application/xml",
-    ".html": "text/html",
-    ".css": "text/css",
     ".js": "text/javascript",
-    ".ts": "text/typescript",
+    ".py": "text/x-python",
   }
   return mimeTypes[ext] || "application/octet-stream"
 }
@@ -38,48 +71,20 @@ export function createLookAt(ctx: PluginInput): ToolDefinition {
       file_path: tool.schema.string().describe("Absolute path to the file to analyze"),
       goal: tool.schema.string().describe("What specific information to extract from the file"),
     },
-    async execute(args: LookAtArgs, toolContext) {
+    async execute(rawArgs: LookAtArgs, toolContext) {
+      const args = normalizeArgs(rawArgs as LookAtArgsWithAlias)
+      const validationError = validateArgs(args)
+      if (validationError) {
+        log(`[look_at] Validation failed: ${validationError}`)
+        return validationError
+      }
+
       log(`[look_at] Analyzing file: ${args.file_path}, goal: ${args.goal}`)
 
-      const filePath = args.file_path
+      const mimeType = inferMimeType(args.file_path)
+      const filename = basename(args.file_path)
 
-      if (!filePath.startsWith("/") && !/^[A-Za-z]:\\/.test(filePath)) {
-        log(`[look_at] Invalid path: ${filePath}`)
-        return `Error: Path must be absolute. Got: ${filePath}`
-      }
-
-      if (!existsSync(filePath)) {
-        log(`[look_at] File not found: ${filePath}`)
-        return `Error: File not found: ${filePath}`
-      }
-
-      const mimeType = inferMimeType(filePath)
-      const filename = basename(filePath)
-      const fileUrl = pathToFileURL(filePath).href
-
-      // Detect if goal is UI/design related for critic mode
-      const isVisualGoal = /ui|design|layout|spacing|color|style|css|component|screenshot/i.test(args.goal)
-      
-      const prompt = isVisualGoal 
-        ? `You are a CRITIC, not a narrator. Analyze this file with a critical eye.
-
-Goal: ${args.goal}
-
-RULES:
-1. DO NOT describe what you see passively
-2. DO identify problems, inconsistencies, missed opportunities
-3. DO provide specific, numbered actionable feedback
-4. DO compare against best practices
-5. DO rate confidence: "Certain" / "Likely" / "Speculative"
-
-VISUAL CRITIQUE:
-- Check alignment, spacing, contrast, hierarchy
-- Identify generic/default elements
-- Suggest specific improvements with values (e.g., "increase padding to 32px")
-- Call out anything that looks "lazy" or "default"
-
-OUTPUT: Numbered findings + recommendations. No fluff.`
-        : `Analyze this file and extract the requested information.
+      const prompt = `Analyze this file and extract the requested information.
 
 Goal: ${args.goal}
 
@@ -88,10 +93,18 @@ Be thorough on what was requested, concise on everything else.
 If the requested information is not found, clearly state what is missing.`
 
       log(`[look_at] Creating session with parent: ${toolContext.sessionID}`)
+      const parentSession = await ctx.client.session.get({
+        path: { id: toolContext.sessionID },
+      }).catch(() => null)
+      const parentDirectory = parentSession?.data?.directory ?? ctx.directory
+
       const createResult = await ctx.client.session.create({
         body: {
           parentID: toolContext.sessionID,
           title: `look_at: ${args.goal.substring(0, 50)}`,
+        },
+        query: {
+          directory: parentDirectory,
         },
       })
 
@@ -116,7 +129,7 @@ If the requested information is not found, clearly state what is missing.`
           },
           parts: [
             { type: "text", text: prompt },
-            { type: "file", mime: mimeType, url: fileUrl, filename },
+            { type: "file", mime: mimeType, url: pathToFileURL(args.file_path).href, filename },
           ],
         },
       })
@@ -142,7 +155,7 @@ If the requested information is not found, clearly state what is missing.`
 
       if (!lastAssistantMessage) {
         log(`[look_at] No assistant message found`)
-        return `Error: No response from M10 - critic agent`
+        return `Error: No response from multimodal-looker agent`
       }
 
       log(`[look_at] Found assistant message with ${lastAssistantMessage.parts.length} parts`)

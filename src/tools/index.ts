@@ -1,16 +1,14 @@
 import {
-  lsp_hover,
   lsp_goto_definition,
   lsp_find_references,
-  lsp_document_symbols,
-  lsp_workspace_symbols,
+  lsp_symbols,
   lsp_diagnostics,
-  lsp_servers,
   lsp_prepare_rename,
   lsp_rename,
-  lsp_code_actions,
-  lsp_code_action_resolve,
+  lspManager,
 } from "./lsp"
+
+export { lspManager }
 
 import {
   ast_grep_search,
@@ -19,7 +17,7 @@ import {
 
 import { grep } from "./grep"
 import { glob } from "./glob"
-import { slashcommand } from "./slashcommand"
+export { createSlashcommandTool, discoverCommandsSync } from "./slashcommand"
 
 import {
   session_list,
@@ -28,41 +26,22 @@ import {
   session_info,
 } from "./session-manager"
 
-import { ticketTools } from './ticket'
-import { system_notify } from './system-notify'
+export { sessionExists } from "./session-manager/storage"
+
+export { interactive_bash, startBackgroundCheck as startTmuxCheck } from "./interactive-bash"
+export { createSkillTool } from "./skill"
+export { getTmuxPath } from "./interactive-bash/utils"
+export { createSkillMcpTool } from "./skill-mcp"
 
 import {
-  runwareGenerate,
-  runwareRemoveBg,
-  runwareUpscale,
-  runwareModelSearch,
-  runwareImg2Img,
-  runwareVideoGenerate,
-  runwareVideoFromImage,
-} from './runware'
+  createBackgroundOutput,
+  createBackgroundCancel,
+} from "./background-task"
 
-import {
-  civitai_search,
-  civitai_get,
-  civitai_tags,
-} from './civitai'
+import type { PluginInput, ToolDefinition } from "@opencode-ai/plugin"
+import type { BackgroundManager } from "../features/background-agent"
 
-import { syncthingTools } from './syncthing'
-
-import { context7_resolve_library_id, context7_get_library_docs, context7_query_docs } from './context7'
-
-import { grep_app_searchGitHub } from './grep-app'
-
-import { websearch as exa_websearch } from './exa'
-
-import { glare } from './glare'
-
-import { codesearch as exa_codesearch } from './codesearch'
-
-import { webfetch } from './webfetch'
-
-import { multiedit } from './multiedit'
-
+// Custom tools - raindrop (ripple)
 import {
   ripple_collections,
   ripple_search,
@@ -76,67 +55,99 @@ import {
   ripple_delete,
   ripple_bulk_delete,
   ripple_suggest,
-} from './raindrop'
+} from "./raindrop"
 
-import { zread_search, zread_file, zread_structure } from './zread'
-
-export { interactive_bash, startBackgroundCheck as startTmuxCheck } from "./interactive-bash"
-export { getTmuxPath } from "./interactive-bash/utils"
-
+// Custom tools - runware
 import {
-  createBackgroundTask,
-  createBackgroundOutput,
-  createBackgroundCancel,
-} from "./background-task"
+  runwareGenerate,
+  runwareRemoveBg,
+  runwareUpscale,
+  runwareModelSearch,
+  runwareImg2Img,
+  runwareVideoGenerate,
+  runwareVideoFromImage,
+} from "./runware"
 
-import type { PluginInput } from "@opencode-ai/plugin"
-import type { ToolDefinition } from "@opencode-ai/plugin/tool"
-import type { BackgroundManager } from "../features/background-agent"
+// Custom tools - syncthing
+import {
+  syncthing_status,
+  syncthing_folders,
+  syncthing_folder_add,
+  syncthing_folder_remove,
+  syncthing_folder_pause,
+  syncthing_folder_rescan,
+  syncthing_devices,
+  syncthing_device_add,
+  syncthing_device_remove,
+  syncthing_share,
+  syncthing_unshare,
+  syncthing_ignores_get,
+  syncthing_ignores_set,
+  syncthing_versioning,
+  syncthing_connections,
+} from "./syncthing"
+
+// Custom tools - ticket
+import {
+  ticket_ready,
+  ticket_list,
+  ticket_show,
+  ticket_create,
+  ticket_start,
+  ticket_close,
+  ticket_dep,
+  ticket_undep,
+  ticket_blocked,
+} from "./ticket"
+
+// Custom tools - civitai
+import {
+  civitai_search,
+  civitai_get,
+  civitai_tags,
+} from "./civitai"
+
+// Custom tools - zread
+import { zread_search, zread_file, zread_structure } from "./zread"
+
+// Custom tools - agent-browser
+import { browserTools } from "./agent-browser"
+
+// Custom tools - system-notify
+import { system_notify } from "./system-notify"
+export { sendSystemNotification } from "./system-notify"
+
+// Custom tools - supermemory (factory function)
+export { createSupermemoryTool } from "./supermemory"
 
 type OpencodeClient = PluginInput["client"]
 
 export { createCallOmoAgent } from "./call-omo-agent"
 export { createLookAt } from "./look-at"
-export { createSupermemoryTool } from "./supermemory"
+export { createDelegateTask, type DelegateTaskToolOptions, DEFAULT_CATEGORIES, CATEGORY_PROMPT_APPENDS } from "./delegate-task"
 
 export function createBackgroundTools(manager: BackgroundManager, client: OpencodeClient): Record<string, ToolDefinition> {
   return {
-    background_task: createBackgroundTask(manager),
     background_output: createBackgroundOutput(manager, client),
     background_cancel: createBackgroundCancel(manager, client),
   }
 }
 
 export const builtinTools: Record<string, ToolDefinition> = {
-  lsp_hover,
   lsp_goto_definition,
   lsp_find_references,
-  lsp_document_symbols,
-  lsp_workspace_symbols,
+  lsp_symbols,
   lsp_diagnostics,
-  lsp_servers,
   lsp_prepare_rename,
   lsp_rename,
-  lsp_code_actions,
-  lsp_code_action_resolve,
   ast_grep_search,
   ast_grep_replace,
   grep,
   glob,
-  slashcommand,
   session_list,
   session_read,
   session_search,
   session_info,
-  context7_resolve_library_id,
-  context7_get_library_docs,
-  context7_query_docs,
-  grep_app_searchGitHub,
-  exa_websearch,
-  glare,
-  exa_codesearch,
-  webfetch,
-  multiedit,
   ripple_collections,
   ripple_search,
   ripple_get,
@@ -149,8 +160,6 @@ export const builtinTools: Record<string, ToolDefinition> = {
   ripple_delete,
   ripple_bulk_delete,
   ripple_suggest,
-  ...ticketTools,
-  system_notify,
   runwareGenerate,
   runwareRemoveBg,
   runwareUpscale,
@@ -158,11 +167,36 @@ export const builtinTools: Record<string, ToolDefinition> = {
   runwareImg2Img,
   runwareVideoGenerate,
   runwareVideoFromImage,
+  syncthing_status,
+  syncthing_folders,
+  syncthing_folder_add,
+  syncthing_folder_remove,
+  syncthing_folder_pause,
+  syncthing_folder_rescan,
+  syncthing_devices,
+  syncthing_device_add,
+  syncthing_device_remove,
+  syncthing_share,
+  syncthing_unshare,
+  syncthing_ignores_get,
+  syncthing_ignores_set,
+  syncthing_versioning,
+  syncthing_connections,
+  ticket_ready,
+  ticket_list,
+  ticket_show,
+  ticket_create,
+  ticket_start,
+  ticket_close,
+  ticket_dep,
+  ticket_undep,
+  ticket_blocked,
   civitai_search,
   civitai_get,
   civitai_tags,
-  ...syncthingTools,
   zread_search,
   zread_file,
   zread_structure,
+  system_notify,
+  ...browserTools,
 }

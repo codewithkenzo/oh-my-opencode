@@ -1,10 +1,9 @@
 import { spawn, type Subprocess } from "bun"
 import { readFileSync } from "fs"
 import { extname, resolve } from "path"
-import type { ResolvedServer } from "./config"
+import { pathToFileURL } from "node:url"
 import { getLanguageId } from "./config"
-import type { Diagnostic } from "./types"
-import { log } from "../../shared/logger"
+import type { Diagnostic, ResolvedServer } from "./types"
 
 interface ManagedClient {
   client: LSPClient
@@ -30,9 +29,7 @@ class LSPServerManager {
       for (const [, managed] of this.clients) {
         try {
           managed.client.stop()
-        } catch {
-          // Ignore errors during cleanup - process is shutting down
-        }
+        } catch {}
       }
       this.clients.clear()
       if (this.cleanupInterval) {
@@ -186,6 +183,26 @@ class LSPServerManager {
       this.cleanupInterval = null
     }
   }
+
+  async cleanupTempDirectoryClients(): Promise<void> {
+    const keysToRemove: string[] = []
+    for (const [key, managed] of this.clients.entries()) {
+      const isTempDir = key.startsWith("/tmp/") || key.startsWith("/var/folders/")
+      const isIdle = managed.refCount === 0
+      if (isTempDir && isIdle) {
+        keysToRemove.push(key)
+      }
+    }
+    for (const key of keysToRemove) {
+      const managed = this.clients.get(key)
+      if (managed) {
+        this.clients.delete(key)
+        try {
+          await managed.client.stop()
+        } catch {}
+      }
+    }
+  }
 }
 
 export const lspManager = LSPServerManager.getInstance()
@@ -193,7 +210,7 @@ export const lspManager = LSPServerManager.getInstance()
 export class LSPClient {
   private proc: Subprocess<"pipe", "pipe", "pipe"> | null = null
   private buffer: Uint8Array = new Uint8Array(0)
-  private pending = new Map<number, { resolve: (value: unknown) => void; reject: (error: Error) => void; timeoutId: ReturnType<typeof setTimeout> }>()
+  private pending = new Map<number, { resolve: (value: unknown) => void; reject: (error: Error) => void }>()
   private requestIdCounter = 0
   private openedFiles = new Set<string>()
   private stderrBuffer: string[] = []
@@ -264,29 +281,27 @@ export class LSPClient {
   private startStderrReading(): void {
     if (!this.proc) return
 
-     const reader = this.proc.stderr.getReader()
-     const read = async () => {
-       const decoder = new TextDecoder()
-       try {
-         while (true) {
-           const { done, value } = await reader.read()
-           if (done) break
-           const text = decoder.decode(value)
-           this.stderrBuffer.push(text)
-           if (this.stderrBuffer.length > 100) {
-             this.stderrBuffer.shift()
-           }
-         }
-       } catch {
-         // Ignore stderr read errors - stderr stream closed
-       }
-     }
+    const reader = this.proc.stderr.getReader()
+    const read = async () => {
+      const decoder = new TextDecoder()
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          const text = decoder.decode(value)
+          this.stderrBuffer.push(text)
+          if (this.stderrBuffer.length > 100) {
+            this.stderrBuffer.shift()
+          }
+        }
+      } catch {
+      }
+    }
     read()
   }
 
   private rejectAllPending(reason: string): void {
     for (const [id, handler] of this.pending) {
-      clearTimeout(handler.timeoutId)
       handler.reject(new Error(reason))
       this.pending.delete(id)
     }
@@ -345,7 +360,6 @@ export class LSPClient {
         } else if ("id" in msg && this.pending.has(msg.id)) {
           const handler = this.pending.get(msg.id)!
           this.pending.delete(msg.id)
-          clearTimeout(handler.timeoutId)
           if ("error" in msg) {
             handler.reject(new Error(msg.error.message))
           } else {
@@ -371,14 +385,14 @@ export class LSPClient {
     this.proc.stdin.write(header + msg)
 
     return new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
+      this.pending.set(id, { resolve, reject })
+      setTimeout(() => {
         if (this.pending.has(id)) {
           this.pending.delete(id)
           const stderr = this.stderrBuffer.slice(-5).join("\n")
           reject(new Error(`LSP request timeout (method: ${method})` + (stderr ? `\nrecent stderr: ${stderr}` : "")))
         }
       }, 15000)
-      this.pending.set(id, { resolve, reject, timeoutId })
     })
   }
 
@@ -414,7 +428,7 @@ export class LSPClient {
   }
 
   async initialize(): Promise<void> {
-    const rootUri = `file://${this.root}`
+    const rootUri = pathToFileURL(this.root).href
     await this.send("initialize", {
       processId: process.pid,
       rootUri,
@@ -484,7 +498,7 @@ export class LSPClient {
 
     this.notify("textDocument/didOpen", {
       textDocument: {
-        uri: `file://${absPath}`,
+        uri: pathToFileURL(absPath).href,
         languageId,
         version: 1,
         text,
@@ -495,20 +509,11 @@ export class LSPClient {
     await new Promise((r) => setTimeout(r, 1000))
   }
 
-  async hover(filePath: string, line: number, character: number): Promise<unknown> {
-    const absPath = resolve(filePath)
-    await this.openFile(absPath)
-    return this.send("textDocument/hover", {
-      textDocument: { uri: `file://${absPath}` },
-      position: { line: line - 1, character },
-    })
-  }
-
   async definition(filePath: string, line: number, character: number): Promise<unknown> {
     const absPath = resolve(filePath)
     await this.openFile(absPath)
     return this.send("textDocument/definition", {
-      textDocument: { uri: `file://${absPath}` },
+      textDocument: { uri: pathToFileURL(absPath).href },
       position: { line: line - 1, character },
     })
   }
@@ -517,7 +522,7 @@ export class LSPClient {
     const absPath = resolve(filePath)
     await this.openFile(absPath)
     return this.send("textDocument/references", {
-      textDocument: { uri: `file://${absPath}` },
+      textDocument: { uri: pathToFileURL(absPath).href },
       position: { line: line - 1, character },
       context: { includeDeclaration },
     })
@@ -527,7 +532,7 @@ export class LSPClient {
     const absPath = resolve(filePath)
     await this.openFile(absPath)
     return this.send("textDocument/documentSymbol", {
-      textDocument: { uri: `file://${absPath}` },
+      textDocument: { uri: pathToFileURL(absPath).href },
     })
   }
 
@@ -537,7 +542,7 @@ export class LSPClient {
 
   async diagnostics(filePath: string): Promise<{ items: Diagnostic[] }> {
     const absPath = resolve(filePath)
-    const uri = `file://${absPath}`
+    const uri = pathToFileURL(absPath).href
     await this.openFile(absPath)
     await new Promise((r) => setTimeout(r, 500))
 
@@ -549,7 +554,6 @@ export class LSPClient {
         return result as { items: Diagnostic[] }
       }
     } catch {
-      // Fallback to stored diagnostics if server doesn't support diagnostic request
     }
 
     return { items: this.diagnosticsStore.get(uri) ?? [] }
@@ -559,7 +563,7 @@ export class LSPClient {
     const absPath = resolve(filePath)
     await this.openFile(absPath)
     return this.send("textDocument/prepareRename", {
-      textDocument: { uri: `file://${absPath}` },
+      textDocument: { uri: pathToFileURL(absPath).href },
       position: { line: line - 1, character },
     })
   }
@@ -568,37 +572,10 @@ export class LSPClient {
     const absPath = resolve(filePath)
     await this.openFile(absPath)
     return this.send("textDocument/rename", {
-      textDocument: { uri: `file://${absPath}` },
+      textDocument: { uri: pathToFileURL(absPath).href },
       position: { line: line - 1, character },
       newName,
     })
-  }
-
-  async codeAction(
-    filePath: string,
-    startLine: number,
-    startChar: number,
-    endLine: number,
-    endChar: number,
-    only?: string[]
-  ): Promise<unknown> {
-    const absPath = resolve(filePath)
-    await this.openFile(absPath)
-    return this.send("textDocument/codeAction", {
-      textDocument: { uri: `file://${absPath}` },
-      range: {
-        start: { line: startLine - 1, character: startChar },
-        end: { line: endLine - 1, character: endChar },
-      },
-      context: {
-        diagnostics: [],
-        only,
-      },
-    })
-  }
-
-  async codeActionResolve(codeAction: unknown): Promise<unknown> {
-    return this.send("codeAction/resolve", codeAction)
   }
 
   isAlive(): boolean {
@@ -610,7 +587,6 @@ export class LSPClient {
       this.notify("shutdown", {})
       this.notify("exit")
     } catch {
-      // Ignore errors during shutdown notifications
     }
     this.proc?.kill()
     this.proc = null

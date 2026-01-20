@@ -1,16 +1,8 @@
 import { existsSync, readFileSync } from "fs"
 import { join } from "path"
 import { homedir } from "os"
-import { BUILTIN_SERVERS, EXT_TO_LANG } from "./constants"
-
-export interface ResolvedServer {
-  id: string
-  command: string[]
-  extensions: string[]
-  priority: number
-  env?: Record<string, string>
-  initialization?: Record<string, unknown>
-}
+import { BUILTIN_SERVERS, EXT_TO_LANG, LSP_INSTALL_HINTS } from "./constants"
+import type { ResolvedServer, ServerLookupResult } from "./types"
 
 interface LspEntry {
   disabled?: boolean
@@ -120,23 +112,47 @@ function getMergedServers(): ServerWithSource[] {
   })
 }
 
-export function findServerForExtension(ext: string): ResolvedServer | null {
+export function findServerForExtension(ext: string): ServerLookupResult {
   const servers = getMergedServers()
 
   for (const server of servers) {
     if (server.extensions.includes(ext) && isServerInstalled(server.command)) {
       return {
-        id: server.id,
-        command: server.command,
-        extensions: server.extensions,
-        priority: server.priority,
-        env: server.env,
-        initialization: server.initialization,
+        status: "found",
+        server: {
+          id: server.id,
+          command: server.command,
+          extensions: server.extensions,
+          priority: server.priority,
+          env: server.env,
+          initialization: server.initialization,
+        },
       }
     }
   }
 
-  return null
+  for (const server of servers) {
+    if (server.extensions.includes(ext)) {
+      const installHint =
+        LSP_INSTALL_HINTS[server.id] || `Install '${server.command[0]}' and ensure it's in your PATH`
+      return {
+        status: "not_installed",
+        server: {
+          id: server.id,
+          command: server.command,
+          extensions: server.extensions,
+        },
+        installHint,
+      }
+    }
+  }
+
+  const availableServers = [...new Set(servers.map((s) => s.id))]
+  return {
+    status: "not_configured",
+    extension: ext,
+    availableServers,
+  }
 }
 
 export function getLanguageId(ext: string): string {
@@ -147,33 +163,59 @@ export function isServerInstalled(command: string[]): boolean {
   if (command.length === 0) return false
 
   const cmd = command[0]
-  const isWindows = process.platform === "win32"
-  const ext = isWindows ? ".exe" : ""
 
-  const pathEnv = process.env.PATH || ""
+  // Support absolute paths (e.g., C:\Users\...\server.exe or /usr/local/bin/server)
+  if (cmd.includes("/") || cmd.includes("\\")) {
+    if (existsSync(cmd)) return true
+  }
+
+  const isWindows = process.platform === "win32"
+  
+  let exts = [""]
+  if (isWindows) {
+    const pathExt = process.env.PATHEXT || ""
+    if (pathExt) {
+       const systemExts = pathExt.split(";").filter(Boolean)
+       exts = [...new Set([...exts, ...systemExts, ".exe", ".cmd", ".bat", ".ps1"])]
+    } else {
+       exts = ["", ".exe", ".cmd", ".bat", ".ps1"]
+    }
+  }
+
+  let pathEnv = process.env.PATH || ""
+  if (isWindows && !pathEnv) {
+    pathEnv = process.env.Path || ""
+  }
+  
   const pathSeparator = isWindows ? ";" : ":"
   const paths = pathEnv.split(pathSeparator)
 
   for (const p of paths) {
-    if (existsSync(join(p, cmd)) || existsSync(join(p, cmd + ext))) {
-      return true
+    for (const suffix of exts) {
+      if (existsSync(join(p, cmd + suffix))) {
+        return true
+      }
     }
   }
 
   const cwd = process.cwd()
-  const additionalPaths = [
-    join(cwd, "node_modules", ".bin", cmd),
-    join(cwd, "node_modules", ".bin", cmd + ext),
-    join(homedir(), ".config", "opencode", "bin", cmd),
-    join(homedir(), ".config", "opencode", "bin", cmd + ext),
-    join(homedir(), ".config", "opencode", "node_modules", ".bin", cmd),
-    join(homedir(), ".config", "opencode", "node_modules", ".bin", cmd + ext),
+  const additionalBases = [
+    join(cwd, "node_modules", ".bin"),
+    join(homedir(), ".config", "opencode", "bin"),
+    join(homedir(), ".config", "opencode", "node_modules", ".bin"),
   ]
 
-  for (const p of additionalPaths) {
-    if (existsSync(p)) {
-      return true
+  for (const base of additionalBases) {
+    for (const suffix of exts) {
+      if (existsSync(join(base, cmd + suffix))) {
+        return true
+      }
     }
+  }
+
+  // Runtime wrappers (bun/node) are always available in oh-my-opencode context
+  if (cmd === "bun" || cmd === "node") {
+    return true
   }
 
   return false

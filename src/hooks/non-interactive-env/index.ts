@@ -1,6 +1,7 @@
 import type { PluginInput } from "@opencode-ai/plugin"
 import { HOOK_NAME, NON_INTERACTIVE_ENV, SHELL_COMMAND_PATTERNS } from "./constants"
-import { log } from "../../shared"
+import { isNonInteractive } from "./detector"
+import { log, detectShellType, buildEnvPrefix } from "../../shared"
 
 export * from "./constants"
 export * from "./detector"
@@ -34,19 +35,28 @@ export function createNonInteractiveEnvHook(_ctx: PluginInput) {
         return
       }
 
-      output.args.env = {
-        ...(output.args.env as Record<string, string> | undefined),
-        ...NON_INTERACTIVE_ENV,
-      }
-
       const bannedCmd = detectBannedCommand(command)
       if (bannedCmd) {
         output.message = `⚠️ Warning: '${bannedCmd}' is an interactive command that may hang in non-interactive environments.`
       }
 
-      log(`[${HOOK_NAME}] Set non-interactive environment variables`, {
+      // Only prepend env vars for git commands (editor blocking, pager, etc.)
+      const isGitCommand = /\bgit\b/.test(command)
+      if (!isGitCommand) {
+        return
+      }
+
+      if (!isNonInteractive()) {
+        return
+      }
+
+      const shellType = detectShellType()
+      const envPrefix = buildEnvPrefix(NON_INTERACTIVE_ENV, shellType)
+      output.args.command = `${envPrefix} ${command}`
+
+      log(`[${HOOK_NAME}] Prepended non-interactive env vars to git command`, {
         sessionID: input.sessionID,
-        env: NON_INTERACTIVE_ENV,
+        envPrefix,
       })
     },
   }

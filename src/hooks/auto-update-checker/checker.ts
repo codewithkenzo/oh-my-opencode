@@ -9,7 +9,10 @@ import {
   INSTALLED_PACKAGE_JSON,
   USER_OPENCODE_CONFIG,
   USER_OPENCODE_CONFIG_JSONC,
+  USER_CONFIG_DIR,
+  getWindowsAppdataDir,
 } from "./constants"
+import * as os from "node:os"
 import { log } from "../../shared/logger"
 
 export function isLocalDevMode(directory: string): boolean {
@@ -23,12 +26,32 @@ function stripJsonComments(json: string): string {
 }
 
 function getConfigPaths(directory: string): string[] {
-  return [
+  const paths = [
     path.join(directory, ".opencode", "opencode.json"),
     path.join(directory, ".opencode", "opencode.jsonc"),
     USER_OPENCODE_CONFIG,
     USER_OPENCODE_CONFIG_JSONC,
   ]
+  
+  if (process.platform === "win32") {
+    const crossPlatformDir = path.join(os.homedir(), ".config")
+    const appdataDir = getWindowsAppdataDir()
+    
+    if (appdataDir) {
+      const alternateDir = USER_CONFIG_DIR === crossPlatformDir ? appdataDir : crossPlatformDir
+      const alternateConfig = path.join(alternateDir, "opencode", "opencode.json")
+      const alternateConfigJsonc = path.join(alternateDir, "opencode", "opencode.jsonc")
+      
+      if (!paths.includes(alternateConfig)) {
+        paths.push(alternateConfig)
+      }
+      if (!paths.includes(alternateConfigJsonc)) {
+        paths.push(alternateConfigJsonc)
+      }
+    }
+  }
+  
+  return paths
 }
 
 export function getLocalDevPath(directory: string): string | null {
@@ -43,14 +66,12 @@ export function getLocalDevPath(directory: string): string | null {
         if (entry.startsWith("file://") && entry.includes(PACKAGE_NAME)) {
           try {
             return fileURLToPath(entry)
-          } catch (e) {
-            log(`[auto-update-checker] Error parsing file URL: ${e instanceof Error ? e.message : String(e)}`)
+          } catch {
             return entry.replace("file://", "")
           }
         }
       }
-    } catch (e) {
-      log(`[auto-update-checker] Error reading config file: ${e instanceof Error ? e.message : String(e)}`)
+    } catch {
       continue
     }
   }
@@ -70,17 +91,13 @@ function findPackageJsonUp(startPath: string): string | null {
           const content = fs.readFileSync(pkgPath, "utf-8")
           const pkg = JSON.parse(content) as PackageJson
           if (pkg.name === PACKAGE_NAME) return pkgPath
-        } catch (e) {
-          log(`[auto-update-checker] Error parsing package.json: ${e instanceof Error ? e.message : String(e)}`)
-        }
+        } catch {}
       }
       const parent = path.dirname(dir)
       if (parent === dir) break
       dir = parent
     }
-  } catch (e) {
-    log(`[auto-update-checker] Error finding package.json: ${e instanceof Error ? e.message : String(e)}`)
-  }
+  } catch {}
   return null
 }
 
@@ -94,8 +111,7 @@ export function getLocalDevVersion(directory: string): string | null {
     const content = fs.readFileSync(pkgPath, "utf-8")
     const pkg = JSON.parse(content) as PackageJson
     return pkg.version ?? null
-  } catch (e) {
-    log(`[auto-update-checker] Error getting local dev version: ${e instanceof Error ? e.message : String(e)}`)
+  } catch {
     return null
   }
 }
@@ -125,8 +141,7 @@ export function findPluginEntry(directory: string): PluginEntryInfo | null {
           return { entry, isPinned, pinnedVersion: isPinned ? pinnedVersion : null, configPath }
         }
       }
-    } catch (e) {
-      log(`[auto-update-checker] Error reading plugin config: ${e instanceof Error ? e.message : String(e)}`)
+    } catch {
       continue
     }
   }
@@ -141,9 +156,7 @@ export function getCachedVersion(): string | null {
       const pkg = JSON.parse(content) as PackageJson
       if (pkg.version) return pkg.version
     }
-  } catch (e) {
-    log(`[auto-update-checker] Error reading installed package.json: ${e instanceof Error ? e.message : String(e)}`)
-  }
+  } catch {}
 
   try {
     const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -218,7 +231,7 @@ export function updatePinnedVersion(configPath: string, oldEntry: string, newVer
   }
 }
 
-export async function getLatestVersion(): Promise<string | null> {
+export async function getLatestVersion(channel: string = "latest"): Promise<string | null> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), NPM_FETCH_TIMEOUT)
 
@@ -231,7 +244,7 @@ export async function getLatestVersion(): Promise<string | null> {
     if (!response.ok) return null
 
     const data = (await response.json()) as NpmDistTags
-    return data.latest ?? null
+    return data[channel] ?? data.latest ?? null
   } catch {
     return null
   } finally {
@@ -251,24 +264,21 @@ export async function checkForUpdate(directory: string): Promise<UpdateCheckResu
     return { needsUpdate: false, currentVersion: null, latestVersion: null, isLocalDev: false, isPinned: false }
   }
 
-  if (pluginInfo.isPinned) {
-    log(`[auto-update-checker] Version pinned to ${pluginInfo.pinnedVersion}, skipping update check`)
-    return { needsUpdate: false, currentVersion: pluginInfo.pinnedVersion, latestVersion: null, isLocalDev: false, isPinned: true }
-  }
-
-  const currentVersion = getCachedVersion()
+  const currentVersion = getCachedVersion() ?? pluginInfo.pinnedVersion
   if (!currentVersion) {
     log("[auto-update-checker] No cached version found")
     return { needsUpdate: false, currentVersion: null, latestVersion: null, isLocalDev: false, isPinned: false }
   }
 
-  const latestVersion = await getLatestVersion()
+  const { extractChannel } = await import("./index")
+  const channel = extractChannel(pluginInfo.pinnedVersion ?? currentVersion)
+  const latestVersion = await getLatestVersion(channel)
   if (!latestVersion) {
-    log("[auto-update-checker] Failed to fetch latest version")
-    return { needsUpdate: false, currentVersion, latestVersion: null, isLocalDev: false, isPinned: false }
+    log("[auto-update-checker] Failed to fetch latest version for channel:", channel)
+    return { needsUpdate: false, currentVersion, latestVersion: null, isLocalDev: false, isPinned: pluginInfo.isPinned }
   }
 
   const needsUpdate = currentVersion !== latestVersion
-  log(`[auto-update-checker] Current: ${currentVersion}, Latest: ${latestVersion}, NeedsUpdate: ${needsUpdate}`)
-  return { needsUpdate, currentVersion, latestVersion, isLocalDev: false, isPinned: false }
+  log(`[auto-update-checker] Current: ${currentVersion}, Latest (${channel}): ${latestVersion}, NeedsUpdate: ${needsUpdate}`)
+  return { needsUpdate, currentVersion, latestVersion, isLocalDev: false, isPinned: pluginInfo.isPinned }
 }

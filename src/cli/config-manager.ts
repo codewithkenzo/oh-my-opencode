@@ -1,15 +1,101 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
-import { homedir } from "node:os"
-import { join } from "node:path"
+import { existsSync, mkdirSync, readFileSync, writeFileSync, statSync } from "node:fs"
+import {
+  parseJsonc,
+  getOpenCodeConfigPaths,
+  type OpenCodeBinaryType,
+  type OpenCodeConfigPaths,
+} from "../shared"
 import type { ConfigMergeResult, DetectedConfig, InstallConfig } from "./types"
 
-const OPENCODE_CONFIG_DIR = join(homedir(), ".config", "opencode")
-const OPENCODE_JSON = join(OPENCODE_CONFIG_DIR, "opencode.json")
-const OPENCODE_JSONC = join(OPENCODE_CONFIG_DIR, "opencode.jsonc")
-const OPENCODE_PACKAGE_JSON = join(OPENCODE_CONFIG_DIR, "package.json")
-const OMO_CONFIG = join(OPENCODE_CONFIG_DIR, "oh-my-opencode.json")
+const OPENCODE_BINARIES = ["opencode", "opencode-desktop"] as const
 
-const CHATGPT_HOTFIX_REPO = "code-yeongyu/opencode-openai-codex-auth#fix/orphaned-function-call-output-with-tools"
+interface ConfigContext {
+  binary: OpenCodeBinaryType
+  version: string | null
+  paths: OpenCodeConfigPaths
+}
+
+let configContext: ConfigContext | null = null
+
+export function initConfigContext(binary: OpenCodeBinaryType, version: string | null): void {
+  const paths = getOpenCodeConfigPaths({ binary, version })
+  configContext = { binary, version, paths }
+}
+
+export function getConfigContext(): ConfigContext {
+  if (!configContext) {
+    const paths = getOpenCodeConfigPaths({ binary: "opencode", version: null })
+    configContext = { binary: "opencode", version: null, paths }
+  }
+  return configContext
+}
+
+export function resetConfigContext(): void {
+  configContext = null
+}
+
+function getConfigDir(): string {
+  return getConfigContext().paths.configDir
+}
+
+function getConfigJson(): string {
+  return getConfigContext().paths.configJson
+}
+
+function getConfigJsonc(): string {
+  return getConfigContext().paths.configJsonc
+}
+
+function getPackageJson(): string {
+  return getConfigContext().paths.packageJson
+}
+
+function getOmoConfig(): string {
+  return getConfigContext().paths.omoConfig
+}
+
+const BUN_INSTALL_TIMEOUT_SECONDS = 60
+const BUN_INSTALL_TIMEOUT_MS = BUN_INSTALL_TIMEOUT_SECONDS * 1000
+
+interface NodeError extends Error {
+  code?: string
+}
+
+function isPermissionError(err: unknown): boolean {
+  const nodeErr = err as NodeError
+  return nodeErr?.code === "EACCES" || nodeErr?.code === "EPERM"
+}
+
+function isFileNotFoundError(err: unknown): boolean {
+  const nodeErr = err as NodeError
+  return nodeErr?.code === "ENOENT"
+}
+
+function formatErrorWithSuggestion(err: unknown, context: string): string {
+  if (isPermissionError(err)) {
+    return `Permission denied: Cannot ${context}. Try running with elevated permissions or check file ownership.`
+  }
+
+  if (isFileNotFoundError(err)) {
+    return `File not found while trying to ${context}. The file may have been deleted or moved.`
+  }
+
+  if (err instanceof SyntaxError) {
+    return `JSON syntax error while trying to ${context}: ${err.message}. Check for missing commas, brackets, or invalid characters.`
+  }
+
+  const message = err instanceof Error ? err.message : String(err)
+
+  if (message.includes("ENOSPC")) {
+    return `Disk full: Cannot ${context}. Free up disk space and try again.`
+  }
+
+  if (message.includes("EROFS")) {
+    return `Read-only filesystem: Cannot ${context}. Check if the filesystem is mounted read-only.`
+  }
+
+  return `Failed to ${context}: ${message}`
+}
 
 export async function fetchLatestVersion(packageName: string): Promise<string | null> {
   try {
@@ -22,6 +108,47 @@ export async function fetchLatestVersion(packageName: string): Promise<string | 
   }
 }
 
+interface NpmDistTags {
+  latest?: string
+  beta?: string
+  next?: string
+  [tag: string]: string | undefined
+}
+
+const NPM_FETCH_TIMEOUT_MS = 5000
+
+export async function fetchNpmDistTags(packageName: string): Promise<NpmDistTags | null> {
+  try {
+    const res = await fetch(`https://registry.npmjs.org/-/package/${packageName}/dist-tags`, {
+      signal: AbortSignal.timeout(NPM_FETCH_TIMEOUT_MS),
+    })
+    if (!res.ok) return null
+    const data = await res.json() as NpmDistTags
+    return data
+  } catch {
+    return null
+  }
+}
+
+const PACKAGE_NAME = "oh-my-opencode"
+
+const PRIORITIZED_TAGS = ["latest", "beta", "next"] as const
+
+export async function getPluginNameWithVersion(currentVersion: string): Promise<string> {
+  const distTags = await fetchNpmDistTags(PACKAGE_NAME)
+
+  if (distTags) {
+    const allTags = new Set([...PRIORITIZED_TAGS, ...Object.keys(distTags)])
+    for (const tag of allTags) {
+      if (distTags[tag] === currentVersion) {
+        return `${PACKAGE_NAME}@${tag}`
+      }
+    }
+  }
+
+  return `${PACKAGE_NAME}@${currentVersion}`
+}
+
 type ConfigFormat = "json" | "jsonc" | "none"
 
 interface OpenCodeConfig {
@@ -30,124 +157,104 @@ interface OpenCodeConfig {
 }
 
 export function detectConfigFormat(): { format: ConfigFormat; path: string } {
-  if (existsSync(OPENCODE_JSONC)) {
-    return { format: "jsonc", path: OPENCODE_JSONC }
+  const configJsonc = getConfigJsonc()
+  const configJson = getConfigJson()
+
+  if (existsSync(configJsonc)) {
+    return { format: "jsonc", path: configJsonc }
   }
-  if (existsSync(OPENCODE_JSON)) {
-    return { format: "json", path: OPENCODE_JSON }
+  if (existsSync(configJson)) {
+    return { format: "json", path: configJson }
   }
-  return { format: "none", path: OPENCODE_JSON }
+  return { format: "none", path: configJson }
 }
 
-function stripJsoncComments(content: string): string {
-  let result = ""
-  let i = 0
-  let inString = false
-  let escape = false
-
-  while (i < content.length) {
-    const char = content[i]
-
-    if (escape) {
-      result += char
-      escape = false
-      i++
-      continue
-    }
-
-    if (char === "\\") {
-      result += char
-      escape = true
-      i++
-      continue
-    }
-
-    if (char === '"' && !inString) {
-      inString = true
-      result += char
-      i++
-      continue
-    }
-
-    if (char === '"' && inString) {
-      inString = false
-      result += char
-      i++
-      continue
-    }
-
-    if (inString) {
-      result += char
-      i++
-      continue
-    }
-
-    // Outside string - check for comments
-    if (char === "/" && content[i + 1] === "/") {
-      // Line comment - skip to end of line
-      while (i < content.length && content[i] !== "\n") {
-        i++
-      }
-      continue
-    }
-
-    if (char === "/" && content[i + 1] === "*") {
-      // Block comment - skip to */
-      i += 2
-      while (i < content.length - 1 && !(content[i] === "*" && content[i + 1] === "/")) {
-        i++
-      }
-      i += 2
-      continue
-    }
-
-    result += char
-    i++
-  }
-
-  return result.replace(/,(\s*[}\]])/g, "$1")
+interface ParseConfigResult {
+  config: OpenCodeConfig | null
+  error?: string
 }
 
-function parseConfig(path: string, isJsonc: boolean): OpenCodeConfig | null {
+function isEmptyOrWhitespace(content: string): boolean {
+  return content.trim().length === 0
+}
+
+function parseConfig(path: string, _isJsonc: boolean): OpenCodeConfig | null {
+  const result = parseConfigWithError(path)
+  return result.config
+}
+
+function parseConfigWithError(path: string): ParseConfigResult {
   try {
+    const stat = statSync(path)
+    if (stat.size === 0) {
+      return { config: null, error: `Config file is empty: ${path}. Delete it or add valid JSON content.` }
+    }
+
     const content = readFileSync(path, "utf-8")
-    const cleaned = isJsonc ? stripJsoncComments(content) : content
-    return JSON.parse(cleaned) as OpenCodeConfig
-  } catch {
-    return null
+
+    if (isEmptyOrWhitespace(content)) {
+      return { config: null, error: `Config file contains only whitespace: ${path}. Delete it or add valid JSON content.` }
+    }
+
+    const config = parseJsonc<OpenCodeConfig>(content)
+
+    if (config === null || config === undefined) {
+      return { config: null, error: `Config file parsed to null/undefined: ${path}. Ensure it contains valid JSON.` }
+    }
+
+    if (typeof config !== "object" || Array.isArray(config)) {
+      return { config: null, error: `Config file must contain a JSON object, not ${Array.isArray(config) ? "an array" : typeof config}: ${path}` }
+    }
+
+    return { config }
+  } catch (err) {
+    return { config: null, error: formatErrorWithSuggestion(err, `parse config file ${path}`) }
   }
 }
 
 function ensureConfigDir(): void {
-  if (!existsSync(OPENCODE_CONFIG_DIR)) {
-    mkdirSync(OPENCODE_CONFIG_DIR, { recursive: true })
+  const configDir = getConfigDir()
+  if (!existsSync(configDir)) {
+    mkdirSync(configDir, { recursive: true })
   }
 }
 
-export function addPluginToOpenCodeConfig(): ConfigMergeResult {
-  ensureConfigDir()
+export async function addPluginToOpenCodeConfig(currentVersion: string): Promise<ConfigMergeResult> {
+  try {
+    ensureConfigDir()
+  } catch (err) {
+    return { success: false, configPath: getConfigDir(), error: formatErrorWithSuggestion(err, "create config directory") }
+  }
 
   const { format, path } = detectConfigFormat()
-  const pluginName = "oh-my-opencode"
+  const pluginEntry = await getPluginNameWithVersion(currentVersion)
 
   try {
     if (format === "none") {
-      const config: OpenCodeConfig = { plugin: [pluginName] }
+      const config: OpenCodeConfig = { plugin: [pluginEntry] }
       writeFileSync(path, JSON.stringify(config, null, 2) + "\n")
       return { success: true, configPath: path }
     }
 
-    const config = parseConfig(path, format === "jsonc")
-    if (!config) {
-      return { success: false, configPath: path, error: "Failed to parse config" }
+    const parseResult = parseConfigWithError(path)
+    if (!parseResult.config) {
+      return { success: false, configPath: path, error: parseResult.error ?? "Failed to parse config file" }
     }
 
+    const config = parseResult.config
     const plugins = config.plugin ?? []
-    if (plugins.some((p) => p.startsWith(pluginName))) {
-      return { success: true, configPath: path }
+    const existingIndex = plugins.findIndex((p) => p === PACKAGE_NAME || p.startsWith(`${PACKAGE_NAME}@`))
+
+    if (existingIndex !== -1) {
+      if (plugins[existingIndex] === pluginEntry) {
+        return { success: true, configPath: path }
+      }
+      plugins[existingIndex] = pluginEntry
+    } else {
+      plugins.push(pluginEntry)
     }
 
-    config.plugin = [...plugins, pluginName]
+    config.plugin = plugins
 
     if (format === "jsonc") {
       const content = readFileSync(path, "utf-8")
@@ -155,14 +262,11 @@ export function addPluginToOpenCodeConfig(): ConfigMergeResult {
       const match = content.match(pluginArrayRegex)
 
       if (match) {
-        const arrayContent = match[1].trim()
-        const newArrayContent = arrayContent
-          ? `${arrayContent},\n    "${pluginName}"`
-          : `"${pluginName}"`
-        const newContent = content.replace(pluginArrayRegex, `"plugin": [\n    ${newArrayContent}\n  ]`)
+        const formattedPlugins = plugins.map((p) => `"${p}"`).join(",\n    ")
+        const newContent = content.replace(pluginArrayRegex, `"plugin": [\n    ${formattedPlugins}\n  ]`)
         writeFileSync(path, newContent)
       } else {
-        const newContent = content.replace(/^(\s*\{)/, `$1\n  "plugin": ["${pluginName}"],`)
+        const newContent = content.replace(/^(\s*\{)/, `$1\n  "plugin": ["${pluginEntry}"],`)
         writeFileSync(path, newContent)
       }
     } else {
@@ -171,7 +275,7 @@ export function addPluginToOpenCodeConfig(): ConfigMergeResult {
 
     return { success: true, configPath: path }
   } catch (err) {
-    return { success: false, configPath: path, error: String(err) }
+    return { success: false, configPath: path, error: formatErrorWithSuggestion(err, "update opencode config") }
   }
 }
 
@@ -202,104 +306,119 @@ function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial
   return result
 }
 
-export function generateOmoConfig(installConfig: InstallConfig): Record<string, unknown> {
+export function generateOmoConfig(_installConfig: InstallConfig): Record<string, unknown> {
+  // v3 beta: No hardcoded model strings - users rely on their OpenCode configured model
+  // Users who want specific models configure them explicitly after install
   const config: Record<string, unknown> = {
     $schema: "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json",
-  }
-
-  if (installConfig.hasGemini) {
-    config.google_auth = false
-  }
-
-  const agents: Record<string, Record<string, unknown>> = {}
-
-  if (!installConfig.hasClaude) {
-    agents["Musashi"] = { model: "opencode/big-pickle" }
-    agents["R2 - researcher"] = { model: "opencode/big-pickle" }
-  } else if (!installConfig.isMax20) {
-    agents["R2 - researcher"] = { model: "opencode/big-pickle" }
-  }
-
-  if (!installConfig.hasChatGPT) {
-    agents["oracle"] = {
-      model: installConfig.hasClaude ? "anthropic/claude-opus-4-5" : "opencode/big-pickle",
-    }
-  }
-
-  if (installConfig.hasGemini) {
-    agents["S6 - designer"] = { model: "google/gemini-3-pro-high" }
-    agents["W7 - writer"] = { model: "google/gemini-3-flash" }
-    agents["M10 - critic"] = { model: "google/gemini-3-flash" }
-  } else {
-    const fallbackModel = installConfig.hasClaude ? "anthropic/claude-opus-4-5" : "opencode/big-pickle"
-    agents["S6 - designer"] = { model: fallbackModel }
-    agents["W7 - writer"] = { model: fallbackModel }
-    agents["M10 - critic"] = { model: fallbackModel }
-  }
-
-  if (Object.keys(agents).length > 0) {
-    config.agents = agents
   }
 
   return config
 }
 
 export function writeOmoConfig(installConfig: InstallConfig): ConfigMergeResult {
-  ensureConfigDir()
+  try {
+    ensureConfigDir()
+  } catch (err) {
+    return { success: false, configPath: getConfigDir(), error: formatErrorWithSuggestion(err, "create config directory") }
+  }
+
+  const omoConfigPath = getOmoConfig()
 
   try {
     const newConfig = generateOmoConfig(installConfig)
 
-    if (existsSync(OMO_CONFIG)) {
-      const content = readFileSync(OMO_CONFIG, "utf-8")
-      const cleaned = stripJsoncComments(content)
-      const existing = JSON.parse(cleaned) as Record<string, unknown>
-      delete existing.agents
-      const merged = deepMerge(existing, newConfig)
-      writeFileSync(OMO_CONFIG, JSON.stringify(merged, null, 2) + "\n")
+    if (existsSync(omoConfigPath)) {
+      try {
+        const stat = statSync(omoConfigPath)
+        const content = readFileSync(omoConfigPath, "utf-8")
+
+        if (stat.size === 0 || isEmptyOrWhitespace(content)) {
+          writeFileSync(omoConfigPath, JSON.stringify(newConfig, null, 2) + "\n")
+          return { success: true, configPath: omoConfigPath }
+        }
+
+        const existing = parseJsonc<Record<string, unknown>>(content)
+        if (!existing || typeof existing !== "object" || Array.isArray(existing)) {
+          writeFileSync(omoConfigPath, JSON.stringify(newConfig, null, 2) + "\n")
+          return { success: true, configPath: omoConfigPath }
+        }
+
+        const merged = deepMerge(existing, newConfig)
+        writeFileSync(omoConfigPath, JSON.stringify(merged, null, 2) + "\n")
+      } catch (parseErr) {
+        if (parseErr instanceof SyntaxError) {
+          writeFileSync(omoConfigPath, JSON.stringify(newConfig, null, 2) + "\n")
+          return { success: true, configPath: omoConfigPath }
+        }
+        throw parseErr
+      }
     } else {
-      writeFileSync(OMO_CONFIG, JSON.stringify(newConfig, null, 2) + "\n")
+      writeFileSync(omoConfigPath, JSON.stringify(newConfig, null, 2) + "\n")
     }
 
-    return { success: true, configPath: OMO_CONFIG }
+    return { success: true, configPath: omoConfigPath }
   } catch (err) {
-    return { success: false, configPath: OMO_CONFIG, error: String(err) }
+    return { success: false, configPath: omoConfigPath, error: formatErrorWithSuggestion(err, "write oh-my-opencode config") }
   }
+}
+
+interface OpenCodeBinaryResult {
+  binary: OpenCodeBinaryType
+  version: string
+}
+
+async function findOpenCodeBinaryWithVersion(): Promise<OpenCodeBinaryResult | null> {
+  for (const binary of OPENCODE_BINARIES) {
+    try {
+      const proc = Bun.spawn([binary, "--version"], {
+        stdout: "pipe",
+        stderr: "pipe",
+      })
+      const output = await new Response(proc.stdout).text()
+      await proc.exited
+      if (proc.exitCode === 0) {
+        const version = output.trim()
+        initConfigContext(binary, version)
+        return { binary, version }
+      }
+    } catch {
+      continue
+    }
+  }
+  return null
 }
 
 export async function isOpenCodeInstalled(): Promise<boolean> {
-  try {
-    const proc = Bun.spawn(["opencode", "--version"], {
-      stdout: "pipe",
-      stderr: "pipe",
-    })
-    await proc.exited
-    return proc.exitCode === 0
-  } catch {
-    return false
-  }
+  const result = await findOpenCodeBinaryWithVersion()
+  return result !== null
 }
 
 export async function getOpenCodeVersion(): Promise<string | null> {
-  try {
-    const proc = Bun.spawn(["opencode", "--version"], {
-      stdout: "pipe",
-      stderr: "pipe",
-    })
-    const output = await new Response(proc.stdout).text()
-    await proc.exited
-    return proc.exitCode === 0 ? output.trim() : null
-  } catch {
-    return null
-  }
+  const result = await findOpenCodeBinaryWithVersion()
+  return result?.version ?? null
 }
 
 export async function addAuthPlugins(config: InstallConfig): Promise<ConfigMergeResult> {
-  ensureConfigDir()
+  try {
+    ensureConfigDir()
+  } catch (err) {
+    return { success: false, configPath: getConfigDir(), error: formatErrorWithSuggestion(err, "create config directory") }
+  }
+
   const { format, path } = detectConfigFormat()
 
   try {
-    const existingConfig = format !== "none" ? parseConfig(path, format === "jsonc") : null
+    let existingConfig: OpenCodeConfig | null = null
+    if (format !== "none") {
+      const parseResult = parseConfigWithError(path)
+      if (parseResult.error && !parseResult.config) {
+        existingConfig = {}
+      } else {
+        existingConfig = parseResult.config
+      }
+    }
+
     const plugins: string[] = existingConfig?.plugin ?? []
 
     if (config.hasGemini) {
@@ -310,127 +429,144 @@ export async function addAuthPlugins(config: InstallConfig): Promise<ConfigMerge
       }
     }
 
-    if (config.hasChatGPT) {
-      if (!plugins.some((p) => p.startsWith("opencode-openai-codex-auth"))) {
-        plugins.push("opencode-openai-codex-auth")
-      }
-    }
+
 
     const newConfig = { ...(existingConfig ?? {}), plugin: plugins }
     writeFileSync(path, JSON.stringify(newConfig, null, 2) + "\n")
     return { success: true, configPath: path }
   } catch (err) {
-    return { success: false, configPath: path, error: String(err) }
+    return { success: false, configPath: path, error: formatErrorWithSuggestion(err, "add auth plugins to config") }
   }
 }
 
-export function setupChatGPTHotfix(): ConfigMergeResult {
-  ensureConfigDir()
-
-  try {
-    let packageJson: Record<string, unknown> = {}
-    if (existsSync(OPENCODE_PACKAGE_JSON)) {
-      const content = readFileSync(OPENCODE_PACKAGE_JSON, "utf-8")
-      packageJson = JSON.parse(content)
-    }
-
-    const deps = (packageJson.dependencies ?? {}) as Record<string, string>
-    deps["opencode-openai-codex-auth"] = CHATGPT_HOTFIX_REPO
-    packageJson.dependencies = deps
-
-    writeFileSync(OPENCODE_PACKAGE_JSON, JSON.stringify(packageJson, null, 2) + "\n")
-    return { success: true, configPath: OPENCODE_PACKAGE_JSON }
-  } catch (err) {
-    return { success: false, configPath: OPENCODE_PACKAGE_JSON, error: String(err) }
-  }
+export interface BunInstallResult {
+  success: boolean
+  timedOut?: boolean
+  error?: string
 }
 
 export async function runBunInstall(): Promise<boolean> {
+  const result = await runBunInstallWithDetails()
+  return result.success
+}
+
+export async function runBunInstallWithDetails(): Promise<BunInstallResult> {
   try {
     const proc = Bun.spawn(["bun", "install"], {
-      cwd: OPENCODE_CONFIG_DIR,
+      cwd: getConfigDir(),
       stdout: "pipe",
       stderr: "pipe",
     })
-    await proc.exited
-    return proc.exitCode === 0
-  } catch {
-    return false
+
+    const timeoutPromise = new Promise<"timeout">((resolve) =>
+      setTimeout(() => resolve("timeout"), BUN_INSTALL_TIMEOUT_MS)
+    )
+
+    const exitPromise = proc.exited.then(() => "completed" as const)
+
+    const result = await Promise.race([exitPromise, timeoutPromise])
+
+    if (result === "timeout") {
+      try {
+        proc.kill()
+      } catch {
+        /* intentionally empty - process may have already exited */
+      }
+      return {
+        success: false,
+        timedOut: true,
+        error: `bun install timed out after ${BUN_INSTALL_TIMEOUT_SECONDS} seconds. Try running manually: cd ~/.config/opencode && bun i`,
+      }
+    }
+
+    if (proc.exitCode !== 0) {
+      const stderr = await new Response(proc.stderr).text()
+      return {
+        success: false,
+        error: stderr.trim() || `bun install failed with exit code ${proc.exitCode}`,
+      }
+    }
+
+    return { success: true }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    return {
+      success: false,
+      error: `bun install failed: ${message}. Is bun installed? Try: curl -fsSL https://bun.sh/install | bash`,
+    }
   }
 }
 
+/**
+ * Antigravity Provider Configuration
+ *
+ * IMPORTANT: Model names MUST use `antigravity-` prefix for stability.
+ *
+ * The opencode-antigravity-auth plugin supports two naming conventions:
+ * - `antigravity-gemini-3-pro-high` (RECOMMENDED, explicit Antigravity quota routing)
+ * - `gemini-3-pro-high` (LEGACY, backward compatible but may break in future)
+ *
+ * Legacy names rely on Gemini CLI using `-preview` suffix for disambiguation.
+ * If Google removes `-preview`, legacy names may route to wrong quota.
+ *
+ * @see https://github.com/NoeFabris/opencode-antigravity-auth#migration-guide-v127
+ */
 export const ANTIGRAVITY_PROVIDER_CONFIG = {
   google: {
     name: "Google",
-    // NOTE: opencode-antigravity-auth expects full model specs (name/limit/modalities).
-    // If these are incomplete, models may appear but fail at runtime (e.g. 404).
     models: {
-      "gemini-3-pro-high": {
+      "antigravity-gemini-3-pro-high": {
         name: "Gemini 3 Pro High (Antigravity)",
         thinking: true,
         attachment: true,
         limit: { context: 1048576, output: 65535 },
         modalities: { input: ["text", "image", "pdf"], output: ["text"] },
       },
-      "gemini-3-pro-medium": {
-        name: "Gemini 3 Pro Medium (Antigravity)",
-        thinking: true,
-        attachment: true,
-        limit: { context: 1048576, output: 65535 },
-        modalities: { input: ["text", "image", "pdf"], output: ["text"] },
-      },
-      "gemini-3-pro-low": {
+      "antigravity-gemini-3-pro-low": {
         name: "Gemini 3 Pro Low (Antigravity)",
         thinking: true,
         attachment: true,
         limit: { context: 1048576, output: 65535 },
         modalities: { input: ["text", "image", "pdf"], output: ["text"] },
       },
-      "gemini-3-flash": {
+      "antigravity-gemini-3-flash": {
         name: "Gemini 3 Flash (Antigravity)",
         attachment: true,
         limit: { context: 1048576, output: 65536 },
         modalities: { input: ["text", "image", "pdf"], output: ["text"] },
       },
-      "gemini-3-flash-lite": {
-        name: "Gemini 3 Flash Lite (Antigravity)",
-        attachment: true,
-        limit: { context: 1048576, output: 65536 },
-        modalities: { input: ["text", "image", "pdf"], output: ["text"] },
-      },
     },
   },
 }
 
-const CODEX_PROVIDER_CONFIG = {
-  openai: {
-    name: "OpenAI",
-    api: "codex",
-    models: {
-      "gpt-5.2": { name: "GPT-5.2" },
-      "o3": { name: "o3", thinking: true },
-      "o4-mini": { name: "o4-mini", thinking: true },
-      "codex-1": { name: "Codex-1" },
-    },
-  },
-}
+
 
 export function addProviderConfig(config: InstallConfig): ConfigMergeResult {
-  ensureConfigDir()
+  try {
+    ensureConfigDir()
+  } catch (err) {
+    return { success: false, configPath: getConfigDir(), error: formatErrorWithSuggestion(err, "create config directory") }
+  }
+
   const { format, path } = detectConfigFormat()
 
   try {
-    const existingConfig = format !== "none" ? parseConfig(path, format === "jsonc") : null
+    let existingConfig: OpenCodeConfig | null = null
+    if (format !== "none") {
+      const parseResult = parseConfigWithError(path)
+      if (parseResult.error && !parseResult.config) {
+        existingConfig = {}
+      } else {
+        existingConfig = parseResult.config
+      }
+    }
+
     const newConfig = { ...(existingConfig ?? {}) }
 
     const providers = (newConfig.provider ?? {}) as Record<string, unknown>
 
     if (config.hasGemini) {
       providers.google = ANTIGRAVITY_PROVIDER_CONFIG.google
-    }
-
-    if (config.hasChatGPT) {
-      providers.openai = CODEX_PROVIDER_CONFIG.openai
     }
 
     if (Object.keys(providers).length > 0) {
@@ -440,22 +576,20 @@ export function addProviderConfig(config: InstallConfig): ConfigMergeResult {
     writeFileSync(path, JSON.stringify(newConfig, null, 2) + "\n")
     return { success: true, configPath: path }
   } catch (err) {
-    return { success: false, configPath: path, error: String(err) }
+    return { success: false, configPath: path, error: formatErrorWithSuggestion(err, "add provider config") }
   }
 }
 
-interface OmoConfigData {
-  google_auth?: boolean
-  agents?: Record<string, { model?: string }>
-}
-
 export function detectCurrentConfig(): DetectedConfig {
+  // v3 beta: Since we no longer generate hardcoded model strings,
+  // detection only checks for plugin installation and Gemini auth plugin
   const result: DetectedConfig = {
     isInstalled: false,
     hasClaude: true,
     isMax20: true,
     hasChatGPT: true,
     hasGemini: false,
+    hasCopilot: false,
   }
 
   const { format, path } = detectConfigFormat()
@@ -463,11 +597,12 @@ export function detectCurrentConfig(): DetectedConfig {
     return result
   }
 
-  const openCodeConfig = parseConfig(path, format === "jsonc")
-  if (!openCodeConfig) {
+  const parseResult = parseConfigWithError(path)
+  if (!parseResult.config) {
     return result
   }
 
+  const openCodeConfig = parseResult.config
   const plugins = openCodeConfig.plugin ?? []
   result.isInstalled = plugins.some((p) => p.startsWith("oh-my-opencode"))
 
@@ -475,39 +610,8 @@ export function detectCurrentConfig(): DetectedConfig {
     return result
   }
 
+  // Gemini auth plugin detection still works via plugin presence
   result.hasGemini = plugins.some((p) => p.startsWith("opencode-antigravity-auth"))
-  result.hasChatGPT = plugins.some((p) => p.startsWith("opencode-openai-codex-auth"))
-
-  if (!existsSync(OMO_CONFIG)) {
-    return result
-  }
-
-  try {
-    const content = readFileSync(OMO_CONFIG, "utf-8")
-    const omoConfig = JSON.parse(stripJsoncComments(content)) as OmoConfigData
-
-    const agents = omoConfig.agents ?? {}
-
-    if (agents["Musashi"]?.model === "opencode/big-pickle") {
-      result.hasClaude = false
-      result.isMax20 = false
-    } else if (agents["R2 - researcher"]?.model === "opencode/big-pickle") {
-      result.hasClaude = true
-      result.isMax20 = false
-    }
-
-    if (agents["oracle"]?.model?.startsWith("anthropic/")) {
-      result.hasChatGPT = false
-    } else if (agents["oracle"]?.model === "opencode/big-pickle") {
-      result.hasChatGPT = false
-    }
-
-    if (omoConfig.google_auth === false) {
-      result.hasGemini = plugins.some((p) => p.startsWith("opencode-antigravity-auth"))
-    }
-  } catch {
-    /* intentionally empty - malformed config returns defaults */
-  }
 
   return result
 }
