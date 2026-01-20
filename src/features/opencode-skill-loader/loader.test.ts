@@ -333,4 +333,72 @@ describe("skill loader - recursive merge", () => {
     // Depth 4 file should NOT be included
     expect(template).not.toContain("This should NOT appear")
   })
+
+  it("excludes root README.md but includes subdir files", async () => {
+    const skillPath = join(FIXTURES_DIR, "excluded-files-skill", "SKILL.md")
+    const resolvedPath = join(FIXTURES_DIR, "excluded-files-skill")
+
+    const skill = await loadSkillFromPath(skillPath, resolvedPath, "excluded-files-skill", "opencode-project")
+
+    expect(skill).not.toBeNull()
+    const template = skill!.definition.template
+
+    // Valid subdir file should be included
+    expect(template).toContain("Valid rule")
+
+    // Root README.md should NOT be included
+    expect(template).not.toContain("This is README - should NOT appear")
+
+    // Hidden files should NOT be included
+    expect(template).not.toContain("Hidden - should NOT appear")
+  })
+
+  it("strips frontmatter from subdir files", async () => {
+    const skillPath = join(FIXTURES_DIR, "frontmatter-subdir-skill", "SKILL.md")
+    const resolvedPath = join(FIXTURES_DIR, "frontmatter-subdir-skill")
+
+    const skill = await loadSkillFromPath(skillPath, resolvedPath, "frontmatter-subdir-skill", "opencode-project")
+
+    expect(skill).not.toBeNull()
+    const template = skill!.definition.template
+
+    // Body content should appear
+    expect(template).toContain("Only this body should appear")
+
+    // Frontmatter keys should NOT appear in output
+    expect(template).not.toContain("ignored: true")
+  })
+
+  it("handles empty subdirs gracefully", async () => {
+    const skillPath = join(FIXTURES_DIR, "empty-subdir-skill", "SKILL.md")
+    const resolvedPath = join(FIXTURES_DIR, "empty-subdir-skill")
+
+    const skill = await loadSkillFromPath(skillPath, resolvedPath, "empty-subdir-skill", "opencode-project")
+
+    expect(skill).not.toBeNull()
+    const template = skill!.definition.template
+
+    // SKILL.md content should be there
+    expect(template).toContain("# Empty Test")
+
+    // No merge comment should appear for empty subdirs
+    expect(template).not.toContain("<!-- Merged from subdirectories")
+  })
+
+  it("preserves single-file skills unchanged (backward compat)", async () => {
+    const skillPath = join(FIXTURES_DIR, "single-file-skill", "SKILL.md")
+    const resolvedPath = join(FIXTURES_DIR, "single-file-skill")
+
+    const skill = await loadSkillFromPath(skillPath, resolvedPath, "single-file-skill", "opencode-project")
+
+    expect(skill).not.toBeNull()
+    const template = skill!.definition.template
+
+    // SKILL.md content should be there
+    expect(template).toContain("# Single")
+    expect(template).toContain("No subdirs here")
+
+    // No merge comment for single-file skills
+    expect(template).not.toContain("<!-- Merged from subdirectories")
+  })
 })
