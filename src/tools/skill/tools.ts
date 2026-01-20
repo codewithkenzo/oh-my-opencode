@@ -6,6 +6,7 @@ import type { LoadedSkill } from "../../features/opencode-skill-loader"
 import { getAllSkills, extractSkillTemplate } from "../../features/opencode-skill-loader/skill-content"
 import { injectGitMasterConfig } from "../../features/opencode-skill-loader/skill-content"
 import { substituteSkillVariables } from "../../features/opencode-skill-loader/substitution"
+import { markForkActive, clearForkActive, subagentSessions } from "../../features/claude-code-session-state/state"
 import type { SkillMcpManager, SkillMcpClientInfo, SkillMcpServerContext } from "../../features/skill-mcp-manager"
 import type { Tool, Resource, Prompt } from "@modelcontextprotocol/sdk/types.js"
 
@@ -127,6 +128,81 @@ async function formatMcpCapabilities(
   return sections.join("\n")
 }
 
+const FORK_TIMEOUT_MS = 30 * 60 * 1000
+const POLL_INTERVAL_MS = 2000
+const STABILITY_THRESHOLD = 3
+
+interface ForkMessage {
+  info?: { role?: string }
+  parts?: Array<{ type?: string; text?: string }>
+}
+
+async function waitForForkCompletion(
+  client: NonNullable<SkillLoadOptions["client"]>,
+  sessionId: string
+): Promise<string> {
+  let lastMsgCount = -1
+  let stablePolls = 0
+  const startedAt = Date.now()
+
+  while (true) {
+    if (Date.now() - startedAt > FORK_TIMEOUT_MS) {
+      return `[FORK_TIMEOUT: Fork session ${sessionId} exceeded 30 minute timeout]`
+    }
+
+    await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS))
+
+    try {
+      const messagesResult = await client.session.messages({
+        path: { id: sessionId },
+      })
+
+      if (messagesResult.error) {
+        return `[FORK_ERROR: Failed to poll fork session: ${messagesResult.error}]`
+      }
+
+      const messages = (messagesResult.data ?? []) as ForkMessage[]
+      const currentMsgCount = messages.length
+
+      if (lastMsgCount === currentMsgCount) {
+        stablePolls++
+
+        if (stablePolls >= STABILITY_THRESHOLD) {
+          const statusResult = await client.session.status()
+          const allStatuses = (statusResult.data ?? {}) as Record<string, { type: string }>
+          const sessionStatus = allStatuses[sessionId]
+
+          if (sessionStatus?.type !== "idle") {
+            stablePolls = 0
+            lastMsgCount = currentMsgCount
+            continue
+          }
+
+          const assistantMessages = messages.filter(m => m.info?.role === "assistant")
+          const lastAssistantMsg = assistantMessages[assistantMessages.length - 1]
+
+          if (!lastAssistantMsg?.parts) {
+            return "[FORK_COMPLETE: No response captured]"
+          }
+
+          const textParts = lastAssistantMsg.parts
+            .filter(p => p.type === "text" && p.text)
+            .map(p => p.text)
+            .join("\n")
+
+          return textParts || "[FORK_COMPLETE: Empty response]"
+        }
+      } else {
+        stablePolls = 0
+      }
+
+      lastMsgCount = currentMsgCount
+    } catch (error) {
+      return `[FORK_ERROR: ${error instanceof Error ? error.message : String(error)}]`
+    }
+  }
+}
+
 export function createSkillTool(options: SkillLoadOptions = {}): ToolDefinition {
   let cachedSkills: LoadedSkill[] | null = null
   let cachedDescription: string | null = null
@@ -172,11 +248,67 @@ export function createSkillTool(options: SkillLoadOptions = {}): ToolDefinition 
         body = injectGitMasterConfig(body, options.gitMasterConfig)
       }
 
+      const dir = skill.path ? dirname(skill.path) : skill.resolvedPath || process.cwd()
+
+      if (skill.context === "fork") {
+        const currentSessionId = options.getSessionID?.()
+
+        if (!currentSessionId) {
+          throw new Error(`Skill "${args.name}" uses context:fork but no session ID available.`)
+        }
+
+        if (!options.client) {
+          throw new Error(`Skill "${args.name}" uses context:fork but client is not available.`)
+        }
+
+        markForkActive(currentSessionId)
+
+        try {
+          const { client } = options
+          const agentToUse = skill.definition.agent || "Sisyphus-Junior"
+
+          const createResult = await client.session.create({
+            body: {
+              parentID: currentSessionId,
+              title: `Fork: ${skill.name}`,
+            },
+            query: {
+              directory: dir,
+            },
+          })
+
+          if (createResult.error) {
+            throw new Error(`Failed to create fork session: ${createResult.error}`)
+          }
+
+          const forkSessionID = createResult.data.id
+          subagentSessions.add(forkSessionID)
+
+          const forkBody = substituteSkillVariables(body, { sessionId: forkSessionID })
+
+          await client.session.prompt({
+            path: { id: forkSessionID },
+            body: {
+              agent: agentToUse,
+              tools: {
+                delegate_task: false,
+                call_omo_agent: false,
+              },
+              parts: [{ type: "text", text: forkBody }],
+            },
+          })
+
+          const result = await waitForForkCompletion(client, forkSessionID)
+
+          return `## Skill Fork: ${skill.name}\n\n**Agent**: ${agentToUse}\n**Session**: ${forkSessionID}\n\n${result}`
+        } finally {
+          clearForkActive(currentSessionId)
+        }
+      }
+
       if (options.getSessionID) {
         body = substituteSkillVariables(body, { sessionId: options.getSessionID() })
       }
-
-      const dir = skill.path ? dirname(skill.path) : skill.resolvedPath || process.cwd()
 
       const output = [
         `## Skill: ${skill.name}`,
