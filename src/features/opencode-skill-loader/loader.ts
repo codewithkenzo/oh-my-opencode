@@ -55,7 +55,45 @@ function parseAllowedTools(allowedTools: string | undefined): string[] | undefin
   return allowedTools.split(/\s+/).filter(Boolean)
 }
 
-async function loadSkillFromPath(
+async function collectMdFilesRecursive(
+  dir: string,
+  currentDepth: number,
+  maxDepth: number = 3,
+  basePath: string = ''
+): Promise<{ path: string; content: string }[]> {
+  if (currentDepth > maxDepth) return []
+
+  const results: { path: string; content: string }[] = []
+  const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => [])
+
+  for (const entry of entries) {
+    if (entry.name.startsWith('.')) continue
+    if (entry.isSymbolicLink()) continue
+
+    const entryPath = join(dir, entry.name)
+    const relativePath = basePath ? `${basePath}/${entry.name}` : entry.name
+
+    if (entry.isDirectory()) {
+      const subdirFiles = await collectMdFilesRecursive(
+        entryPath,
+        currentDepth + 1,
+        maxDepth,
+        relativePath
+      )
+      results.push(...subdirFiles)
+    } else if (entry.isFile() && entry.name.endsWith('.md')) {
+      if (currentDepth > 0) {
+        const content = await fs.readFile(entryPath, 'utf-8')
+        const { body } = parseFrontmatter(content)
+        results.push({ path: relativePath, content: body.trim() })
+      }
+    }
+  }
+
+  return results.sort((a, b) => a.path.localeCompare(b.path))
+}
+
+export async function loadSkillFromPath(
   skillPath: string,
   resolvedPath: string,
   defaultName: string,
@@ -68,6 +106,12 @@ async function loadSkillFromPath(
     const mcpJsonMcp = await loadMcpJsonFromDir(resolvedPath)
     const mcpConfig = mcpJsonMcp || frontmatterMcp
 
+    const subdirFiles = await collectMdFilesRecursive(resolvedPath, 0, 3, '')
+    const mergedContent = subdirFiles.length > 0
+      ? '\n\n<!-- Merged from subdirectories (alphabetical by path) -->\n\n' +
+        subdirFiles.map(f => f.content).join('\n\n')
+      : ''
+
     const skillName = data.name || defaultName
     const originalDescription = data.description || ""
     const isOpencodeSource = scope === "opencode" || scope === "opencode-project"
@@ -77,7 +121,7 @@ async function loadSkillFromPath(
 Base directory for this skill: ${resolvedPath}/
 File references (@path) in this skill are relative to this directory.
 
-${body.trim()}
+${body.trim()}${mergedContent}
 </skill-instruction>
 
 <user-request>
