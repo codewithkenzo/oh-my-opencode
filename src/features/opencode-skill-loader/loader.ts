@@ -55,6 +55,35 @@ function parseAllowedTools(allowedTools: string | undefined): string[] | undefin
   return allowedTools.split(/\s+/).filter(Boolean)
 }
 
+// Helper to collect .md files from immediate subdirectories (non-recursive for basic merge)
+async function collectSubdirMdFiles(
+  skillDir: string
+): Promise<{ path: string; content: string }[]> {
+  const results: { path: string; content: string }[] = []
+  const entries = await fs.readdir(skillDir, { withFileTypes: true }).catch(() => [])
+
+  for (const entry of entries) {
+    if (entry.name.startsWith('.')) continue  // Skip hidden
+    if (!entry.isDirectory()) continue         // Only process directories
+
+    const subdirPath = join(skillDir, entry.name)
+    const subdirEntries = await fs.readdir(subdirPath, { withFileTypes: true }).catch(() => [])
+
+    for (const file of subdirEntries) {
+      if (!file.isFile()) continue
+      if (!file.name.endsWith('.md')) continue
+
+      const filePath = join(subdirPath, file.name)
+      const content = await fs.readFile(filePath, 'utf-8')
+      const { body } = parseFrontmatter(content)  // Strip frontmatter
+      results.push({ path: `${entry.name}/${file.name}`, content: body.trim() })
+    }
+  }
+
+  // Sort alphabetically by path
+  return results.sort((a, b) => a.path.localeCompare(b.path))
+}
+
 export async function loadSkillFromPath(
   skillPath: string,
   resolvedPath: string,
@@ -68,6 +97,12 @@ export async function loadSkillFromPath(
     const mcpJsonMcp = await loadMcpJsonFromDir(resolvedPath)
     const mcpConfig = mcpJsonMcp || frontmatterMcp
 
+    const subdirFiles = await collectSubdirMdFiles(resolvedPath)
+    const mergedContent = subdirFiles.length > 0
+      ? '\n\n<!-- Merged from subdirectories (alphabetical by path) -->\n\n' +
+        subdirFiles.map(f => f.content).join('\n\n')
+      : ''
+
     const skillName = data.name || defaultName
     const originalDescription = data.description || ""
     const isOpencodeSource = scope === "opencode" || scope === "opencode-project"
@@ -77,7 +112,7 @@ export async function loadSkillFromPath(
 Base directory for this skill: ${resolvedPath}/
 File references (@path) in this skill are relative to this directory.
 
-${body.trim()}
+${body.trim()}${mergedContent}
 </skill-instruction>
 
 <user-request>
