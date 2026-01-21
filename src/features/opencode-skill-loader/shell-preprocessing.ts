@@ -6,15 +6,22 @@ const ALLOWED_COMMANDS = new Set([
   'git', 'node', 'bun', 'npm', 'pnpm'
 ])
 
+const SHELL_METACHARACTERS = /[;|&$`\\()<>{}!\n\r]/
+
 const SHELL_SECURITY = {
   TIMEOUT_MS: 5000,
-  MAX_OUTPUT_BYTES: 1024 * 1024,  // 1MB
+  MAX_OUTPUT_BYTES: 1024 * 1024,
   MAX_COMMAND_LENGTH: 1000,
   MAX_COMMANDS_PER_SKILL: 10,
 } as const
 
-function isCommandAllowed(command: string): { allowed: boolean; binary: string } {
+function isCommandAllowed(command: string): { allowed: boolean; binary: string; reason?: string } {
   const trimmed = command.trim()
+  
+  if (SHELL_METACHARACTERS.test(trimmed)) {
+    return { allowed: false, binary: '', reason: 'shell metacharacters not permitted' }
+  }
+  
   const firstToken = trimmed.split(/\s+/)[0]
   const binary = firstToken.includes('/') 
     ? firstToken.split('/').pop() || ''
@@ -55,6 +62,9 @@ async function executeCommand(command: string, skillDir: string): Promise<string
 
     child.stderr?.on('data', (data) => {
       stderr += data.toString()
+      if (stderr.length > SHELL_SECURITY.MAX_OUTPUT_BYTES) {
+        stderr = stderr.slice(0, SHELL_SECURITY.MAX_OUTPUT_BYTES)
+      }
     })
 
     child.on('close', (code) => {
@@ -97,28 +107,39 @@ export async function preprocessShellCommands(
     console.warn(`[skill-loader] Too many shell commands (${matches.length} > ${SHELL_SECURITY.MAX_COMMANDS_PER_SKILL}), only processing first ${SHELL_SECURITY.MAX_COMMANDS_PER_SKILL}`)
   }
   
-  let result = content
   const processLimit = Math.min(matches.length, SHELL_SECURITY.MAX_COMMANDS_PER_SKILL)
+  const replacements: { index: number; length: number; replacement: string }[] = []
   
   for (let i = 0; i < processLimit; i++) {
     const match = matches[i]
     const fullMatch = match[0]
     const command = match[1]
+    const matchIndex = match.index!
+    
+    let replacement: string
     
     if (command.length > SHELL_SECURITY.MAX_COMMAND_LENGTH) {
-      result = result.replace(fullMatch, '[COMMAND_BLOCKED: exceeds max length]')
-      continue
+      replacement = '[COMMAND_BLOCKED: exceeds max length]'
+    } else {
+      const { allowed, binary, reason } = isCommandAllowed(command)
+      if (!allowed) {
+        const blockReason = reason || `${binary} not permitted`
+        replacement = `[COMMAND_BLOCKED: ${blockReason}]`
+      } else {
+        replacement = await executeCommand(command, skillDir)
+      }
     }
     
-    const { allowed, binary } = isCommandAllowed(command)
-    if (!allowed) {
-      result = result.replace(fullMatch, `[COMMAND_BLOCKED: ${binary} not permitted]`)
-      continue
-    }
-    
-    const output = await executeCommand(command, skillDir)
-    result = result.replace(fullMatch, output)
+    replacements.push({ index: matchIndex, length: fullMatch.length, replacement })
   }
+  
+  let result = ''
+  let lastIndex = 0
+  for (const { index, length, replacement } of replacements) {
+    result += content.slice(lastIndex, index) + replacement
+    lastIndex = index + length
+  }
+  result += content.slice(lastIndex)
   
   return result
 }

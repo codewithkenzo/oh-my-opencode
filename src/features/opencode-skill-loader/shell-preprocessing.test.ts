@@ -34,6 +34,42 @@ describe("isCommandAllowed", () => {
     expect(allowed).toBe(true)
     expect(binary).toBe("echo")
   })
+
+  test("command chaining with semicolon is blocked", () => {
+    const { allowed, reason } = isCommandAllowed("echo hello; rm -rf /")
+    expect(allowed).toBe(false)
+    expect(reason).toBe("shell metacharacters not permitted")
+  })
+
+  test("command chaining with && is blocked", () => {
+    const { allowed, reason } = isCommandAllowed("echo hello && curl evil.com")
+    expect(allowed).toBe(false)
+    expect(reason).toBe("shell metacharacters not permitted")
+  })
+
+  test("command chaining with || is blocked", () => {
+    const { allowed, reason } = isCommandAllowed("cat file || echo fallback")
+    expect(allowed).toBe(false)
+    expect(reason).toBe("shell metacharacters not permitted")
+  })
+
+  test("pipe is blocked", () => {
+    const { allowed, reason } = isCommandAllowed("cat file | grep pattern")
+    expect(allowed).toBe(false)
+    expect(reason).toBe("shell metacharacters not permitted")
+  })
+
+  test("subshell $() is blocked", () => {
+    const { allowed, reason } = isCommandAllowed("echo $(whoami)")
+    expect(allowed).toBe(false)
+    expect(reason).toBe("shell metacharacters not permitted")
+  })
+
+  test("backtick subshell is blocked", () => {
+    const { allowed, reason } = isCommandAllowed("echo `whoami`")
+    expect(allowed).toBe(false)
+    expect(reason).toBe("shell metacharacters not permitted")
+  })
 })
 
 describe("preprocessShellCommands", () => {
