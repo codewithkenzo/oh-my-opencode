@@ -7,7 +7,7 @@
 >
 > なりすましサイトはペイウォールの裏にあるため、**何が配布されているか確認できません**。そこからのダウンロードは**潜在的に危険なもの**として扱ってください。
 >
-> ✅ 公式ダウンロード：https://github.com/code-yeongyu/oh-my-opencode/releases
+> ✅ 公式ダウンロード：https://github.com/codewithkenzo/oh-my-opencode/releases
 
 > [!NOTE]
 >
@@ -16,7 +16,7 @@
 
 > [!TIP]
 >
-> [![The Orchestrator is now available in beta.](./.github/assets/orchestrator-sisyphus.png?v=3)](https://github.com/code-yeongyu/oh-my-opencode/releases/tag/v3.0.0-beta.10)
+> [![The Orchestrator is now available in beta.](./.github/assets/orchestrator-sisyphus.png?v=3)](https://github.com/codewithkenzo/oh-my-opencode/releases/tag/v3.0.0-beta.10)
 > > **オーケストレーターがベータ版で利用可能になりました。`oh-my-opencode@3.0.0-beta.10`を使用してインストールしてください。**
 >
 > 一緒に歩みましょう！
@@ -30,9 +30,9 @@
 
 <div align="center">
 
-[![Oh My OpenCode](./.github/assets/hero.jpg)](https://github.com/code-yeongyu/oh-my-opencode#oh-my-opencode)
+[![Oh My OpenCode](./.github/assets/hero.jpg)](https://github.com/codewithkenzo/oh-my-opencode#oh-my-opencode)
 
-[![Preview](./.github/assets/omo.png)](https://github.com/code-yeongyu/oh-my-opencode#oh-my-opencode)
+[![Preview](./.github/assets/omo.png)](https://github.com/codewithkenzo/oh-my-opencode#oh-my-opencode)
 
 
 </div>
@@ -65,13 +65,13 @@
 
 <div align="center">
 
-[![GitHub Release](https://img.shields.io/github/v/release/code-yeongyu/oh-my-opencode?color=369eff&labelColor=black&logo=github&style=flat-square)](https://github.com/code-yeongyu/oh-my-opencode/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/code-yeongyu/oh-my-opencode?color=369eff&labelColor=black&logo=github&style=flat-square)](https://github.com/codewithkenzo/oh-my-opencode/releases)
 [![npm downloads](https://img.shields.io/npm/dt/oh-my-opencode?color=ff6b35&labelColor=black&style=flat-square)](https://www.npmjs.com/package/oh-my-opencode)
-[![GitHub Contributors](https://img.shields.io/github/contributors/code-yeongyu/oh-my-opencode?color=c4f042&labelColor=black&style=flat-square)](https://github.com/code-yeongyu/oh-my-opencode/graphs/contributors)
-[![GitHub Forks](https://img.shields.io/github/forks/code-yeongyu/oh-my-opencode?color=8ae8ff&labelColor=black&style=flat-square)](https://github.com/code-yeongyu/oh-my-opencode/network/members)
-[![GitHub Stars](https://img.shields.io/github/stars/code-yeongyu/oh-my-opencode?color=ffcb47&labelColor=black&style=flat-square)](https://github.com/code-yeongyu/oh-my-opencode/stargazers)
-[![GitHub Issues](https://img.shields.io/github/issues/code-yeongyu/oh-my-opencode?color=ff80eb&labelColor=black&style=flat-square)](https://github.com/code-yeongyu/oh-my-opencode/issues)
-[![License](https://img.shields.io/badge/license-SUL--1.0-white?labelColor=black&style=flat-square)](https://github.com/code-yeongyu/oh-my-opencode/blob/master/LICENSE.md)
+[![GitHub Contributors](https://img.shields.io/github/contributors/code-yeongyu/oh-my-opencode?color=c4f042&labelColor=black&style=flat-square)](https://github.com/codewithkenzo/oh-my-opencode/graphs/contributors)
+[![GitHub Forks](https://img.shields.io/github/forks/code-yeongyu/oh-my-opencode?color=8ae8ff&labelColor=black&style=flat-square)](https://github.com/codewithkenzo/oh-my-opencode/network/members)
+[![GitHub Stars](https://img.shields.io/github/stars/code-yeongyu/oh-my-opencode?color=ffcb47&labelColor=black&style=flat-square)](https://github.com/codewithkenzo/oh-my-opencode/stargazers)
+[![GitHub Issues](https://img.shields.io/github/issues/code-yeongyu/oh-my-opencode?color=ff80eb&labelColor=black&style=flat-square)](https://github.com/codewithkenzo/oh-my-opencode/issues)
+[![License](https://img.shields.io/badge/license-SUL--1.0-white?labelColor=black&style=flat-square)](https://github.com/codewithkenzo/oh-my-opencode/blob/master/LICENSE.md)
 
 [English](README.md) | [日本語](README.ja.md) | [简体中文](README.zh-cn.md)
 
@@ -226,7 +226,7 @@ Windows から Linux に初めて乗り換えた時のこと、自分の思い�
 
 ```
 oh-my-opencode をインストールして設定してください。以下の手順に従ってください：
-https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/refs/heads/master/docs/guide/installation.md
+https://raw.githubusercontent.com/codewithkenzo/oh-my-opencode/refs/heads/master/docs/guide/installation.md
 ```
 
 または [インストールガイド](docs/guide/installation.md) を直接読んでください。ただし、エージェントに任せることを強くお勧めします。人間はミスをしますが、エージェントはしません。
@@ -236,7 +236,7 @@ https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/refs/heads/master/
 インストールガイドを取得して、その指示に従ってください：
 
 ```bash
-curl -s https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/refs/heads/master/docs/guide/installation.md
+curl -s https://raw.githubusercontent.com/codewithkenzo/oh-my-opencode/refs/heads/master/docs/guide/installation.md
 ```
 
 

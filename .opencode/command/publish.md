@@ -223,7 +223,7 @@ Compare with expected version. If not matching after 2 minutes, warn user about 
 
 Report success to user with:
 - New version number
-- GitHub release URL: https://github.com/code-yeongyu/oh-my-opencode/releases/tag/v{version}
+- GitHub release URL: https://github.com/codewithkenzo/oh-my-opencode/releases/tag/v{version}
 - npm package URL: https://www.npmjs.com/package/oh-my-opencode
 
 ---

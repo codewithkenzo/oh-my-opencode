@@ -17,7 +17,7 @@ Schema autocomplete supported:
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json"
+  "$schema": "https://raw.githubusercontent.com/codewithkenzo/oh-my-opencode/master/assets/oh-my-opencode.schema.json"
 }
 ```
 
@@ -34,7 +34,7 @@ When both `oh-my-opencode.jsonc` and `oh-my-opencode.json` files exist, `.jsonc`
 
 ```jsonc
 {
-  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json",
+  "$schema": "https://raw.githubusercontent.com/codewithkenzo/oh-my-opencode/master/assets/oh-my-opencode.schema.json",
 
   /* Agent overrides - customize models for specific tasks */
   "agents": {

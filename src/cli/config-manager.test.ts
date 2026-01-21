@@ -215,7 +215,7 @@ describe("generateOmoConfig - v3 beta: no hardcoded models", () => {
     const result = generateOmoConfig(config)
 
     // #then should only contain $schema, no agents or categories
-    expect(result.$schema).toBe("https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json")
+    expect(result.$schema).toBe("https://raw.githubusercontent.com/codewithkenzo/oh-my-opencode/master/assets/oh-my-opencode.schema.json")
     expect(result.agents).toBeUndefined()
     expect(result.categories).toBeUndefined()
   })
@@ -252,7 +252,7 @@ describe("generateOmoConfig - v3 beta: no hardcoded models", () => {
     const result = generateOmoConfig(config)
 
     // #then should still only contain $schema
-    expect(result.$schema).toBe("https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json")
+    expect(result.$schema).toBe("https://raw.githubusercontent.com/codewithkenzo/oh-my-opencode/master/assets/oh-my-opencode.schema.json")
     expect(result.agents).toBeUndefined()
     expect(result.categories).toBeUndefined()
   })

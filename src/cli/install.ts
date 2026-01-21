@@ -323,7 +323,7 @@ async function runNonTuiInstall(args: InstallArgs): Promise<number> {
   )
 
   console.log(`${SYMBOLS.star} ${color.yellow("If you found this helpful, consider starring the repo!")}`)
-  console.log(`  ${color.dim("gh repo star code-yeongyu/oh-my-opencode")}`)
+  console.log(`  ${color.dim("gh repo star codewithkenzo/oh-my-opencode")}`)
   console.log()
   console.log(color.dim("oMoMoMoMo... Enjoy!"))
   console.log()
@@ -430,7 +430,7 @@ export async function install(args: InstallArgs): Promise<number> {
   )
 
   p.log.message(`${color.yellow("★")} If you found this helpful, consider starring the repo!`)
-  p.log.message(`  ${color.dim("gh repo star code-yeongyu/oh-my-opencode")}`)
+  p.log.message(`  ${color.dim("gh repo star codewithkenzo/oh-my-opencode")}`)
 
   p.outro(color.green("oMoMoMoMo... Enjoy!"))
 

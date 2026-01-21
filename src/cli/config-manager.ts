@@ -310,7 +310,7 @@ export function generateOmoConfig(_installConfig: InstallConfig): Record<string,
   // v3 beta: No hardcoded model strings - users rely on their OpenCode configured model
   // Users who want specific models configure them explicitly after install
   const config: Record<string, unknown> = {
-    $schema: "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json",
+    $schema: "https://raw.githubusercontent.com/codewithkenzo/oh-my-opencode/master/assets/oh-my-opencode.schema.json",
   }
 
   return config
