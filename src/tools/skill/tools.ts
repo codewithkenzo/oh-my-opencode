@@ -5,6 +5,7 @@ import type { SkillArgs, SkillInfo, SkillLoadOptions } from "./types"
 import type { LoadedSkill } from "../../features/opencode-skill-loader"
 import { getAllSkills, extractSkillTemplate } from "../../features/opencode-skill-loader/skill-content"
 import { injectGitMasterConfig } from "../../features/opencode-skill-loader/skill-content"
+import { substituteSkillVariables } from "../../features/opencode-skill-loader/substitution"
 import type { SkillMcpManager, SkillMcpClientInfo, SkillMcpServerContext } from "../../features/skill-mcp-manager"
 import type { Tool, Resource, Prompt } from "@modelcontextprotocol/sdk/types.js"
 
@@ -169,6 +170,10 @@ export function createSkillTool(options: SkillLoadOptions = {}): ToolDefinition 
 
       if (args.name === "git-master") {
         body = injectGitMasterConfig(body, options.gitMasterConfig)
+      }
+
+      if (options.getSessionID) {
+        body = substituteSkillVariables(body, { sessionId: options.getSessionID() })
       }
 
       const dir = skill.path ? dirname(skill.path) : skill.resolvedPath || process.cwd()
