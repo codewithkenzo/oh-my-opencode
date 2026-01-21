@@ -207,15 +207,25 @@ export async function loadProjectSkills(): Promise<Record<string, CommandDefinit
 }
 
 export async function loadOpencodeGlobalSkills(): Promise<Record<string, CommandDefinition>> {
-  const opencodeSkillsDir = join(homedir(), ".config", "opencode", "skill")
-  const skills = await loadSkillsFromDir(opencodeSkillsDir, "opencode")
-  return skillsToRecord(skills)
+  // Support both singular (oh-my-opencode convention) and plural (vercel-labs/add-skill convention)
+  const skillsSingular = join(homedir(), ".config", "opencode", "skill")
+  const skillsPlural = join(homedir(), ".config", "opencode", "skills")
+  const [singular, plural] = await Promise.all([
+    loadSkillsFromDir(skillsSingular, "opencode"),
+    loadSkillsFromDir(skillsPlural, "opencode"),
+  ])
+  return skillsToRecord([...singular, ...plural])
 }
 
 export async function loadOpencodeProjectSkills(): Promise<Record<string, CommandDefinition>> {
-  const opencodeProjectDir = join(process.cwd(), ".opencode", "skill")
-  const skills = await loadSkillsFromDir(opencodeProjectDir, "opencode-project")
-  return skillsToRecord(skills)
+  // Support both singular (oh-my-opencode convention) and plural (vercel-labs/add-skill convention)
+  const skillsSingular = join(process.cwd(), ".opencode", "skill")
+  const skillsPlural = join(process.cwd(), ".opencode", "skills")
+  const [singular, plural] = await Promise.all([
+    loadSkillsFromDir(skillsSingular, "opencode-project"),
+    loadSkillsFromDir(skillsPlural, "opencode-project"),
+  ])
+  return skillsToRecord([...singular, ...plural])
 }
 
 export interface DiscoverSkillsOptions {
@@ -280,11 +290,23 @@ export async function discoverProjectClaudeSkills(): Promise<LoadedSkill[]> {
 }
 
 export async function discoverOpencodeGlobalSkills(): Promise<LoadedSkill[]> {
-  const opencodeSkillsDir = join(homedir(), ".config", "opencode", "skill")
-  return loadSkillsFromDir(opencodeSkillsDir, "opencode")
+  // Support both singular (oh-my-opencode convention) and plural (vercel-labs/add-skill convention)
+  const skillsSingular = join(homedir(), ".config", "opencode", "skill")
+  const skillsPlural = join(homedir(), ".config", "opencode", "skills")
+  const [singular, plural] = await Promise.all([
+    loadSkillsFromDir(skillsSingular, "opencode"),
+    loadSkillsFromDir(skillsPlural, "opencode"),
+  ])
+  return [...singular, ...plural]
 }
 
 export async function discoverOpencodeProjectSkills(): Promise<LoadedSkill[]> {
-  const opencodeProjectDir = join(process.cwd(), ".opencode", "skill")
-  return loadSkillsFromDir(opencodeProjectDir, "opencode-project")
+  // Support both singular (oh-my-opencode convention) and plural (vercel-labs/add-skill convention)
+  const skillsSingular = join(process.cwd(), ".opencode", "skill")
+  const skillsPlural = join(process.cwd(), ".opencode", "skills")
+  const [singular, plural] = await Promise.all([
+    loadSkillsFromDir(skillsSingular, "opencode-project"),
+    loadSkillsFromDir(skillsPlural, "opencode-project"),
+  ])
+  return [...singular, ...plural]
 }
