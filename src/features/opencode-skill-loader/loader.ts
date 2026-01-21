@@ -116,6 +116,10 @@ $ARGUMENTS
       allowedTools: parseAllowedTools(data["allowed-tools"]),
       mcpConfig,
       lazyContent: eagerLoader,
+      disableModelInvocation: data["disable-model-invocation"],
+      userInvocable: data["user-invocable"],
+      context: data.context,
+      hooks: data.hooks,
     }
   } catch {
     return null

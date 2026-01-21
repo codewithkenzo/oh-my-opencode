@@ -129,6 +129,10 @@ $ARGUMENTS
       metadata: data.metadata,
       allowedTools: parseAllowedTools(data["allowed-tools"]),
       mcpConfig,
+      disableModelInvocation: data["disable-model-invocation"],
+      userInvocable: data["user-invocable"],
+      context: data.context,
+      hooks: data.hooks,
     }
   } catch {
     return null
