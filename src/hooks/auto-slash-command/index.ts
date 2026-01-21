@@ -13,6 +13,7 @@ import type {
   AutoSlashCommandHookOutput,
 } from "./types"
 import type { LoadedSkill } from "../../features/opencode-skill-loader"
+import { markSessionAsSlashCommand } from "../skill-invocation-filter"
 
 export * from "./detector"
 export * from "./executor"
@@ -75,6 +76,10 @@ export function createAutoSlashCommandHook(options?: AutoSlashCommandHookOptions
           error: result.error,
         })
         return
+      }
+
+      if (result.isSkill) {
+        markSessionAsSlashCommand(input.sessionID)
       }
 
       const taggedContent = `${AUTO_SLASH_COMMAND_TAG_OPEN}\n${result.replacementText}\n${AUTO_SLASH_COMMAND_TAG_CLOSE}`
