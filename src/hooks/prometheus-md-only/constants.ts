@@ -2,7 +2,7 @@ import { createSystemDirective, SystemDirectiveTypes } from "../../shared/system
 
 export const HOOK_NAME = "prometheus-md-only"
 
-export const PROMETHEUS_AGENTS = ["Musashi - plan"]
+export const PROMETHEUS_AGENTS = ["Musashi - plan", "Prometheus (Planner)"]
 
 export const ALLOWED_EXTENSIONS = [".md"]
 
