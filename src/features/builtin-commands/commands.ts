@@ -87,3 +87,48 @@ export function loadBuiltinCommands(
 
   return commands
 }
+
+/**
+ * Get builtin commands as CommandInfo array for slashcommand tool discovery.
+ * This allows builtin commands to appear in slash command listings and be invocable.
+ */
+export interface BuiltinCommandInfo {
+  name: string
+  metadata: {
+    name: string
+    description: string
+    argumentHint?: string
+    model?: string
+    agent?: string
+    subtask?: boolean
+  }
+  content: string
+  scope: "builtin"
+}
+
+export function getBuiltinCommandsAsInfoArray(
+  disabledCommands?: BuiltinCommandName[]
+): BuiltinCommandInfo[] {
+  const disabled = new Set(disabledCommands ?? [])
+  const commands: BuiltinCommandInfo[] = []
+
+  for (const [name, definition] of Object.entries(BUILTIN_COMMAND_DEFINITIONS)) {
+    if (!disabled.has(name as BuiltinCommandName)) {
+      commands.push({
+        name,
+        metadata: {
+          name,
+          description: definition.description || "",
+          argumentHint: definition.argumentHint,
+          model: definition.model,
+          agent: definition.agent,
+          subtask: definition.subtask,
+        },
+        content: definition.template,
+        scope: "builtin",
+      })
+    }
+  }
+
+  return commands
+}

@@ -279,7 +279,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     getSessionID: getSessionIDForMcp,
   });
 
-  const commands = discoverCommandsSync();
+  const commands = discoverCommandsSync(pluginConfig.disabled_commands);
   const slashcommandTool = createSlashcommandTool({
     commands,
     skills: mergedSkills,
