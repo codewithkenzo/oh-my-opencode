@@ -18,6 +18,12 @@ const SCOPE_PRIORITY: Record<SkillScope, number> = {
   "opencode-project": 6,
 }
 
+function parseAllowedToolsValue(value: string | string[] | undefined): string[] | undefined {
+  if (!value) return undefined
+  if (Array.isArray(value)) return value
+  return value.split(/\s+/).filter(Boolean)
+}
+
 function builtinToLoaded(builtin: BuiltinSkill): LoadedSkill {
   const definition: CommandDefinition = {
     name: builtin.name,
@@ -118,8 +124,8 @@ $ARGUMENTS
     argumentHint: entry["argument-hint"] || fileMetadata["argument-hint"],
   }
 
-  const allowedTools = entry["allowed-tools"] ||
-    (fileMetadata["allowed-tools"] ? fileMetadata["allowed-tools"].split(/\s+/).filter(Boolean) : undefined)
+  const allowedTools = parseAllowedToolsValue(entry["allowed-tools"]) ||
+    parseAllowedToolsValue(fileMetadata["allowed-tools"])
 
   return {
     name,

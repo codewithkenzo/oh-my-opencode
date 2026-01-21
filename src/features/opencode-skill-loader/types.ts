@@ -13,7 +13,7 @@ export interface SkillMetadata {
   license?: string
   compatibility?: string
   metadata?: Record<string, string>
-  "allowed-tools"?: string
+  "allowed-tools"?: string | string[]
   mcp?: SkillMcpConfig
   /** If true, skill cannot be invoked by model - only via slash command */
   "disable-model-invocation"?: boolean
@@ -23,6 +23,8 @@ export interface SkillMetadata {
   context?: "fork" | "inline"
   /** Hook configuration (placeholder for v2, not implemented) */
   hooks?: SkillHookConfig
+  /** Shell commands to execute and substitute as variables in skill body */
+  shell?: Record<string, string>
 }
 
 /** Placeholder type for skill-scoped hooks (v2 feature) */

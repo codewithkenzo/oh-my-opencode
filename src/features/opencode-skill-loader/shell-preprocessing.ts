@@ -2,7 +2,7 @@ import { spawn } from "child_process"
 
 const ALLOWED_COMMANDS = new Set([
   'echo', 'cat', 'ls', 'find', 'grep', 'wc', 'head', 'tail',
-  'date', 'pwd', 'basename', 'dirname', 'realpath',
+  'date', 'pwd', 'basename', 'dirname', 'realpath', 'whoami', 'uname', 'hostname',
   'git', 'node', 'bun', 'npm', 'pnpm'
 ])
 
@@ -144,5 +144,42 @@ export async function preprocessShellCommands(
   return result
 }
 
+export async function executeShellBlock(
+  shellConfig: Record<string, string>,
+  skillDir: string
+): Promise<Record<string, string>> {
+  const results: Record<string, string> = {}
+  
+  for (const [key, command] of Object.entries(shellConfig)) {
+    const cmd = command.replace(/^\$\((.*)\)$/, '$1').trim()
+    
+    if (cmd.length > SHELL_SECURITY.MAX_COMMAND_LENGTH) {
+      results[key] = '[COMMAND_BLOCKED: exceeds max length]'
+      continue
+    }
+    
+    const { allowed, binary, reason } = isCommandAllowed(cmd)
+    if (!allowed) {
+      const blockReason = reason || `${binary} not permitted`
+      results[key] = `[COMMAND_BLOCKED: ${blockReason}]`
+    } else {
+      results[key] = await executeCommand(cmd, skillDir)
+    }
+  }
+  
+  return results
+}
+
+export function substituteShellVariables(
+  content: string,
+  variables: Record<string, string>
+): string {
+  let result = content
+  for (const [key, value] of Object.entries(variables)) {
+    result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value)
+  }
+  return result
+}
+
 // Export for testing
-export { isCommandAllowed, ALLOWED_COMMANDS, SHELL_SECURITY }
+export { isCommandAllowed, executeCommand, ALLOWED_COMMANDS, SHELL_SECURITY }

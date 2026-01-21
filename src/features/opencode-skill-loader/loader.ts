@@ -10,7 +10,7 @@ import type { CommandDefinition } from "../claude-code-command-loader/types"
 import type { SkillScope, SkillMetadata, LoadedSkill, LazyContentLoader } from "./types"
 import type { SkillMcpConfig } from "../skill-mcp-manager/types"
 import { collectMdFilesRecursive } from "./utils"
-import { preprocessShellCommands } from "./shell-preprocessing"
+import { preprocessShellCommands, executeShellBlock, substituteShellVariables } from "./shell-preprocessing"
 import { discoverSupportingFiles, formatSize } from "./supporting-files"
 
 function parseSkillMcpConfigFromFrontmatter(content: string): SkillMcpConfig | undefined {
@@ -68,7 +68,15 @@ export async function loadSkillFromPath(
   try {
     const content = await fs.readFile(skillPath, "utf-8")
     const { data, body } = parseFrontmatter<SkillMetadata>(content)
+    
+    let shellVariables: Record<string, string> = {}
+    if (data.shell && typeof data.shell === 'object') {
+      shellVariables = await executeShellBlock(data.shell, resolvedPath)
+    }
+    
     const processedBody = await preprocessShellCommands(body, resolvedPath)
+    const substitutedBody = substituteShellVariables(processedBody, shellVariables)
+    
     const frontmatterMcp = parseSkillMcpConfigFromFrontmatter(content)
     const mcpJsonMcp = await loadMcpJsonFromDir(resolvedPath)
     const mcpConfig = mcpJsonMcp || frontmatterMcp
@@ -94,7 +102,7 @@ export async function loadSkillFromPath(
     const templateContent = `<skill-instruction>
 Base directory for this skill: ${resolvedPath}/
 File references (@path) in this skill are relative to this directory.
-${supportingFilesSection}${processedBody.trim()}${mergedContent}
+${supportingFilesSection}${substitutedBody.trim()}${mergedContent}
 </skill-instruction>
 
 <user-request>

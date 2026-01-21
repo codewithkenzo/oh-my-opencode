@@ -12,6 +12,7 @@ export interface SubstitutionContext {
  *
  * Currently supported:
  * - ${CLAUDE_SESSION_ID} → session ID
+ * - $OPENCODE_SESSION_ID or ${OPENCODE_SESSION_ID} → session ID
  *
  * NOT touched:
  * - $ARGUMENTS → passed through for LLM interpretation
@@ -29,6 +30,7 @@ export function substituteSkillVariables(
 
 	if (context.sessionId) {
 		result = result.replace(/\$\{CLAUDE_SESSION_ID\}/g, context.sessionId)
+		result = result.replace(/\$OPENCODE_SESSION_ID|\$\{OPENCODE_SESSION_ID\}/g, context.sessionId)
 	} else {
 		// Substitute empty string + warn
 		if (result.includes("${CLAUDE_SESSION_ID}")) {
@@ -36,6 +38,12 @@ export function substituteSkillVariables(
 				"[skill-loader] ${CLAUDE_SESSION_ID} used but no session available",
 			)
 			result = result.replace(/\$\{CLAUDE_SESSION_ID\}/g, "")
+		}
+		if (result.match(/\$OPENCODE_SESSION_ID|\$\{OPENCODE_SESSION_ID\}/)) {
+			console.warn(
+				"[skill-loader] $OPENCODE_SESSION_ID used but no session available",
+			)
+			result = result.replace(/\$OPENCODE_SESSION_ID|\$\{OPENCODE_SESSION_ID\}/g, "")
 		}
 	}
 
