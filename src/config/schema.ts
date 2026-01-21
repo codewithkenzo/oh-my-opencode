@@ -186,7 +186,7 @@ export const AgentOverridesSchema = z.object({
   "Senshi - distributor": AgentOverrideConfigSchema.optional(),
   "Seichou - growth": AgentOverrideConfigSchema.optional(),
   "Tsunagi - networker": AgentOverrideConfigSchema.optional(),
-})
+}).catchall(AgentOverrideConfigSchema.optional())
 
 export const ClaudeCodeConfigSchema = z.object({
   mcp: z.boolean().optional(),
