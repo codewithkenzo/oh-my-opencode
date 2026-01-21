@@ -271,6 +271,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     mcpManager: skillMcpManager,
     getSessionID: getSessionIDForMcp,
     gitMasterConfig: pluginConfig.git_master,
+    client: ctx.client,
   });
   const skillMcpTool = createSkillMcpTool({
     manager: skillMcpManager,
