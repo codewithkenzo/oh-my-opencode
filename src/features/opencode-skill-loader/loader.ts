@@ -9,7 +9,7 @@ import { getClaudeConfigDir } from "../../shared"
 import type { CommandDefinition } from "../claude-code-command-loader/types"
 import type { SkillScope, SkillMetadata, LoadedSkill, LazyContentLoader } from "./types"
 import type { SkillMcpConfig } from "../skill-mcp-manager/types"
-import { collectMdFilesRecursive } from "./utils"
+import { collectMdFilesRecursive, parseAllowedTools, validateShellConfig } from "./utils"
 import { preprocessShellCommands, executeShellBlock, substituteShellVariables } from "./shell-preprocessing"
 import { discoverSupportingFiles, formatSize } from "./supporting-files"
 
@@ -53,12 +53,6 @@ async function loadMcpJsonFromDir(skillDir: string): Promise<SkillMcpConfig | un
   return undefined
 }
 
-function parseAllowedTools(allowedTools: string | string[] | undefined): string[] | undefined {
-  if (!allowedTools) return undefined
-  if (Array.isArray(allowedTools)) return allowedTools
-  return allowedTools.split(/\s+/).filter(Boolean)
-}
-
 export async function loadSkillFromPath(
   skillPath: string,
   resolvedPath: string,
@@ -70,7 +64,7 @@ export async function loadSkillFromPath(
     const { data, body } = parseFrontmatter<SkillMetadata>(content)
     
     let shellVariables: Record<string, string> = {}
-    if (data.shell && typeof data.shell === 'object') {
+    if (validateShellConfig(data.shell)) {
       shellVariables = await executeShellBlock(data.shell, resolvedPath)
     }
     

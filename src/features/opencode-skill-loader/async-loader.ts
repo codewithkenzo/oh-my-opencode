@@ -8,7 +8,8 @@ import { resolveSymlink, isMarkdownFile } from "../../shared/file-utils"
 import type { CommandDefinition } from "../claude-code-command-loader/types"
 import type { SkillScope, SkillMetadata, LoadedSkill } from "./types"
 import type { SkillMcpConfig } from "../skill-mcp-manager/types"
-import { collectMdFilesRecursive } from "./utils"
+import { collectMdFilesRecursive, parseAllowedTools, validateShellConfig } from "./utils"
+import { preprocessShellCommands, executeShellBlock, substituteShellVariables } from "./shell-preprocessing"
 
 export async function mapWithConcurrency<T, R>(
   items: T[],
@@ -82,6 +83,14 @@ export async function loadSkillFromPathAsync(
     const { data, body, parseError } = parseFrontmatter<SkillMetadata>(content)
     if (parseError) return null
     
+    let shellVariables: Record<string, string> = {}
+    if (validateShellConfig(data.shell)) {
+      shellVariables = await executeShellBlock(data.shell, resolvedPath)
+    }
+    
+    const processedBody = await preprocessShellCommands(body, resolvedPath)
+    const substitutedBody = substituteShellVariables(processedBody, shellVariables)
+    
     const frontmatterMcp = parseSkillMcpConfigFromFrontmatter(content)
     const mcpJsonMcp = await loadMcpJsonFromDirAsync(resolvedPath)
     const mcpConfig = mcpJsonMcp || frontmatterMcp
@@ -101,7 +110,7 @@ export async function loadSkillFromPathAsync(
 Base directory for this skill: ${resolvedPath}/
 File references (@path) in this skill are relative to this directory.
 
-${body.trim()}${mergedContent}
+${substitutedBody.trim()}${mergedContent}
 </skill-instruction>
 
 <user-request>
@@ -137,12 +146,6 @@ $ARGUMENTS
   } catch {
     return null
   }
-}
-
-function parseAllowedTools(allowedTools: string | string[] | undefined): string[] | undefined {
-  if (!allowedTools) return undefined
-  if (Array.isArray(allowedTools)) return allowedTools
-  return allowedTools.split(/\s+/).filter(Boolean)
 }
 
 export async function discoverSkillsInDirAsync(skillsDir: string): Promise<LoadedSkill[]> {

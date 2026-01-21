@@ -39,3 +39,14 @@ export async function collectMdFilesRecursive(
 
   return results.sort((a, b) => a.path.localeCompare(b.path))
 }
+
+export function parseAllowedTools(allowedTools: string | string[] | undefined): string[] | undefined {
+  if (!allowedTools) return undefined
+  if (Array.isArray(allowedTools)) return allowedTools
+  return allowedTools.split(/\s+/).filter(Boolean)
+}
+
+export function validateShellConfig(shell: unknown): shell is Record<string, string> {
+  if (!shell || typeof shell !== 'object') return false
+  return Object.values(shell).every(v => typeof v === 'string')
+}
