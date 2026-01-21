@@ -1,7 +1,6 @@
 ---
 name: demo-skill
 description: Demo skill showcasing all skill loader features
-# Claude Code compatibility fields
 allowed-tools:
   - Read
   - Bash
@@ -12,11 +11,10 @@ disallowed-tools:
   - WebFetch
 user-invocable: true
 model-invocable: true
-# Shell preprocessing (runs at load time)
 shell:
   project_root: $(pwd)
-  git_branch: $(git branch --show-current 2>/dev/null || echo "not-a-repo")
-  node_version: $(node --version 2>/dev/null || echo "not-installed")
+  git_branch: $(git branch --show-current)
+  node_version: $(node --version)
   current_date: $(date +%Y-%m-%d)
   username: $(whoami)
 ---
