@@ -8,6 +8,7 @@ import { resolveSymlink, isMarkdownFile } from "../../shared/file-utils"
 import type { CommandDefinition } from "../claude-code-command-loader/types"
 import type { SkillScope, SkillMetadata, LoadedSkill } from "./types"
 import type { SkillMcpConfig } from "../skill-mcp-manager/types"
+import { collectMdFilesRecursive } from "./utils"
 
 export async function mapWithConcurrency<T, R>(
   items: T[],
@@ -85,6 +86,12 @@ export async function loadSkillFromPathAsync(
     const mcpJsonMcp = await loadMcpJsonFromDirAsync(resolvedPath)
     const mcpConfig = mcpJsonMcp || frontmatterMcp
 
+    const subdirFiles = await collectMdFilesRecursive(resolvedPath, 0, 3, '')
+    const mergedContent = subdirFiles.length > 0
+      ? '\n\n<!-- Merged from subdirectories (alphabetical by path) -->\n\n' +
+        subdirFiles.map(f => f.content).join('\n\n')
+      : ''
+
     const skillName = data.name || defaultName
     const originalDescription = data.description || ""
     const isOpencodeSource = scope === "opencode" || scope === "opencode-project"
@@ -94,7 +101,7 @@ export async function loadSkillFromPathAsync(
 Base directory for this skill: ${resolvedPath}/
 File references (@path) in this skill are relative to this directory.
 
-${body.trim()}
+${body.trim()}${mergedContent}
 </skill-instruction>
 
 <user-request>
