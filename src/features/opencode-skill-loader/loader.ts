@@ -53,8 +53,9 @@ async function loadMcpJsonFromDir(skillDir: string): Promise<SkillMcpConfig | un
   return undefined
 }
 
-function parseAllowedTools(allowedTools: string | undefined): string[] | undefined {
+function parseAllowedTools(allowedTools: string | string[] | undefined): string[] | undefined {
   if (!allowedTools) return undefined
+  if (Array.isArray(allowedTools)) return allowedTools
   return allowedTools.split(/\s+/).filter(Boolean)
 }
 
