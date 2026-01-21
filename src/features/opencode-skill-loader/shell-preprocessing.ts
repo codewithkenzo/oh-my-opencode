@@ -44,10 +44,19 @@ async function executeCommand(command: string, skillDir: string): Promise<string
 
     let stdout = ''
     let stderr = ''
-    let killed = false
+    let resolved = false
+    let timedOut = false
+    let truncated = false
+
+    const safeResolve = (value: string) => {
+      if (resolved) return
+      resolved = true
+      clearTimeout(timeout)
+      resolve(value)
+    }
 
     const timeout = setTimeout(() => {
-      killed = true
+      timedOut = true
       child.kill('SIGKILL')
     }, SHELL_SECURITY.TIMEOUT_MS)
 
@@ -55,7 +64,7 @@ async function executeCommand(command: string, skillDir: string): Promise<string
       stdout += data.toString()
       if (stdout.length > SHELL_SECURITY.MAX_OUTPUT_BYTES) {
         stdout = stdout.slice(0, SHELL_SECURITY.MAX_OUTPUT_BYTES)
-        killed = true
+        truncated = true
         child.kill('SIGKILL')
       }
     })
@@ -68,21 +77,19 @@ async function executeCommand(command: string, skillDir: string): Promise<string
     })
 
     child.on('close', (code) => {
-      clearTimeout(timeout)
-      if (killed && stdout.length >= SHELL_SECURITY.MAX_OUTPUT_BYTES) {
-        resolve(stdout + '... (truncated)')
-      } else if (killed) {
-        resolve('[COMMAND_TIMEOUT: exceeded 5s]')
+      if (truncated) {
+        safeResolve(stdout + '... (truncated)')
+      } else if (timedOut) {
+        safeResolve('[COMMAND_TIMEOUT: exceeded 5s]')
       } else if (code !== 0) {
-        resolve(`[COMMAND_FAILED: ${code} - ${stderr.trim()}]`)
+        safeResolve(`[COMMAND_FAILED: ${code} - ${stderr.trim()}]`)
       } else {
-        resolve(stdout.trim())
+        safeResolve(stdout.trim())
       }
     })
 
     child.on('error', (err) => {
-      clearTimeout(timeout)
-      resolve(`[COMMAND_FAILED: ${err.message}]`)
+      safeResolve(`[COMMAND_FAILED: ${err.message}]`)
     })
   })
 }
@@ -149,8 +156,16 @@ export async function executeShellBlock(
   skillDir: string
 ): Promise<Record<string, string>> {
   const results: Record<string, string> = {}
+  const entries = Object.entries(shellConfig)
   
-  for (const [key, command] of Object.entries(shellConfig)) {
+  if (entries.length > SHELL_SECURITY.MAX_COMMANDS_PER_SKILL) {
+    console.warn(`[skill-loader] Shell block has too many commands (${entries.length} > ${SHELL_SECURITY.MAX_COMMANDS_PER_SKILL}), only processing first ${SHELL_SECURITY.MAX_COMMANDS_PER_SKILL}`)
+  }
+  
+  const processLimit = Math.min(entries.length, SHELL_SECURITY.MAX_COMMANDS_PER_SKILL)
+  
+  for (let i = 0; i < processLimit; i++) {
+    const [key, command] = entries[i]
     const cmd = command.replace(/^\$\((.*)\)$/, '$1').trim()
     
     if (cmd.length > SHELL_SECURITY.MAX_COMMAND_LENGTH) {
@@ -176,9 +191,13 @@ export function substituteShellVariables(
 ): string {
   let result = content
   for (const [key, value] of Object.entries(variables)) {
-    result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value)
+    result = result.replace(new RegExp(`\\{\\{${escapeRegExp(key)}\\}\\}`, 'g'), value)
   }
   return result
+}
+
+function escapeRegExp(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 // Export for testing
