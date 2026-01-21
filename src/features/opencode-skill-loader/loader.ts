@@ -10,6 +10,8 @@ import type { CommandDefinition } from "../claude-code-command-loader/types"
 import type { SkillScope, SkillMetadata, LoadedSkill, LazyContentLoader } from "./types"
 import type { SkillMcpConfig } from "../skill-mcp-manager/types"
 import { collectMdFilesRecursive } from "./utils"
+import { preprocessShellCommands } from "./shell-preprocessing"
+import { discoverSupportingFiles, formatSize } from "./supporting-files"
 
 function parseSkillMcpConfigFromFrontmatter(content: string): SkillMcpConfig | undefined {
   const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/)
@@ -65,9 +67,23 @@ export async function loadSkillFromPath(
   try {
     const content = await fs.readFile(skillPath, "utf-8")
     const { data, body } = parseFrontmatter<SkillMetadata>(content)
+    const processedBody = await preprocessShellCommands(body, resolvedPath)
     const frontmatterMcp = parseSkillMcpConfigFromFrontmatter(content)
     const mcpJsonMcp = await loadMcpJsonFromDir(resolvedPath)
     const mcpConfig = mcpJsonMcp || frontmatterMcp
+
+    const subdirFiles = await collectMdFilesRecursive(resolvedPath, 0, 3, '')
+    const mergedContent = subdirFiles.length > 0
+      ? '\n\n<!-- Merged from subdirectories (alphabetical by path) -->\n\n' +
+        subdirFiles.map(f => f.content).join('\n\n')
+      : ''
+
+    const supportingFiles = await discoverSupportingFiles(resolvedPath)
+    const supportingFilesSection = supportingFiles.length > 0
+      ? '\n<supporting-files>\n' +
+        supportingFiles.map(f => `${f.relativePath} (${formatSize(f.sizeBytes)})`).join('\n') +
+        '\n</supporting-files>\n\n'
+      : ''
 
     const skillName = data.name || defaultName
     const originalDescription = data.description || ""
@@ -77,8 +93,7 @@ export async function loadSkillFromPath(
     const templateContent = `<skill-instruction>
 Base directory for this skill: ${resolvedPath}/
 File references (@path) in this skill are relative to this directory.
-
-${body.trim()}
+${supportingFilesSection}${processedBody.trim()}${mergedContent}
 </skill-instruction>
 
 <user-request>
