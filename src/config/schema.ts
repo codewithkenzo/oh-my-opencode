@@ -350,6 +350,15 @@ export const GitMasterConfigSchema = z.object({
   include_co_authored_by: z.boolean().default(true),
 })
 
+export const BrowserConfigSchema = z.object({
+  /** Browser backend: "agent-browser" (default, more features) or "browser" (camhahu/browser, faster) */
+  backend: z.enum(["agent-browser", "browser"]).default("agent-browser"),
+  /** Default CDP port for connecting to existing Chrome (e.g., 9222) */
+  cdp_port: z.number().optional(),
+  /** Auto-launch Windows Chrome on WSL if no CDP port active (default: true) */
+  wsl_auto_launch: z.boolean().default(true),
+})
+
 export const CategorySkillsConfigSchema = z.record(z.string(), z.array(z.string()))
 
 export const OhMyOpenCodeConfigSchema = z.object({
@@ -372,6 +381,7 @@ export const OhMyOpenCodeConfigSchema = z.object({
   background_task: BackgroundTaskConfigSchema.optional(),
   notification: NotificationConfigSchema.optional(),
   git_master: GitMasterConfigSchema.optional(),
+  browser: BrowserConfigSchema.optional(),
 })
 
 export type OhMyOpenCodeConfig = z.infer<typeof OhMyOpenCodeConfigSchema>
@@ -395,5 +405,6 @@ export type CategoriesConfig = z.infer<typeof CategoriesConfigSchema>
 export type CategorySkillsConfig = z.infer<typeof CategorySkillsConfigSchema>
 export type BuiltinCategoryName = z.infer<typeof BuiltinCategoryNameSchema>
 export type GitMasterConfig = z.infer<typeof GitMasterConfigSchema>
+export type BrowserConfig = z.infer<typeof BrowserConfigSchema>
 
 export { AnyMcpNameSchema, type AnyMcpName, McpNameSchema, type McpName } from "../mcp/types"

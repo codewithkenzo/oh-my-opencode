@@ -1,8 +1,17 @@
 import { tool } from "@opencode-ai/plugin"
 import type { ToolDefinition } from "@opencode-ai/plugin/tool"
-import { spawn, execSync } from "node:child_process"
-import { existsSync, mkdirSync } from "node:fs"
-import { dirname, resolve } from "node:path"
+import { existsSync, readFileSync } from "node:fs"
+import { join } from "node:path"
+import { parseJsonc, getUserConfigDir } from "../../shared"
+import type { BrowserConfig } from "../../config/schema"
+import {
+  type BrowserBackend,
+  type BrowserAdapter,
+  createBrowserAdapter,
+  resolveCdpPort,
+  clearBrowserSession,
+  formatRef,
+} from "./adapters"
 import {
   BROWSER_OPEN_DESCRIPTION,
   BROWSER_SNAPSHOT_DESCRIPTION,
@@ -24,155 +33,55 @@ import {
   BROWSER_WAIT_DESCRIPTION,
 } from "./constants"
 
-// Browser session state
-let activeCdpPort: number | undefined
-let chromeProcess: ReturnType<typeof spawn> | undefined
-
-/**
- * Detect if running in WSL
- */
-function isWSL(): boolean {
+function getBrowserConfig(): { backend: BrowserBackend; cdpPort?: number; wslAutoLaunch: boolean } {
+  const defaultConfig = { backend: "agent-browser" as BrowserBackend, wslAutoLaunch: true }
+  
   try {
-    const release = execSync("uname -r", { encoding: "utf-8" }).toLowerCase()
-    return release.includes("microsoft") || release.includes("wsl")
+    const userConfigPath = join(getUserConfigDir(), "opencode", "oh-my-opencode.json")
+    const projectConfigPath = join(process.cwd(), ".opencode", "oh-my-opencode.json")
+    
+    let browserConfig: BrowserConfig | undefined
+    
+    // Check project config first, then user config (to match load priority, though simple override here)
+    // Actually standard is user base + project override.
+    // We'll check project first, if found use it. If not, check user.
+    // This is a simplified lookup since we don't have deep merge here.
+    
+    if (existsSync(projectConfigPath)) {
+        const content = readFileSync(projectConfigPath, "utf-8")
+        const config = parseJsonc<{ browser?: BrowserConfig }>(content)
+        if (config?.browser) browserConfig = config.browser
+    }
+    
+    if (!browserConfig && existsSync(userConfigPath)) {
+        const content = readFileSync(userConfigPath, "utf-8")
+        const config = parseJsonc<{ browser?: BrowserConfig }>(content)
+        if (config?.browser) browserConfig = config.browser
+    }
+    
+    return {
+      backend: browserConfig?.backend ?? "agent-browser",
+      cdpPort: browserConfig?.cdp_port,
+      wslAutoLaunch: browserConfig?.wsl_auto_launch ?? true,
+    }
   } catch {
-    return false
+    return defaultConfig
   }
 }
 
-/**
- * Check if a CDP port is responding
- */
-async function isCdpPortActive(port: number): Promise<boolean> {
-  try {
-    const response = await fetch(`http://127.0.0.1:${port}/json/version`, {
-      signal: AbortSignal.timeout(1000),
-    })
-    return response.ok
-  } catch {
-    return false
-  }
+async function getAdapter(explicitCdpPort?: number): Promise<{ adapter: BrowserAdapter; mode: string }> {
+  const { backend, cdpPort: configCdpPort, wslAutoLaunch } = getBrowserConfig()
+  const resolvedPort = await resolveCdpPort(explicitCdpPort ?? configCdpPort, wslAutoLaunch)
+  const adapter = createBrowserAdapter(backend, resolvedPort)
+  const mode = resolvedPort ? `CDP:${resolvedPort}` : backend
+  return { adapter, mode }
 }
 
-/**
- * Launch Chrome on Windows with remote debugging enabled (from WSL)
- */
-async function launchWindowsChrome(port: number = 9222): Promise<number> {
-  // Check if already running
-  if (await isCdpPortActive(port)) {
-    return port
-  }
-
-  // Try common Chrome paths on Windows
-  const chromePaths = [
-    "/mnt/c/Program Files/Google/Chrome/Application/chrome.exe",
-    "/mnt/c/Program Files (x86)/Google/Chrome/Application/chrome.exe",
-    "/mnt/c/Users/${USER}/AppData/Local/Google/Chrome/Application/chrome.exe",
-  ]
-
-  let chromePath: string | undefined
-  for (const p of chromePaths) {
-    const expanded = p.replace("${USER}", process.env.USER || "")
-    if (existsSync(expanded)) {
-      chromePath = expanded
-      break
-    }
-  }
-
-  if (!chromePath) {
-    throw new Error("Chrome not found on Windows. Install Chrome or provide cdp_port manually.")
-  }
-
-  // Launch Chrome with remote debugging
-  const winPath = chromePath.replace(/^\/mnt\/([a-z])\//, (_, drive) => `${drive.toUpperCase()}:\\`).replace(/\//g, "\\")
-  
-  // Use cmd.exe to launch Chrome in background
-  const proc = spawn("cmd.exe", ["/c", "start", "", winPath, `--remote-debugging-port=${port}`, "--no-first-run", "--no-default-browser-check"], {
-    detached: true,
-    stdio: "ignore",
-  })
-  proc.unref()
-  
-  // Wait for CDP to become available
-  const maxAttempts = 30
-  for (let i = 0; i < maxAttempts; i++) {
-    await new Promise(r => setTimeout(r, 200))
-    if (await isCdpPortActive(port)) {
-      activeCdpPort = port
-      return port
-    }
-  }
-  
-  throw new Error(`Chrome launched but CDP port ${port} not responding after 6s`)
-}
-
-/**
- * Get or create a CDP port for browser operations
- * Priority: explicit cdp_port > active session > auto-launch on WSL
- */
-async function resolveCdpPort(cdpPort?: number): Promise<number | undefined> {
-  // Explicit port provided
-  if (cdpPort !== undefined) {
-    if (await isCdpPortActive(cdpPort)) {
-      activeCdpPort = cdpPort
-      return cdpPort
-    }
-    throw new Error(`CDP port ${cdpPort} not responding. Start Chrome with --remote-debugging-port=${cdpPort}`)
-  }
-  
-  // Active session exists
-  if (activeCdpPort && await isCdpPortActive(activeCdpPort)) {
-    return activeCdpPort
-  }
-  
-  // On WSL, try to auto-launch Windows Chrome
-  if (isWSL()) {
-    try {
-      return await launchWindowsChrome(9222)
-    } catch {
-      // Fall through to bundled mode
-    }
-  }
-  
-  // No CDP - will use bundled Playwright via agent-browser
-  return undefined
-}
-
-async function runAgentBrowser(args: string[], cdpPort?: number): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const cmdArgs = cdpPort ? ["--cdp", String(cdpPort), ...args] : args
-    
-    const proc = spawn("agent-browser", cmdArgs, {
-      stdio: ["pipe", "pipe", "pipe"],
-    })
-    
-    let stdout = ""
-    let stderr = ""
-    
-    proc.stdout.on("data", (data) => {
-      stdout += data.toString()
-    })
-    
-    proc.stderr.on("data", (data) => {
-      stderr += data.toString()
-    })
-    
-    proc.on("close", (code) => {
-      if (code === 0) {
-        resolve(stdout.trim() || "Success")
-      } else {
-        reject(new Error(stderr.trim() || `agent-browser exited with code ${code}`))
-      }
-    })
-    
-    proc.on("error", (err) => {
-      if ((err as NodeJS.ErrnoException).code === "ENOENT") {
-        reject(new Error("agent-browser not found. Install with: bun add -g agent-browser"))
-      } else {
-        reject(err)
-      }
-    })
-  })
+function getTarget(ref?: number, selector?: string): string | null {
+  const { backend } = getBrowserConfig()
+  if (ref !== undefined) return formatRef(ref, backend)
+  if (selector) return selector
+  return null
 }
 
 export const browser_open: ToolDefinition = tool({
@@ -183,9 +92,8 @@ export const browser_open: ToolDefinition = tool({
   },
   execute: async ({ url, cdp_port }) => {
     try {
-      const resolvedPort = await resolveCdpPort(cdp_port)
-      const result = await runAgentBrowser(["open", url], resolvedPort)
-      const mode = resolvedPort ? `CDP:${resolvedPort}` : "bundled"
+      const { adapter, mode } = await getAdapter(cdp_port)
+      const result = await adapter.open(url)
       return `[${mode}] Navigated to: ${url}\n${result}`
     } catch (err) {
       return `Error: ${(err as Error).message}`
@@ -201,9 +109,8 @@ export const browser_snapshot: ToolDefinition = tool({
   },
   execute: async ({ interactive, cdp_port }) => {
     try {
-      const resolvedPort = await resolveCdpPort(cdp_port)
-      const args = interactive ? ["snapshot", "-i"] : ["snapshot"]
-      return await runAgentBrowser(args, resolvedPort)
+      const { adapter } = await getAdapter(cdp_port)
+      return await adapter.snapshot(interactive)
     } catch (err) {
       return `Error: ${(err as Error).message}`
     }
@@ -218,15 +125,9 @@ export const browser_screenshot: ToolDefinition = tool({
   },
   execute: async ({ output_path = "tmp/screenshot.png", cdp_port }) => {
     try {
-      const resolvedPort = await resolveCdpPort(cdp_port)
-      const fullPath = resolve(process.cwd(), output_path)
-      const dir = dirname(fullPath)
-      if (!existsSync(dir)) {
-        mkdirSync(dir, { recursive: true })
-      }
-      
-      await runAgentBrowser(["screenshot", fullPath], resolvedPort)
-      return `Screenshot saved: ${fullPath}\n\nUse look_at(file_path="${fullPath}", goal="...") to analyze`
+      const { adapter } = await getAdapter(cdp_port)
+      const result = await adapter.screenshot(output_path)
+      return `${result}\n\nUse look_at(file_path="${output_path}", goal="...") to analyze`
     } catch (err) {
       return `Error: ${(err as Error).message}`
     }
@@ -242,14 +143,10 @@ export const browser_click: ToolDefinition = tool({
   },
   execute: async ({ ref, selector, cdp_port }) => {
     try {
-      const resolvedPort = await resolveCdpPort(cdp_port)
-      if (ref !== undefined) {
-        return await runAgentBrowser(["click", `@e${ref}`], resolvedPort)
-      } else if (selector) {
-        return await runAgentBrowser(["click", selector], resolvedPort)
-      } else {
-        return "Error: Provide either ref or selector"
-      }
+      const target = getTarget(ref, selector)
+      if (!target) return "Error: Provide either ref or selector"
+      const { adapter } = await getAdapter(cdp_port)
+      return await adapter.click(target)
     } catch (err) {
       return `Error: ${(err as Error).message}`
     }
@@ -266,14 +163,10 @@ export const browser_fill: ToolDefinition = tool({
   },
   execute: async ({ ref, selector, text, cdp_port }) => {
     try {
-      const resolvedPort = await resolveCdpPort(cdp_port)
-      if (ref !== undefined) {
-        return await runAgentBrowser(["fill", `@e${ref}`, text], resolvedPort)
-      } else if (selector) {
-        return await runAgentBrowser(["fill", selector, text], resolvedPort)
-      } else {
-        return "Error: Provide either ref or selector"
-      }
+      const target = getTarget(ref, selector)
+      if (!target) return "Error: Provide either ref or selector"
+      const { adapter } = await getAdapter(cdp_port)
+      return await adapter.fill(target, text)
     } catch (err) {
       return `Error: ${(err as Error).message}`
     }
@@ -287,14 +180,9 @@ export const browser_close: ToolDefinition = tool({
   },
   execute: async ({ cdp_port }) => {
     try {
-      const resolvedPort = await resolveCdpPort(cdp_port)
-      const result = await runAgentBrowser(["close"], resolvedPort)
-      // Clear session state
-      activeCdpPort = undefined
-      if (chromeProcess) {
-        chromeProcess.kill()
-        chromeProcess = undefined
-      }
+      const { adapter } = await getAdapter(cdp_port)
+      const result = await adapter.close()
+      clearBrowserSession()
       return result
     } catch (err) {
       return `Error: ${(err as Error).message}`
@@ -309,8 +197,8 @@ export const browser_back: ToolDefinition = tool({
   },
   execute: async ({ cdp_port }) => {
     try {
-      const resolvedPort = await resolveCdpPort(cdp_port)
-      return await runAgentBrowser(["back"], resolvedPort)
+      const { adapter } = await getAdapter(cdp_port)
+      return await adapter.back()
     } catch (err) {
       return `Error: ${(err as Error).message}`
     }
@@ -324,8 +212,8 @@ export const browser_forward: ToolDefinition = tool({
   },
   execute: async ({ cdp_port }) => {
     try {
-      const resolvedPort = await resolveCdpPort(cdp_port)
-      return await runAgentBrowser(["forward"], resolvedPort)
+      const { adapter } = await getAdapter(cdp_port)
+      return await adapter.forward()
     } catch (err) {
       return `Error: ${(err as Error).message}`
     }
@@ -339,8 +227,8 @@ export const browser_reload: ToolDefinition = tool({
   },
   execute: async ({ cdp_port }) => {
     try {
-      const resolvedPort = await resolveCdpPort(cdp_port)
-      return await runAgentBrowser(["reload"], resolvedPort)
+      const { adapter } = await getAdapter(cdp_port)
+      return await adapter.reload()
     } catch (err) {
       return `Error: ${(err as Error).message}`
     }
@@ -354,8 +242,8 @@ export const browser_get_url: ToolDefinition = tool({
   },
   execute: async ({ cdp_port }) => {
     try {
-      const resolvedPort = await resolveCdpPort(cdp_port)
-      return await runAgentBrowser(["get", "url"], resolvedPort)
+      const { adapter } = await getAdapter(cdp_port)
+      return await adapter.getUrl()
     } catch (err) {
       return `Error: ${(err as Error).message}`
     }
@@ -369,8 +257,8 @@ export const browser_get_title: ToolDefinition = tool({
   },
   execute: async ({ cdp_port }) => {
     try {
-      const resolvedPort = await resolveCdpPort(cdp_port)
-      return await runAgentBrowser(["get", "title"], resolvedPort)
+      const { adapter } = await getAdapter(cdp_port)
+      return await adapter.getTitle()
     } catch (err) {
       return `Error: ${(err as Error).message}`
     }
@@ -388,11 +276,10 @@ export const browser_type: ToolDefinition = tool({
   },
   execute: async ({ ref, selector, text, delay, cdp_port }) => {
     try {
-      const resolvedPort = await resolveCdpPort(cdp_port)
-      const target = ref !== undefined ? `@e${ref}` : selector
+      const target = getTarget(ref, selector)
       if (!target) return "Error: Provide either ref or selector"
-      const args = delay ? ["type", target, text, "--delay", String(delay)] : ["type", target, text]
-      return await runAgentBrowser(args, resolvedPort)
+      const { adapter } = await getAdapter(cdp_port)
+      return await adapter.type(target, text, delay)
     } catch (err) {
       return `Error: ${(err as Error).message}`
     }
@@ -407,8 +294,8 @@ export const browser_press: ToolDefinition = tool({
   },
   execute: async ({ key, cdp_port }) => {
     try {
-      const resolvedPort = await resolveCdpPort(cdp_port)
-      return await runAgentBrowser(["press", key], resolvedPort)
+      const { adapter } = await getAdapter(cdp_port)
+      return await adapter.press(key)
     } catch (err) {
       return `Error: ${(err as Error).message}`
     }
@@ -424,10 +311,10 @@ export const browser_hover: ToolDefinition = tool({
   },
   execute: async ({ ref, selector, cdp_port }) => {
     try {
-      const resolvedPort = await resolveCdpPort(cdp_port)
-      const target = ref !== undefined ? `@e${ref}` : selector
+      const target = getTarget(ref, selector)
       if (!target) return "Error: Provide either ref or selector"
-      return await runAgentBrowser(["hover", target], resolvedPort)
+      const { adapter } = await getAdapter(cdp_port)
+      return await adapter.hover(target)
     } catch (err) {
       return `Error: ${(err as Error).message}`
     }
@@ -443,9 +330,8 @@ export const browser_scroll: ToolDefinition = tool({
   },
   execute: async ({ direction, amount, cdp_port }) => {
     try {
-      const resolvedPort = await resolveCdpPort(cdp_port)
-      const args = amount ? ["scroll", direction, String(amount)] : ["scroll", direction]
-      return await runAgentBrowser(args, resolvedPort)
+      const { adapter } = await getAdapter(cdp_port)
+      return await adapter.scroll(direction, amount)
     } catch (err) {
       return `Error: ${(err as Error).message}`
     }
@@ -462,10 +348,10 @@ export const browser_select: ToolDefinition = tool({
   },
   execute: async ({ ref, selector, value, cdp_port }) => {
     try {
-      const resolvedPort = await resolveCdpPort(cdp_port)
-      const target = ref !== undefined ? `@e${ref}` : selector
+      const target = getTarget(ref, selector)
       if (!target) return "Error: Provide either ref or selector"
-      return await runAgentBrowser(["select", target, value], resolvedPort)
+      const { adapter } = await getAdapter(cdp_port)
+      return await adapter.select(target, value)
     } catch (err) {
       return `Error: ${(err as Error).message}`
     }
@@ -480,8 +366,8 @@ export const browser_eval: ToolDefinition = tool({
   },
   execute: async ({ script, cdp_port }) => {
     try {
-      const resolvedPort = await resolveCdpPort(cdp_port)
-      return await runAgentBrowser(["eval", script], resolvedPort)
+      const { adapter } = await getAdapter(cdp_port)
+      return await adapter.eval(script)
     } catch (err) {
       return `Error: ${(err as Error).message}`
     }
@@ -497,14 +383,9 @@ export const browser_wait: ToolDefinition = tool({
   },
   execute: async ({ selector, timeout, cdp_port }) => {
     try {
-      const resolvedPort = await resolveCdpPort(cdp_port)
-      if (selector) {
-        return await runAgentBrowser(["wait", selector], resolvedPort)
-      } else if (timeout) {
-        return await runAgentBrowser(["wait", String(timeout)], resolvedPort)
-      } else {
-        return "Error: Provide either selector or timeout"
-      }
+      if (!selector && !timeout) return "Error: Provide either selector or timeout"
+      const { adapter } = await getAdapter(cdp_port)
+      return await adapter.wait(selector ?? timeout!)
     } catch (err) {
       return `Error: ${(err as Error).message}`
     }
