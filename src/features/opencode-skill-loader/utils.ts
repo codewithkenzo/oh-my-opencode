@@ -2,11 +2,22 @@ import { promises as fs } from "fs"
 import { join } from "path"
 import { parseFrontmatter } from "../../shared/frontmatter"
 
+/**
+ * Recursively collect .md files from a skill directory.
+ * 
+ * @param dir - Directory to scan
+ * @param currentDepth - Current recursion depth (0 = root)
+ * @param maxDepth - Maximum recursion depth (default: 3)
+ * @param basePath - Base path for relative path construction
+ * @param skipFiles - Set of filenames to skip at root level (e.g., 'SKILL.md')
+ * @returns Array of { path, content } for each .md file found
+ */
 export async function collectMdFilesRecursive(
   dir: string,
   currentDepth: number,
   maxDepth: number = 3,
-  basePath: string = ''
+  basePath: string = '',
+  skipFiles: Set<string> = new Set()
 ): Promise<{ path: string; content: string }[]> {
   if (currentDepth > maxDepth) return []
 
@@ -25,15 +36,16 @@ export async function collectMdFilesRecursive(
         entryPath,
         currentDepth + 1,
         maxDepth,
-        relativePath
+        relativePath,
+        skipFiles
       )
       results.push(...subdirFiles)
     } else if (entry.isFile() && entry.name.endsWith('.md')) {
-      if (currentDepth > 0) {
-        const content = await fs.readFile(entryPath, 'utf-8')
-        const { body } = parseFrontmatter(content)
-        results.push({ path: relativePath, content: body.trim() })
-      }
+      if (currentDepth === 0 && skipFiles.has(entry.name)) continue
+      
+      const content = await fs.readFile(entryPath, 'utf-8')
+      const { body } = parseFrontmatter(content)
+      results.push({ path: relativePath, content: body.trim() })
     }
   }
 

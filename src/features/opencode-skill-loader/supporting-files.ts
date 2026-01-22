@@ -6,7 +6,10 @@ export interface SupportingFile {
   absolutePath: string   // Full path
   sizeBytes: number      // File size
   extension: string      // ".sh", ".json", etc.
+  content?: string       // File content (only for files < 50KB)
 }
+
+const INLINE_CONTENT_MAX_SIZE_BYTES = 50 * 1024
 
 const DISCOVERY_LIMITS = {
   MAX_FILES: 20,
@@ -20,6 +23,33 @@ export function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes}B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`
+}
+
+const EXTENSION_TO_LANGUAGE: Record<string, string> = {
+  '.ts': 'typescript',
+  '.tsx': 'tsx',
+  '.js': 'javascript',
+  '.jsx': 'jsx',
+  '.json': 'json',
+  '.sh': 'bash',
+  '.bash': 'bash',
+  '.zsh': 'bash',
+  '.fish': 'fish',
+  '.py': 'python',
+  '.rb': 'ruby',
+  '.rs': 'rust',
+  '.go': 'go',
+  '.yaml': 'yaml',
+  '.yml': 'yaml',
+  '.toml': 'toml',
+  '.xml': 'xml',
+  '.html': 'html',
+  '.css': 'css',
+  '.sql': 'sql',
+}
+
+export function getLanguageFromExtension(extension: string): string {
+  return EXTENSION_TO_LANGUAGE[extension.toLowerCase()] || ''
 }
 
 async function collectNonMdFilesRecursive(
@@ -42,12 +72,18 @@ async function collectNonMdFilesRecursive(
     } else if (entry.isFile() && !entry.name.endsWith('.md')) {
       const stats = await fs.stat(entryPath).catch(() => null)
       if (stats) {
-        results.push({
+        const supportingFile: SupportingFile = {
           relativePath,
           absolutePath: entryPath,
           sizeBytes: stats.size,
           extension: extname(entry.name),
-        })
+        }
+        
+        if (stats.size <= INLINE_CONTENT_MAX_SIZE_BYTES) {
+          supportingFile.content = await fs.readFile(entryPath, 'utf-8').catch(() => undefined)
+        }
+        
+        results.push(supportingFile)
       }
     }
   }

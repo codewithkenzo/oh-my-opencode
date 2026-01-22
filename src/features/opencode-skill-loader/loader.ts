@@ -11,7 +11,7 @@ import type { SkillScope, SkillMetadata, LoadedSkill, LazyContentLoader } from "
 import type { SkillMcpConfig } from "../skill-mcp-manager/types"
 import { collectMdFilesRecursive, parseAllowedTools, validateShellConfig } from "./utils"
 import { preprocessShellCommands, executeShellBlock, substituteShellVariables } from "./shell-preprocessing"
-import { discoverSupportingFiles, formatSize } from "./supporting-files"
+import { discoverSupportingFiles, formatSize, getLanguageFromExtension } from "./supporting-files"
 
 function parseSkillMcpConfigFromFrontmatter(content: string): SkillMcpConfig | undefined {
   const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/)
@@ -75,7 +75,7 @@ export async function loadSkillFromPath(
     const mcpJsonMcp = await loadMcpJsonFromDir(resolvedPath)
     const mcpConfig = mcpJsonMcp || frontmatterMcp
 
-    const subdirFiles = await collectMdFilesRecursive(resolvedPath, 0, 3, '')
+    const subdirFiles = await collectMdFilesRecursive(resolvedPath, 0, 3, '', new Set(['SKILL.md']))
     const mergedContent = subdirFiles.length > 0
       ? '\n\n<!-- Merged from subdirectories (alphabetical by path) -->\n\n' +
         subdirFiles.map(f => f.content).join('\n\n')
@@ -84,7 +84,14 @@ export async function loadSkillFromPath(
     const supportingFiles = await discoverSupportingFiles(resolvedPath)
     const supportingFilesSection = supportingFiles.length > 0
       ? '\n<supporting-files>\n' +
-        supportingFiles.map(f => `${f.relativePath} (${formatSize(f.sizeBytes)})`).join('\n') +
+        supportingFiles.map(f => {
+          const header = `${f.relativePath} (${formatSize(f.sizeBytes)})`
+          if (f.content) {
+            const lang = getLanguageFromExtension(f.extension)
+            return `${header}\n\`\`\`${lang}\n${f.content}\n\`\`\``
+          }
+          return header
+        }).join('\n\n') +
         '\n</supporting-files>\n\n'
       : ''
 
