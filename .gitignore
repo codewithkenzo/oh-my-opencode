@@ -33,3 +33,6 @@ yarn.lock
 test-injection/
 notepad.md
 oauth-success.html
+
+# Session files
+session-*.md

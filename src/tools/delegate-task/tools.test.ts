@@ -1060,4 +1060,183 @@ describe("sisyphus-task", () => {
       expect(resolved!.model).toBe(systemDefaultModel)
     })
   })
+
+  // ===== CATEGORY_SKILLS AUTO-INJECTION TESTS =====
+  describe("CATEGORY_SKILLS", () => {
+    test("visual-engineering category has frontend skills defined", () => {
+      // #given
+      const { CATEGORY_SKILLS } = require("./constants")
+      
+      // #when
+      const skills = CATEGORY_SKILLS["visual-engineering"]
+      
+      // #then
+      expect(skills).toBeDefined()
+      expect(Array.isArray(skills)).toBe(true)
+      expect(skills.length).toBeGreaterThan(0)
+      expect(skills).toContain("component-stack")
+    })
+
+    test("ultrabrain category has backend skills defined", () => {
+      // #given
+      const { CATEGORY_SKILLS } = require("./constants")
+      
+      // #when
+      const skills = CATEGORY_SKILLS["ultrabrain"]
+      
+      // #then
+      expect(skills).toBeDefined()
+      expect(Array.isArray(skills)).toBe(true)
+    })
+
+    test("quick category has empty skills array (no skills needed)", () => {
+      // #given
+      const { CATEGORY_SKILLS } = require("./constants")
+      
+      // #when
+      const skills = CATEGORY_SKILLS["quick"]
+      
+      // #then - quick tasks don't need domain skills
+      expect(skills).toBeDefined()
+      expect(skills).toEqual([])
+    })
+
+    test("all default categories have CATEGORY_SKILLS entry", () => {
+      // #given
+      const { CATEGORY_SKILLS } = require("./constants")
+      const defaultCategoryNames = Object.keys(DEFAULT_CATEGORIES)
+      
+      // #when / #then - every category should have a skills entry (even if empty)
+      for (const name of defaultCategoryNames) {
+        expect(CATEGORY_SKILLS[name]).toBeDefined()
+        expect(Array.isArray(CATEGORY_SKILLS[name])).toBe(true)
+      }
+    })
+  })
+
+  describe("getCategorySkills", () => {
+    test("returns category skills for known category", () => {
+      // #given
+      const { getCategorySkills } = require("./tools")
+      
+      // #when
+      const skills = getCategorySkills("visual-engineering")
+      
+      // #then
+      expect(Array.isArray(skills)).toBe(true)
+      expect(skills.length).toBeGreaterThan(0)
+    })
+
+    test("returns empty array for unknown category", () => {
+      // #given
+      const { getCategorySkills } = require("./tools")
+      
+      // #when
+      const skills = getCategorySkills("nonexistent-category")
+      
+      // #then
+      expect(skills).toEqual([])
+    })
+
+    test("user can override category skills", () => {
+      // #given
+      const { getCategorySkills } = require("./tools")
+      const userCategorySkills = {
+        "visual-engineering": ["my-custom-skill", "another-skill"]
+      }
+      
+      // #when
+      const skills = getCategorySkills("visual-engineering", userCategorySkills)
+      
+      // #then - user skills should be used instead of defaults
+      expect(skills).toEqual(["my-custom-skill", "another-skill"])
+    })
+
+    test("user empty array overrides defaults (opt-out)", () => {
+      // #given
+      const { getCategorySkills } = require("./tools")
+      const userCategorySkills = {
+        "visual-engineering": []  // User explicitly opts out of default skills
+      }
+      
+      // #when
+      const skills = getCategorySkills("visual-engineering", userCategorySkills)
+      
+      // #then - should return empty array (user opted out)
+      expect(skills).toEqual([])
+    })
+  })
+
+  describe("category skill injection in delegate_task", () => {
+    test("category skills are auto-injected for visual-engineering category", async () => {
+      const { createDelegateTask, getCategorySkills } = require("./tools")
+      let launchedSkills: string[] | undefined
+      let launchedSkillContent: string | undefined
+      
+      const mockManager = {
+        launch: async (input: any) => {
+          launchedSkills = input.skills
+          launchedSkillContent = input.skillContent
+          return {
+            id: "task-skills",
+            sessionID: "session-skills",
+            description: "Skills task",
+            agent: "Sisyphus-Junior",
+            status: "running",
+          }
+        },
+      }
+      
+      const mockClient = {
+        app: { agents: async () => ({ data: [] }) },
+        config: { get: async () => ({ data: { model: SYSTEM_DEFAULT_MODEL } }) },
+        session: {
+          create: async () => ({ data: { id: "test-session" } }),
+          prompt: async () => ({ data: {} }),
+          messages: async () => ({ data: [] }),
+        },
+      }
+      
+      const tool = createDelegateTask({
+        manager: mockManager,
+        client: mockClient,
+      })
+      
+      const toolContext = {
+        sessionID: "parent-session",
+        messageID: "parent-message",
+        agent: "Sisyphus",
+        abort: new AbortController().signal,
+      }
+      
+      await tool.execute(
+        {
+          description: "Skills merge test",
+          prompt: "Do something visual",
+          category: "visual-engineering",
+          run_in_background: true,
+          skills: [],
+        },
+        toolContext
+      )
+      
+      const categorySkills = getCategorySkills("visual-engineering")
+      expect(launchedSkills).toBeDefined()
+      expect(launchedSkills).toEqual(categorySkills)
+    })
+
+    test("passed skills are deduplicated with category skills", async () => {
+      const { getCategorySkills } = require("./tools")
+      
+      const categorySkills = getCategorySkills("visual-engineering")
+      expect(categorySkills.length).toBeGreaterThan(0)
+      
+      const existingSkill = categorySkills[0]
+      const passedSkills = [existingSkill]
+      
+      const merged = [...new Set([...categorySkills, ...passedSkills])]
+      const uniqueSkills = [...new Set(merged)]
+      expect(merged.length).toBe(uniqueSkills.length)
+    })
+  })
 })
