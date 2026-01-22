@@ -1074,10 +1074,10 @@ describe("sisyphus-task", () => {
       expect(skills).toBeDefined()
       expect(Array.isArray(skills)).toBe(true)
       expect(skills.length).toBeGreaterThan(0)
-      expect(skills).toContain("component-stack")
+      expect(skills).toContain("frontend-ui-ux")
     })
 
-    test("ultrabrain category has backend skills defined", () => {
+    test("ultrabrain category has skills array (may be empty)", () => {
       // #given
       const { CATEGORY_SKILLS } = require("./constants")
       

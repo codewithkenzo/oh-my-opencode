@@ -229,19 +229,10 @@ export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 
 export const CATEGORY_SKILLS: Record<string, string[]> = {
   "visual-engineering": [
-    "component-stack",
-    "shadcn-ui-patterns",
     "frontend-ui-ux",
   ],
-  ultrabrain: [
-    "effect-ts-expert",
-    "drizzle-orm",
-    "hono-api",
-  ],
-  artistry: [
-    "asset-prompts",
-    "runware-assets",
-  ],
+  ultrabrain: [],
+  artistry: [],
   quick: [],
   "most-capable": [],
   writing: [],
