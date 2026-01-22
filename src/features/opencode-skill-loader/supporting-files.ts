@@ -12,7 +12,7 @@ export interface SupportingFile {
 const INLINE_CONTENT_MAX_SIZE_BYTES = 50 * 1024
 
 const DISCOVERY_LIMITS = {
-  MAX_FILES: 20,
+  MAX_FILES: 25,
   MAX_FILE_SIZE: 1024 * 1024,        // 1MB per file
   MAX_TOTAL_SIZE: 10 * 1024 * 1024,  // 10MB total
 } as const
