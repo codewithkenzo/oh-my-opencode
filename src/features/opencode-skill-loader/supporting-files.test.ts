@@ -96,7 +96,7 @@ describe("supporting-files", () => {
 			expect(files.find((f) => f.relativePath === "visible.txt")).toBeTruthy()
 		})
 
-		it("includes file metadata", async () => {
+		it("includes file metadata and content for small files", async () => {
 			await fs.writeFile(join(tmpDir, "config.json"), '{"key":"value"}')
 
 			const files = await discoverSupportingFiles(tmpDir)
@@ -106,6 +106,7 @@ describe("supporting-files", () => {
 			expect(file.absolutePath).toBe(join(tmpDir, "config.json"))
 			expect(file.extension).toBe(".json")
 			expect(file.sizeBytes).toBeGreaterThan(0)
+			expect(file.content).toBe('{"key":"value"}')
 		})
 	})
 })

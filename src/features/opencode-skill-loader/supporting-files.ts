@@ -95,10 +95,11 @@ async function collectNonMdFilesRecursive(
  * Algorithm (DETERMINISTIC):
  * 1. Recursively collect all non-.md, non-hidden files
  * 2. Sort alphabetically by relativePath
- * 3. Apply limits: max 20 files, skip >1MB files, stop at 10MB total
+ * 3. Apply limits: max 25 files, skip >1MB files, stop at 10MB total
+ * 4. Inline file contents for files under 50KB
  * 
  * @param skillDir The skill's resolved directory path
- * @returns Array of SupportingFile metadata (no file contents)
+ * @returns Array of SupportingFile with metadata and content (for files <50KB)
  */
 export async function discoverSupportingFiles(skillDir: string): Promise<SupportingFile[]> {
   const allFiles: SupportingFile[] = []
