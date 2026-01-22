@@ -235,6 +235,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     client: ctx.client,
     directory: ctx.directory,
     userCategories: pluginConfig.categories,
+    userCategorySkills: pluginConfig.category_skills,
     gitMasterConfig: pluginConfig.git_master,
     sisyphusJuniorModel: pluginConfig.agents?.["Sisyphus-Junior"]?.model ?? pluginConfig.agents?.["J1 - junior"]?.model,
   });

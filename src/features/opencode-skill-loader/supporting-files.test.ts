@@ -62,16 +62,16 @@ describe("supporting-files", () => {
 			expect(files.find((f) => f.relativePath === "package.json")).toBeTruthy()
 		})
 
-		it("limits to 20 files and filters by size", async () => {
-			// Create 25 small files
-			for (let i = 0; i < 25; i++) {
-				await fs.writeFile(join(tmpDir, `file${i}.txt`), "content")
-			}
+	it("limits to 25 files and filters by size", async () => {
+		// Create 30 small files
+		for (let i = 0; i < 30; i++) {
+			await fs.writeFile(join(tmpDir, `file${i}.txt`), "content")
+		}
 
-			const files = await discoverSupportingFiles(tmpDir)
+		const files = await discoverSupportingFiles(tmpDir)
 
-			expect(files.length).toBeLessThanOrEqual(20)
-		})
+		expect(files.length).toBeLessThanOrEqual(25)
+	})
 
 		it("filters out files larger than 1MB", async () => {
 			// Create a small file
@@ -96,7 +96,7 @@ describe("supporting-files", () => {
 			expect(files.find((f) => f.relativePath === "visible.txt")).toBeTruthy()
 		})
 
-		it("includes file metadata", async () => {
+		it("includes file metadata and content for small files", async () => {
 			await fs.writeFile(join(tmpDir, "config.json"), '{"key":"value"}')
 
 			const files = await discoverSupportingFiles(tmpDir)
@@ -106,6 +106,7 @@ describe("supporting-files", () => {
 			expect(file.absolutePath).toBe(join(tmpDir, "config.json"))
 			expect(file.extension).toBe(".json")
 			expect(file.sizeBytes).toBeGreaterThan(0)
+			expect(file.content).toBe('{"key":"value"}')
 		})
 	})
 })

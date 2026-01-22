@@ -284,7 +284,7 @@ jobs:
           - user.email: sisyphus-dev-ai@users.noreply.github.com
           PROMPT_EOF
           )
-          jq --arg append "$PROMPT_APPEND" '.agents.Sisyphus.prompt_append = $append' "$OMO_JSON" > /tmp/omo.json && mv /tmp/omo.json "$OMO_JSON"
+          jq --arg append "$PROMPT_APPEND" '.agents.Musashi.prompt_append = $append' "$OMO_JSON" > /tmp/omo.json && mv /tmp/omo.json "$OMO_JSON"
 
           mkdir -p ~/.local/share/opencode
           echo "$OPENCODE_AUTH_JSON" > ~/.local/share/opencode/auth.json

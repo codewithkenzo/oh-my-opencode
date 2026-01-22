@@ -350,6 +350,8 @@ export const GitMasterConfigSchema = z.object({
   include_co_authored_by: z.boolean().default(true),
 })
 
+export const CategorySkillsConfigSchema = z.record(z.string(), z.array(z.string()))
+
 export const OhMyOpenCodeConfigSchema = z.object({
   $schema: z.string().optional(),
   disabled_mcps: z.array(AnyMcpNameSchema).optional(),
@@ -359,6 +361,7 @@ export const OhMyOpenCodeConfigSchema = z.object({
   disabled_commands: z.array(BuiltinCommandNameSchema).optional(),
   agents: AgentOverridesSchema.optional(),
   categories: CategoriesConfigSchema.optional(),
+  category_skills: CategorySkillsConfigSchema.optional(),
   claude_code: ClaudeCodeConfigSchema.optional(),
   sisyphus_agent: SisyphusAgentConfigSchema.optional(),
   comment_checker: CommentCheckerConfigSchema.optional(),
@@ -389,6 +392,7 @@ export type RalphLoopConfig = z.infer<typeof RalphLoopConfigSchema>
 export type NotificationConfig = z.infer<typeof NotificationConfigSchema>
 export type CategoryConfig = z.infer<typeof CategoryConfigSchema>
 export type CategoriesConfig = z.infer<typeof CategoriesConfigSchema>
+export type CategorySkillsConfig = z.infer<typeof CategorySkillsConfigSchema>
 export type BuiltinCategoryName = z.infer<typeof BuiltinCategoryNameSchema>
 export type GitMasterConfig = z.infer<typeof GitMasterConfigSchema>
 

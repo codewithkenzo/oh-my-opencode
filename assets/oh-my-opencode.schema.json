@@ -5110,6 +5110,18 @@
         }
       }
     },
+    "category_skills": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
     "claude_code": {
       "type": "object",
       "properties": {

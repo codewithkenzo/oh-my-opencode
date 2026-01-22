@@ -4,7 +4,7 @@ import { join } from "node:path"
 import type { BackgroundManager } from "../../features/background-agent"
 import type { DelegateTaskArgs } from "./types"
 import type { CategoryConfig, CategoriesConfig, GitMasterConfig } from "../../config/schema"
-import { DELEGATE_TASK_DESCRIPTION, DEFAULT_CATEGORIES, CATEGORY_PROMPT_APPENDS } from "./constants"
+import { DELEGATE_TASK_DESCRIPTION, DEFAULT_CATEGORIES, CATEGORY_PROMPT_APPENDS, CATEGORY_SKILLS } from "./constants"
 import { findNearestMessageWithFields, findFirstMessageWithAgent, MESSAGE_STORAGE } from "../../features/hook-message-injector"
 import { resolveMultipleSkillsAsync } from "../../features/opencode-skill-loader/skill-content"
 import { discoverSkills } from "../../features/opencode-skill-loader"
@@ -147,13 +147,23 @@ export function resolveCategoryConfig(
   return { config, promptAppend, model }
 }
 
+export function getCategorySkills(
+  categoryName: string,
+  userCategorySkills?: Record<string, string[]>
+): string[] {
+  if (userCategorySkills?.[categoryName] !== undefined) {
+    return userCategorySkills[categoryName]
+  }
+  return CATEGORY_SKILLS[categoryName] ?? []
+}
+
 export interface DelegateTaskToolOptions {
   manager: BackgroundManager
   client: OpencodeClient
   directory: string
   userCategories?: CategoriesConfig
+  userCategorySkills?: Record<string, string[]>
   gitMasterConfig?: GitMasterConfig
-  /** Model override for Sisyphus-Junior agent (used by category delegation) */
   sisyphusJuniorModel?: string
 }
 
@@ -177,7 +187,7 @@ export function buildSystemContent(input: BuildSystemContentInput): string | und
 }
 
 export function createDelegateTask(options: DelegateTaskToolOptions): ToolDefinition {
-  const { manager, client, directory, userCategories, gitMasterConfig, sisyphusJuniorModel } = options
+  const { manager, client, directory, userCategories, userCategorySkills, gitMasterConfig, sisyphusJuniorModel } = options
 
   return tool({
     description: DELEGATE_TASK_DESCRIPTION,
@@ -203,9 +213,14 @@ export function createDelegateTask(options: DelegateTaskToolOptions): ToolDefini
       }
       const runInBackground = args.run_in_background === true
 
+      const categorySkills = args.category 
+        ? getCategorySkills(args.category, userCategorySkills)
+        : []
+      const mergedSkills = [...new Set([...categorySkills, ...args.skills])]
+
       let skillContent: string | undefined
-      if (args.skills.length > 0) {
-        const { resolved, notFound } = await resolveMultipleSkillsAsync(args.skills, { gitMasterConfig })
+      if (mergedSkills.length > 0) {
+        const { resolved, notFound } = await resolveMultipleSkillsAsync(mergedSkills, { gitMasterConfig })
         if (notFound.length > 0) {
           const allSkills = await discoverSkills({ includeClaudeCodePaths: true })
           const available = allSkills.map(s => s.name).join(", ")
@@ -529,7 +544,7 @@ ${textContent || "(No text output)"}`
             parentModel,
             parentAgent,
             model: categoryModel,
-            skills: args.skills.length > 0 ? args.skills : undefined,
+            skills: mergedSkills.length > 0 ? mergedSkills : undefined,
             skillContent: systemContent,
           })
 
@@ -593,7 +608,7 @@ System notifies on completion. Use \`background_output\` with task_id="${task.id
             description: args.description,
             agent: agentToUse,
             isBackground: false,
-            skills: args.skills.length > 0 ? args.skills : undefined,
+            skills: mergedSkills.length > 0 ? mergedSkills : undefined,
             modelInfo,
           })
         }

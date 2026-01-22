@@ -227,6 +227,27 @@ export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   general: "General purpose tasks",
 }
 
+export const CATEGORY_SKILLS: Record<string, string[]> = {
+  "visual-engineering": [
+    "component-stack",
+    "shadcn-ui-patterns",
+    "frontend-ui-ux",
+  ],
+  ultrabrain: [
+    "effect-ts-expert",
+    "drizzle-orm",
+    "hono-api",
+  ],
+  artistry: [
+    "asset-prompts",
+    "runware-assets",
+  ],
+  quick: [],
+  "most-capable": [],
+  writing: [],
+  general: [],
+}
+
 const BUILTIN_CATEGORIES = Object.keys(DEFAULT_CATEGORIES).join(", ")
 
 export const DELEGATE_TASK_DESCRIPTION = `Spawn agent task with category-based or direct agent selection.

@@ -2,6 +2,7 @@ import { createSystemDirective, SystemDirectiveTypes } from "../../shared/system
 
 export const HOOK_NAME = "prometheus-md-only"
 
+// NOTE: "Musashi - boulder" is intentionally NOT included - boulder is execution mode, not planning
 export const PROMETHEUS_AGENTS = ["Musashi - plan", "Prometheus (Planner)"]
 
 export const ALLOWED_EXTENSIONS = [".md"]

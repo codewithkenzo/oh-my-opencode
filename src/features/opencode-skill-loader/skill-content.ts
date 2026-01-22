@@ -49,10 +49,10 @@ async function getAllSkills(): Promise<LoadedSkill[]> {
 }
 
 async function extractSkillTemplate(skill: LoadedSkill): Promise<string> {
-	if (skill.path) {
-		const content = readFileSync(skill.path, "utf-8")
-		const { body } = parseFrontmatter(content)
-		return body.trim()
+	if (skill.lazyContent) {
+		const fullTemplate = await skill.lazyContent.load()
+		const templateMatch = fullTemplate.match(/<skill-instruction>([\s\S]*?)<\/skill-instruction>/)
+		return templateMatch ? templateMatch[1].trim() : fullTemplate
 	}
 	return skill.definition.template || ""
 }

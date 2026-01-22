@@ -6,10 +6,13 @@ export interface SupportingFile {
   absolutePath: string   // Full path
   sizeBytes: number      // File size
   extension: string      // ".sh", ".json", etc.
+  content?: string       // File content (only for files < 50KB)
 }
 
+const INLINE_CONTENT_MAX_SIZE_BYTES = 50 * 1024
+
 const DISCOVERY_LIMITS = {
-  MAX_FILES: 20,
+  MAX_FILES: 25,
   MAX_FILE_SIZE: 1024 * 1024,        // 1MB per file
   MAX_TOTAL_SIZE: 10 * 1024 * 1024,  // 10MB total
 } as const
@@ -20,6 +23,33 @@ export function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes}B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`
+}
+
+const EXTENSION_TO_LANGUAGE: Record<string, string> = {
+  '.ts': 'typescript',
+  '.tsx': 'tsx',
+  '.js': 'javascript',
+  '.jsx': 'jsx',
+  '.json': 'json',
+  '.sh': 'bash',
+  '.bash': 'bash',
+  '.zsh': 'bash',
+  '.fish': 'fish',
+  '.py': 'python',
+  '.rb': 'ruby',
+  '.rs': 'rust',
+  '.go': 'go',
+  '.yaml': 'yaml',
+  '.yml': 'yaml',
+  '.toml': 'toml',
+  '.xml': 'xml',
+  '.html': 'html',
+  '.css': 'css',
+  '.sql': 'sql',
+}
+
+export function getLanguageFromExtension(extension: string): string {
+  return EXTENSION_TO_LANGUAGE[extension.toLowerCase()] || ''
 }
 
 async function collectNonMdFilesRecursive(
@@ -42,12 +72,18 @@ async function collectNonMdFilesRecursive(
     } else if (entry.isFile() && !entry.name.endsWith('.md')) {
       const stats = await fs.stat(entryPath).catch(() => null)
       if (stats) {
-        results.push({
+        const supportingFile: SupportingFile = {
           relativePath,
           absolutePath: entryPath,
           sizeBytes: stats.size,
           extension: extname(entry.name),
-        })
+        }
+        
+        if (stats.size <= INLINE_CONTENT_MAX_SIZE_BYTES) {
+          supportingFile.content = await fs.readFile(entryPath, 'utf-8').catch(() => undefined)
+        }
+        
+        results.push(supportingFile)
       }
     }
   }
@@ -59,10 +95,11 @@ async function collectNonMdFilesRecursive(
  * Algorithm (DETERMINISTIC):
  * 1. Recursively collect all non-.md, non-hidden files
  * 2. Sort alphabetically by relativePath
- * 3. Apply limits: max 20 files, skip >1MB files, stop at 10MB total
+ * 3. Apply limits: max 25 files, skip >1MB files, stop at 10MB total
+ * 4. Inline file contents for files under 50KB
  * 
  * @param skillDir The skill's resolved directory path
- * @returns Array of SupportingFile metadata (no file contents)
+ * @returns Array of SupportingFile with metadata and content (for files <50KB)
  */
 export async function discoverSupportingFiles(skillDir: string): Promise<SupportingFile[]> {
   const allFiles: SupportingFile[] = []
@@ -79,27 +116,20 @@ export async function discoverSupportingFiles(skillDir: string): Promise<Support
   
   for (const file of allFiles) {
     if (result.length >= DISCOVERY_LIMITS.MAX_FILES) {
-      console.warn(`[skill-loader] Supporting files limit reached (${DISCOVERY_LIMITS.MAX_FILES}), skipping remaining ${allFiles.length - result.length} files`)
       break
     }
     
     if (file.sizeBytes > DISCOVERY_LIMITS.MAX_FILE_SIZE) {
-      console.warn(`[skill-loader] Skipping large file: ${file.relativePath} (${formatSize(file.sizeBytes)} > 1MB)`)
       skippedLargeFiles++
       continue
     }
     
     if (totalSize + file.sizeBytes > DISCOVERY_LIMITS.MAX_TOTAL_SIZE) {
-      console.warn(`[skill-loader] Total size limit reached (10MB), stopping discovery`)
       break
     }
     
     result.push(file)
     totalSize += file.sizeBytes
-  }
-  
-  if (skippedLargeFiles > 0) {
-    console.warn(`[skill-loader] Skipped ${skippedLargeFiles} files exceeding 1MB size limit`)
   }
   
   return result
