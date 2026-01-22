@@ -115,27 +115,20 @@ export async function discoverSupportingFiles(skillDir: string): Promise<Support
   
   for (const file of allFiles) {
     if (result.length >= DISCOVERY_LIMITS.MAX_FILES) {
-      console.warn(`[skill-loader] Supporting files limit reached (${DISCOVERY_LIMITS.MAX_FILES}), skipping remaining ${allFiles.length - result.length} files`)
       break
     }
     
     if (file.sizeBytes > DISCOVERY_LIMITS.MAX_FILE_SIZE) {
-      console.warn(`[skill-loader] Skipping large file: ${file.relativePath} (${formatSize(file.sizeBytes)} > 1MB)`)
       skippedLargeFiles++
       continue
     }
     
     if (totalSize + file.sizeBytes > DISCOVERY_LIMITS.MAX_TOTAL_SIZE) {
-      console.warn(`[skill-loader] Total size limit reached (10MB), stopping discovery`)
       break
     }
     
     result.push(file)
     totalSize += file.sizeBytes
-  }
-  
-  if (skippedLargeFiles > 0) {
-    console.warn(`[skill-loader] Skipped ${skippedLargeFiles} files exceeding 1MB size limit`)
   }
   
   return result

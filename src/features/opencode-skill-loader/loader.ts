@@ -218,6 +218,7 @@ export async function loadProjectSkills(): Promise<Record<string, CommandDefinit
 
 export async function loadOpencodeGlobalSkills(): Promise<Record<string, CommandDefinition>> {
   // Support both singular (oh-my-opencode convention) and plural (vercel-labs/add-skill convention)
+  // Plural takes priority (loaded last to override) as it's the newer convention
   const skillsSingular = join(homedir(), ".config", "opencode", "skill")
   const skillsPlural = join(homedir(), ".config", "opencode", "skills")
   const [singular, plural] = await Promise.all([
@@ -229,6 +230,7 @@ export async function loadOpencodeGlobalSkills(): Promise<Record<string, Command
 
 export async function loadOpencodeProjectSkills(): Promise<Record<string, CommandDefinition>> {
   // Support both singular (oh-my-opencode convention) and plural (vercel-labs/add-skill convention)
+  // Plural takes priority (loaded last to override) as it's the newer convention
   const skillsSingular = join(process.cwd(), ".opencode", "skill")
   const skillsPlural = join(process.cwd(), ".opencode", "skills")
   const [singular, plural] = await Promise.all([
@@ -301,22 +303,24 @@ export async function discoverProjectClaudeSkills(): Promise<LoadedSkill[]> {
 
 export async function discoverOpencodeGlobalSkills(): Promise<LoadedSkill[]> {
   // Support both singular (oh-my-opencode convention) and plural (vercel-labs/add-skill convention)
+  // Plural takes priority (loaded first) as it's the newer convention
   const skillsSingular = join(homedir(), ".config", "opencode", "skill")
   const skillsPlural = join(homedir(), ".config", "opencode", "skills")
   const [singular, plural] = await Promise.all([
     loadSkillsFromDir(skillsSingular, "opencode"),
     loadSkillsFromDir(skillsPlural, "opencode"),
   ])
-  return [...singular, ...plural]
+  return [...plural, ...singular]
 }
 
 export async function discoverOpencodeProjectSkills(): Promise<LoadedSkill[]> {
   // Support both singular (oh-my-opencode convention) and plural (vercel-labs/add-skill convention)
+  // Plural takes priority (loaded first) as it's the newer convention
   const skillsSingular = join(process.cwd(), ".opencode", "skill")
   const skillsPlural = join(process.cwd(), ".opencode", "skills")
   const [singular, plural] = await Promise.all([
     loadSkillsFromDir(skillsSingular, "opencode-project"),
     loadSkillsFromDir(skillsPlural, "opencode-project"),
   ])
-  return [...singular, ...plural]
+  return [...plural, ...singular]
 }
