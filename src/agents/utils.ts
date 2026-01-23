@@ -136,7 +136,7 @@ const agentMetadata: Partial<Record<BuiltinAgentName, AgentPromptMetadata>> = {
     category: "specialist",
     cost: "CHEAP",
     triggers: [{ domain: "Backend Development", trigger: "API routes, database, server-side logic" }],
-    skills: ["hono-api", "elysiajs", "drizzle-sqlite", "better-auth", "effect-ts-expert"],
+    skills: ["bun-hono-api", "hono-api", "elysiajs", "drizzle-sqlite", "better-auth", "effect-ts-expert"],
   },
   "H3 - bulk builder": {
     category: "utility",
