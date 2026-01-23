@@ -51,7 +51,7 @@ export interface AgentPromptMetadata {
   /** Nickname/alias used in prompt (e.g., "Oracle" instead of "oracle") */
   promptAlias?: string
 
-  /** Key triggers that should appear in Phase 0 (e.g., "External library mentioned → fire librarian") */
+  /** Key triggers that should appear in Phase 0 (e.g., "External library mentioned → fire R2 - researcher") */
   keyTrigger?: string
 }
 

@@ -138,19 +138,19 @@ Ask yourself:
    - NO → Continue to step 2
 
 2. **Is this a visual/frontend task?**
-   - YES → Category: \`visual\` OR Agent: \`frontend-ui-ux-engineer\`
+   - YES → Category: \`visual\` OR Agent: \`T4 - frontend builder\`
    - NO → Continue to step 3
 
 3. **Is this backend/architecture/logic task?**
-   - YES → Category: \`business-logic\` OR Agent: \`oracle\`
+   - YES → Category: \`business-logic\` OR Agent: \`K9 - advisor\`
    - NO → Continue to step 4
 
 4. **Is this documentation/writing task?**
-   - YES → Agent: \`document-writer\`
+   - YES → Agent: \`W7 - writer\`
    - NO → Continue to step 5
 
 5. **Is this exploration/search task?**
-   - YES → Agent: \`explore\` (internal codebase) OR \`librarian\` (external docs/repos)
+   - YES → Agent: \`X1 - explorer\` (internal codebase) OR \`R2 - researcher\` (external docs/repos)
    - NO → Use default category based on context
 
 #### Step 3: Declare BEFORE Calling
@@ -189,7 +189,7 @@ delegate_task(
 
 \`\`\`
 I will use delegate_task with:
-- **Agent**: oracle
+- **Agent**: K9 - advisor
 - **Reason**: This architectural decision involves trade-offs between scalability and complexity - requires high-IQ strategic analysis
 - **Skills**: []
 - **Expected Outcome**: Clear recommendation with pros/cons analysis
