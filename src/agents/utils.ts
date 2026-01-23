@@ -323,7 +323,9 @@ export function createBuiltinAgents(
       const { resolved } = resolveMultipleSkills(configWithSkills.skills, { gitMasterConfig })
       if (resolved.size > 0) {
         const skillContent = Array.from(resolved.values()).join("\n\n")
-        config.prompt = skillContent + (config.prompt ? "\n\n" + config.prompt : "")
+        if (skillContent.length > 0) {
+          config.prompt = config.prompt ? skillContent + "\n\n" + config.prompt : skillContent
+        }
       }
     }
 

@@ -358,12 +358,15 @@ export function createFindSkillsTool(options: SkillLoadOptions = {}): ToolDefini
     return getAllSkills()
   }
 
+  const CATEGORY_KEYS = Object.keys(SKILL_CATEGORIES) as [string, ...string[]]
+  const SCOPE_KEYS = ["project", "user", "opencode", "opencode-project"] as [string, ...string[]]
+
   return tool({
     description: FIND_SKILLS_DESCRIPTION,
     args: {
       query: tool.schema.string().optional().describe("Search term to filter skills by name/description"),
-      category: tool.schema.enum(Object.keys(SKILL_CATEGORIES) as [string, ...string[]]).optional().describe("Filter by skill category"),
-      scope: tool.schema.enum(["project", "user", "opencode", "opencode-project"] as [string, ...string[]]).optional().describe("Filter by skill scope"),
+      category: tool.schema.enum(CATEGORY_KEYS).optional().describe("Filter by skill category"),
+      scope: tool.schema.enum(SCOPE_KEYS).optional().describe("Filter by skill scope"),
       limit: tool.schema.number().optional().describe("Max results to return (default: 20)"),
     },
     async execute(args: FindSkillsArgs) {
