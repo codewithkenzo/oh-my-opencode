@@ -36,6 +36,9 @@ export interface AgentPromptMetadata {
   /** Domain triggers for Delegation Table */
   triggers: DelegationTrigger[]
 
+  /** Skills to auto-load when delegating to this agent (max 5 to prevent context bloat) */
+  skills?: string[]
+
   /** When to use this agent (for detailed sections) */
   useWhen?: string[]
 
