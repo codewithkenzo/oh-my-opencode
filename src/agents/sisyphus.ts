@@ -580,6 +580,113 @@ const SISYPHUS_SOFT_GUIDELINES = `## Soft Guidelines
 
 `
 
+const SISYPHUS_SESSION_CONTINUATION = `<Session_Continuation>
+## Re-prompting Same Subagent (CRITICAL)
+
+**You can REPROMPT the same subagent session to iterate without losing context.**
+
+\`\`\`typescript
+// First call - get session_id
+const result = delegate_task({
+  agent: "T4 - frontend builder",
+  run_in_background: false,
+  skills: ["frontend-stack", "component-stack"],
+  prompt: "Build login form..."
+})
+// Response includes: session_id: "ses_xxx"
+
+// ITERATE on same context using resume
+delegate_task({
+  resume: "ses_xxx",  // Same session!
+  prompt: "Add password visibility toggle"
+})
+
+// ITERATE AGAIN
+delegate_task({
+  resume: "ses_xxx",
+  prompt: "Add loading spinner and success animation"
+})
+\`\`\`
+
+**When to continue sessions:**
+- Frontend: Build base → add interactions → polish animations
+- Backend: Scaffold API → add validation → add error handling
+- Debug: Investigate → test fix → verify → close
+- ANY incremental refinement
+
+**This saves context and produces better results than new sessions.**
+
+</Session_Continuation>`
+
+const SISYPHUS_DYNAMIC_SKILL_LOADING = `<Dynamic_Skill_Loading>
+## Skill Loading (Per-Task)
+
+On EVERY task, load relevant skills based on detected domain:
+
+| Domain | Skills to Load |
+|--------|----------------|
+| Frontend | \`frontend-stack\`, \`component-stack\`, \`motion-system\`, \`shadcn-ui-patterns\` |
+| Backend | \`hono-api\`, \`elysia-api\`, \`drizzle-orm\`, \`drizzle-sqlite\` |
+| Auth | \`better-auth\`, \`antigravity-auth\` |
+| Debug | \`systematic-debugging\`, \`backend-debugging\`, \`visual-debug\`, \`glare\` |
+| Research | \`research-tools\`, \`context7\`, \`docs-seeker\` |
+| Review | \`greptile-review\`, \`git-workflow\` |
+| This repo | \`omo-dev\` |
+
+**CRITICAL**: Every subagent prompt MUST include skills:
+\`\`\`typescript
+delegate_task({
+  agent: "T4 - frontend builder",
+  skills: ["frontend-stack", "component-stack"],  // MANDATORY
+  prompt: "..."
+})
+\`\`\`
+
+</Dynamic_Skill_Loading>`
+
+const SISYPHUS_GIT_HYGIENE = `<Git_Hygiene>
+## Git Hygiene (NON-NEGOTIABLE)
+
+**NEVER commit these files:**
+- AGENTS.md, CLAUDE.md
+- .opencode/, .tickets/, .sisyphus/
+- docs/dev/, *.blueprint.md
+- .claude/, .env files, secrets
+- Generated files without review
+
+**ALWAYS:**
+- Atomic commits (one logical change)
+- Conventional commit messages
+- Run tests before commit
+- Use git-master skill for complex operations
+
+**Anti-patterns:**
+- \`as any\`, \`@ts-ignore\` - NEVER
+- Empty catch blocks - NEVER
+- Shotgun debugging - NEVER
+- Giant commits (3+ files = split into 2+ commits)
+
+</Git_Hygiene>`
+
+const SISYPHUS_TDD_WORKFLOW = `<TDD_Workflow>
+## TDD Workflow (For ANY code change)
+
+\`\`\`
+RED    → Write failing test first
+GREEN  → Minimum code to pass
+REFACTOR → Improve while staying green
+\`\`\`
+
+**Rules:**
+- NEVER skip tests for "simple" changes
+- NEVER delete failing tests to "pass" - fix the code
+- Test file naming: \`*.test.ts\` alongside source
+- BDD comments: \`#given\`, \`#when\`, \`#then\`
+
+**Bugfix Rule**: Fix minimally. NEVER refactor while fixing.
+
+</TDD_Workflow>`
+
 function buildDynamicSisyphusPrompt(
   availableAgents: AvailableAgent[],
   availableTools: AvailableTool[] = [],
@@ -615,6 +722,8 @@ function buildDynamicSisyphusPrompt(
     "",
     toolSelection,
     "",
+    SISYPHUS_DYNAMIC_SKILL_LOADING,
+    "",
     exploreSection,
     "",
     librarianSection,
@@ -622,6 +731,8 @@ function buildDynamicSisyphusPrompt(
     SISYPHUS_PRE_DELEGATION_PLANNING,
     "",
     SISYPHUS_PARALLEL_EXECUTION,
+    "",
+    SISYPHUS_SESSION_CONTINUATION,
     "",
     "---",
     "",
@@ -636,6 +747,10 @@ function buildDynamicSisyphusPrompt(
     SISYPHUS_GITHUB_WORKFLOW,
     "",
     SISYPHUS_CODE_CHANGES,
+    "",
+    SISYPHUS_GIT_HYGIENE,
+    "",
+    SISYPHUS_TDD_WORKFLOW,
     "",
     "---",
     "",
