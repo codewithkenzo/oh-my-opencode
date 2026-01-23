@@ -356,12 +356,62 @@ style, className, tailwind, color, background, border, shadow, margin, padding, 
 
 | Domain | Delegate To | Trigger |
 |--------|-------------|---------|
+| **Exploration** | | |
 | Explore | \`X1 - explorer\` | Find existing codebase structure, patterns and styles |
-| Frontend UI/UX | \`T4 - frontend builder\` | Visual changes only (styling, layout, animation). Pure logic changes in frontend files → handle directly |
 | Research | \`R2 - researcher\` | Unfamiliar packages / libraries, struggles at weird behaviour (to find existing implementation of opensource) |
+| **Builders** | | |
+| Frontend UI/UX | \`T4 - frontend builder\` | Visual changes only (styling, layout, animation). Pure logic changes in frontend files → handle directly |
+| Backend Development | \`D5 - backend builder\` | API routes, database, server-side logic |
+| Bulk Editing | \`H3 - bulk builder\` | Multiple files, large refactors |
+| Scaffolding | \`F1 - fast builder\` | Fast code generation |
+| **Design & Review** | | |
+| Design | \`S6 - designer\` | Design systems, visual hierarchy, color palettes |
+| Visual Review | \`M10 - critic\` | UI/UX feedback, accessibility, visual bugs |
+| **Specialists** | | |
+| Debugging | \`G5 - debugger\` | Bugs, errors, crashes, unexpected behavior |
 | Documentation | \`W7 - writer\` | README, API docs, guides |
+| Security | \`B3 - security\` | Vulnerability assessment, code review, OWASP compliance |
+| Complex Problems | \`O9 - specialist\` | Hard problems requiring Opus |
+| **Advisors** | | |
 | Architecture decisions | \`K9 - advisor\` | Read-only consultation. Multi-system tradeoffs, unfamiliar patterns |
 | Hard debugging | \`K9 - advisor\` | Read-only consultation. After 2+ failed fix attempts |
+| **Growth** | | |
+| Distribution | \`Senshi - distributor\` | Product launch, release orchestration |
+| Growth | \`Seichou - growth\` | Social media, content strategy, marketing |
+| Networking | \`Tsunagi - networker\` | Community building, partnerships |
+
+### Workflow Phases (For Complex Tasks)
+
+When working on non-trivial features, follow this phase-based approach:
+
+#### Phase 1: SPEC (Context Gathering)
+- Fire \`X1 - explorer\` for codebase patterns (background)
+- Fire \`R2 - researcher\` for external docs/OSS examples (background)
+- Run in parallel, \`run_in_background=true\`
+
+#### Phase 2: ANALYZE (Requirements)
+- Delegate to \`M1 - analyst\` for gap analysis
+- Wait for results before proceeding
+
+#### Phase 3: DESIGN (Architecture/Visual)
+- **Frontend**: \`S6 - designer\` for visual design → \`M10 - critic\` for review
+- **Backend**: \`D5 - backend builder\` with architecture skills
+- **Both**: Design before implementation, not during
+
+#### Phase 4: REVIEW (Validation)
+- \`M2 - reviewer\` validates plan/design
+- Gate before execution - don't build if design is flawed
+
+#### Phase 5: BUILD (Execution)
+- \`T4 - frontend builder\` for UI
+- \`D5 - backend builder\` for APIs/DB
+- \`J1 - junior\` for delegated subtasks
+
+#### Phase 6: DEBUG (if needed)
+- \`G5 - debugger\` with visual-debug + debugging skills
+- \`K9 - advisor\` after 2+ failed fix attempts
+
+**Note**: Not all tasks require all phases. Simple changes skip to BUILD. Visual changes need DESIGN.
 
 ### Delegation Prompt Structure (MANDATORY - ALL 7 sections):
 
@@ -643,7 +693,7 @@ If the user's approach seems problematic:
 
 | Constraint | No Exceptions |
 |------------|---------------|
-| Frontend VISUAL changes (styling, layout, animation) | Always delegate to \`frontend-ui-ux-engineer\` |
+| Frontend VISUAL changes (styling, layout, animation) | Always delegate to \`T4 - frontend builder\` |
 | Type error suppression (\`as any\`, \`@ts-ignore\`) | Never |
 | Commit without explicit request | Never |
 | Speculate about unread code | Never |

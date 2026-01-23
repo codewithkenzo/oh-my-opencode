@@ -2,28 +2,100 @@
 
 ## OVERVIEW
 
-11 AI agents for multi-model orchestration. Sisyphus (primary), oracle, librarian, explore, frontend, document-writer, multimodal-looker, Prometheus, Metis, Momus, B3 - security.
+23 AI agents for multi-model orchestration using Musashi-style naming convention.
+
+## AGENT ROSTER
+
+| ID | Name | Purpose |
+|----|------|---------|
+| **Orchestration** | | |
+| | `Musashi` | Primary agent |
+| | `Musashi - boulder` | Execution mode (orchestrator) |
+| | `Musashi - plan` | Planning mode (Prometheus) |
+| **Validation** | | |
+| | `M1 - analyst` | Pre-planning analysis (Metis) |
+| | `M2 - reviewer` | Plan validation (Momus) |
+| **Execution** | | |
+| | `J1 - junior` | Delegated task executor |
+| | `K9 - advisor` | Strategic advisor (Kenja) |
+| **Explorers** | | |
+| | `X1 - explorer` | Codebase exploration (fast contextual grep) |
+| | `R2 - researcher` | External docs/OSS research (librarian) |
+| | `V1 - viewer` | Multimodal/PDF analysis |
+| **Builders** | | |
+| | `T4 - frontend builder` | UI/UX (Takumi) |
+| | `D5 - backend builder` | APIs/databases (Daiku) |
+| | `H3 - bulk builder` | Bulk operations (Hayai) |
+| | `F1 - fast builder` | Fast scaffolding |
+| | `S6 - designer` | Design work (Shokunin) |
+| **Specialists** | | |
+| | `G5 - debugger` | Visual + backend debugging |
+| | `W7 - writer` | Documentation |
+| | `M10 - critic` | Visual critique (Miru) |
+| | `B3 - security` | Security scanning |
+| | `O9 - specialist` | Domain specialist (Opus) |
+| **Growth** | | |
+| | `Senshi - distributor` | Distribution |
+| | `Seichou - growth` | Growth hacking |
+| | `Tsunagi - networker` | Networking |
+
+## WORKFLOW PHASES
+
+For complex tasks, follow this phase-based approach:
+
+### Phase 1: SPEC (Context Gathering)
+- `X1 - explorer` for codebase patterns (background)
+- `R2 - researcher` for external docs/OSS (background)
+
+### Phase 2: ANALYZE (Requirements)
+- `M1 - analyst` for gap analysis
+
+### Phase 3: DESIGN (Architecture/Visual)
+- **Frontend**: `S6 - designer` → `M10 - critic` for review
+- **Backend**: `D5 - backend builder` with architecture skills
+
+### Phase 4: REVIEW (Validation)
+- `M2 - reviewer` validates plan/design
+
+### Phase 5: BUILD (Execution)
+- `T4 - frontend builder` for UI
+- `D5 - backend builder` for APIs/DB
+- `J1 - junior` for delegated subtasks
+
+### Phase 6: DEBUG (if needed)
+- `G5 - debugger` with visual-debug + debugging skills
+- `K9 - advisor` after 2+ failed fix attempts
 
 ## STRUCTURE
 
 ```
 agents/
-├── orchestrator-sisyphus.ts    # Orchestrator (1531 lines) - 7-phase delegation
+├── orchestrator-sisyphus.ts    # Orchestrator (1531 lines) - 6-phase delegation
 ├── sisyphus.ts                 # Main prompt (640 lines)
-├── sisyphus-junior.ts          # Delegated task executor
+├── sisyphus-junior.ts          # Delegated task executor (J1)
 ├── sisyphus-prompt-builder.ts  # Dynamic prompt generation
-├── oracle.ts                   # Strategic advisor (GPT-5.2)
-├── librarian.ts                # Multi-repo research (GLM-4.7-free)
-├── explore.ts                  # Fast grep (Grok Code)
-├── frontend-ui-ux-engineer.ts  # UI specialist (Gemini 3 Pro)
-├── document-writer.ts          # Technical writer (Gemini 3 Flash)
-├── multimodal-looker.ts        # Media analyzer (Gemini 3 Flash)
-├── b3-router.ts                # Security specialist (Sonnet 4.5)
+├── kenja-advisor.ts            # Strategic advisor (K9)
+├── librarian.ts                # Research agent (R2)
+├── explore.ts                  # Fast grep (X1)
+├── takumi-builder.ts           # Frontend builder (T4)
+├── builder.ts                  # Backend builder (D5)
+├── shokunin-designer.ts        # Designer (S6)
+├── g5-debugger.ts              # Debugger (G5)
+├── w7-writer.ts                # Technical writer (W7)
+├── m10-critic.ts               # Visual critic (M10)
+├── b3-security.ts              # Security specialist (B3)
+├── o9-specialist.ts            # Domain specialist (O9)
+├── multimodal-looker.ts        # Media analyzer (V1)
 ├── prometheus-prompt.ts        # Planning (1196 lines) - interview mode
-├── metis.ts                    # Plan consultant - pre-planning analysis
-├── momus.ts                    # Plan reviewer - validation
+├── metis.ts                    # Plan consultant (M1)
+├── momus.ts                    # Plan reviewer (M2)
+├── hayai-builder.ts            # Bulk builder (H3)
+├── f1-fast-builder.ts          # Fast builder (F1)
+├── senshi-distributor.ts       # Distribution (Senshi)
+├── seichou-growth.ts           # Growth (Seichou)
+├── tsunagi-networker.ts        # Networking (Tsunagi)
 ├── types.ts                    # AgentModelConfig interface
-├── utils.ts                    # createBuiltinAgents(), getAgentName()
+├── utils.ts                    # createBuiltinAgents(), normalizeAgentName()
 └── index.ts                    # builtinAgents export
 ```
 
@@ -31,40 +103,63 @@ agents/
 
 | Agent | Model | Temperature | Purpose |
 |-------|-------|-------------|---------|
-| Sisyphus | anthropic/claude-opus-4-5 | 0.1 | Primary orchestrator, todo-driven |
-| oracle | openai/gpt-5.2 | 0.1 | Read-only consultation, debugging |
-| librarian | opencode/glm-4.7-free | 0.1 | Docs, GitHub search, OSS examples |
-| explore | opencode/grok-code | 0.1 | Fast contextual grep |
-| frontend-ui-ux-engineer | google/gemini-3-pro-preview | 0.7 | UI generation, visual design |
-| document-writer | google/gemini-3-flash | 0.3 | Technical documentation |
-| multimodal-looker | google/gemini-3-flash | 0.1 | PDF/image analysis |
-| B3 - security | anthropic/claude-sonnet-4-5 | 0.1 | OWASP Top 10, CVE scanning, security assessment |
-| Prometheus | anthropic/claude-opus-4-5 | 0.1 | Strategic planning, interview mode |
-| Metis | anthropic/claude-sonnet-4-5 | 0.1 | Pre-planning gap analysis |
-| Momus | anthropic/claude-sonnet-4-5 | 0.1 | Plan validation |
+| Musashi | anthropic/claude-opus-4-5 | 0.1 | Primary orchestrator |
+| Musashi - boulder | anthropic/claude-opus-4-5 | 0.1 | Execution orchestrator |
+| Musashi - plan | anthropic/claude-opus-4-5 | 0.1 | Strategic planning |
+| M1 - analyst | anthropic/claude-sonnet-4-5 | 0.1 | Pre-planning analysis |
+| M2 - reviewer | anthropic/claude-sonnet-4-5 | 0.1 | Plan validation |
+| K9 - advisor | openai/gpt-5.2 | 0.1 | Read-only consultation |
+| X1 - explorer | opencode/grok-code | 0.1 | Fast contextual grep |
+| R2 - researcher | opencode/glm-4.7-free | 0.1 | Docs, GitHub search |
+| V1 - viewer | google/gemini-3-flash | 0.1 | PDF/image analysis |
+| T4 - frontend builder | google/gemini-3-pro-preview | 0.7 | UI generation |
+| D5 - backend builder | opencode/glm-4.7-free | 0.1 | Backend logic |
+| H3 - bulk builder | x-ai/grok-3-beta | 0.1 | Bulk operations |
+| F1 - fast builder | google/gemini-3-flash | 0.3 | Fast scaffolding |
+| S6 - designer | google/gemini-3-pro-preview | 0.7 | Design systems |
+| G5 - debugger | anthropic/claude-sonnet-4-5 | 0.1 | Debugging |
+| W7 - writer | google/gemini-3-flash | 0.3 | Documentation |
+| M10 - critic | google/gemini-3-pro-preview | 0.5 | Visual critique |
+| B3 - security | anthropic/claude-sonnet-4-5 | 0.1 | Security assessment |
+| O9 - specialist | anthropic/claude-opus-4-5 | 0.1 | Complex problems |
+
+## LEGACY NAME MAPPING
+
+Backward compatibility for older configurations:
+
+| Legacy Name | Musashi Name |
+|-------------|--------------|
+| `explore` | `X1 - explorer` |
+| `librarian` | `R2 - researcher` |
+| `oracle` | `K9 - advisor` |
+| `frontend-ui-ux-engineer` | `T4 - frontend builder` |
+| `document-writer` | `W7 - writer` |
+| `multimodal-looker` | `V1 - viewer` |
 
 ## HOW TO ADD
 
 1. Create `src/agents/my-agent.ts` exporting `AgentConfig`
-2. Add to `builtinAgents` in `src/agents/index.ts`
-3. Update `AgentNameSchema` in `src/config/schema.ts`
-4. Register in `src/index.ts` initialization
+2. Add to `agentSources` in `src/agents/utils.ts`
+3. Add metadata to `agentMetadata` in `src/agents/utils.ts`
+4. Update `BuiltinAgentName` type in `src/agents/types.ts`
+5. Register in `src/agents/index.ts`
 
 ## TOOL RESTRICTIONS
 
 | Agent | Denied Tools |
 |-------|-------------|
-| oracle | write, edit, task, delegate_task |
-| librarian | write, edit, task, delegate_task, call_omo_agent |
-| explore | write, edit, task, delegate_task, call_omo_agent |
-| multimodal-looker | Allowlist: read, glob, grep |
+| K9 - advisor | write, edit, task, delegate_task |
+| R2 - researcher | write, edit, task, delegate_task, call_omo_agent |
+| X1 - explorer | write, edit, task, delegate_task, call_omo_agent |
+| V1 - viewer | Allowlist: read, glob, grep |
 
 ## KEY PATTERNS
 
 - **Factory**: `createXXXAgent(model?: string): AgentConfig`
 - **Metadata**: `XXX_PROMPT_METADATA: AgentPromptMetadata`
 - **Tool restrictions**: `permission: { edit: "deny", bash: "ask" }`
-- **Thinking**: 32k budget tokens for Sisyphus, Oracle, Prometheus
+- **Thinking**: 32k budget tokens for Musashi, K9 - advisor, Prometheus
+- **Skills auto-load**: Define in `agentMetadata.skills[]`
 
 ## ANTI-PATTERNS
 
