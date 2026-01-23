@@ -84,7 +84,7 @@ export type BuiltinAgentName =
   | "G5 - debugger"
   | "W7 - writer"
   | "M10 - critic"
-  | "B3 - router"
+  | "B3 - security"
   | "O9 - specialist"
   // Growth
   | "Senshi - distributor"

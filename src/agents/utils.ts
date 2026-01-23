@@ -21,7 +21,7 @@ import { createG5DebuggerAgent } from "./g5-debugger"
 import { createW7WriterAgent } from "./w7-writer"
 import { createKenjaAdvisorAgent } from "./kenja-advisor"
 import { createMiruCriticAgent } from "./m10-critic"
-import { createB3RouterAgent } from "./b3-router"
+import { createB3SecurityAgent } from "./b3-security"
 import { createO9SpecialistAgent } from "./o9-specialist"
 import { createSenshiDistributorAgent } from "./senshi-distributor"
 import { createSeichouGrowthAgent } from "./seichou-growth"
@@ -90,7 +90,7 @@ const agentSources: Record<BuiltinAgentName, AgentSource> = {
   "G5 - debugger": createG5DebuggerAgent,
   "W7 - writer": createW7WriterAgent,
   "M10 - critic": createMiruCriticAgent,
-  "B3 - router": createB3RouterAgent,
+  "B3 - security": createB3SecurityAgent,
   "O9 - specialist": createO9SpecialistAgent,
   // Growth
   "Senshi - distributor": createSenshiDistributorAgent,
@@ -170,10 +170,11 @@ const agentMetadata: Partial<Record<BuiltinAgentName, AgentPromptMetadata>> = {
     cost: "CHEAP",
     triggers: [{ domain: "Visual Review", trigger: "UI/UX feedback, accessibility, visual bugs" }],
   },
-  "B3 - router": {
-    category: "utility",
+  "B3 - security": {
+    category: "specialist",
     cost: "CHEAP",
-    triggers: [{ domain: "Task Delegation", trigger: "Builder dispatcher, task routing" }],
+    triggers: [{ domain: "Security", trigger: "Vulnerability assessment, code review, OWASP compliance" }],
+    skills: ["owasp-security", "api-security-best-practices", "vulnerability-scanning", "auth-implementation-patterns"],
   },
   "O9 - specialist": {
     category: "specialist",
