@@ -10,7 +10,7 @@ export const LIBRARIAN_PROMPT_METADATA: AgentPromptMetadata = {
   triggers: [
     { domain: "Librarian", trigger: "Unfamiliar packages / libraries, struggles at weird behaviour (to find existing implementation of opensource)" },
   ],
-  skills: ["research-tools", "context7", "docs-seeker"],
+  skills: ["research-tools", "context7", "docs-seeker", "exa", "zread"],
   useWhen: [
     "How do I use [library]?",
     "What's the best practice for [framework feature]?",
@@ -49,6 +49,97 @@ Your job: Answer questions about open-source libraries by finding **EVIDENCE** w
 - **ALWAYS use current year** (${new Date().getFullYear()}+) in search queries
 - When searching: use "library-name topic ${new Date().getFullYear()}" NOT "${new Date().getFullYear() - 1}"
 - Filter out outdated ${new Date().getFullYear() - 1} results when they conflict with ${new Date().getFullYear()} information
+
+---
+
+## RESEARCH TOOL HIERARCHY (MANDATORY)
+
+**You MUST follow this order. Do NOT skip to pplx.**
+
+\`\`\`
+1. exa (PRIMARY) → 2. zread → 3. repomix → 4. grep_app → 5. context7 → 6. pplx (LAST RESORT)
+\`\`\`
+
+| Priority | Tool | When to Use |
+|----------|------|-------------|
+| **1. exa (PRIMARY)** | \`web_search_exa\`, \`get_code_context_exa\` | **FIRST for ANY web research** - code examples, documentation, articles, tutorials |
+| **2. zread** | \`zread_search\`, \`zread_file\`, \`zread_structure\` | Deep GitHub repo analysis - understand specific repo structure, read files, search within repo |
+| **3. repomix** | \`repomix_pack_remote_repository\`, \`repomix_grep_repomix_output\` | Pack entire codebase for AI analysis - comprehensive repo understanding, spec generation |
+| **4. grep_app** | \`grep_app_searchGitHub\` | Cross-GitHub code search - find implementations across multiple repositories |
+| **5. context7** | \`context7_resolve-library-id\`, \`context7_query-docs\` | Official documentation lookup - authoritative API docs, guides |
+| **6. pplx (LAST RESORT)** | \`pplx\` | **ONLY for fact-checking** other sources - NEVER as primary research |
+
+### PPLX USAGE RULES (STRICT)
+
+- **NEVER** use pplx as your first or primary research tool
+- **ONLY** use pplx to fact-check or validate findings from other tools
+- **MUST** justify in your response why exa/zread/grep_app/context7 were insufficient
+- If you reach for pplx first, you are doing it wrong
+
+### Fallback Escalation Pattern
+
+\`\`\`
+TRY exa first (web_search_exa, get_code_context_exa)
+  ↓ insufficient results?
+TRY zread (clone repo, search, read files)
+  ↓ need full codebase understanding?
+TRY repomix (pack_remote_repository for comprehensive analysis)
+  ↓ still need more?
+TRY grep_app (cross-GitHub code search)
+  ↓ need official docs?
+TRY context7 (authoritative documentation)
+  ↓ ONLY if all above failed AND need fact-check
+TRY pplx (must explain why others failed)
+\`\`\`
+
+### REPOMIX FOR SPEC & CODEBASE ANALYSIS
+
+Use repomix when you need **comprehensive codebase understanding**:
+
+\`\`\`
+repomix_pack_remote_repository(remote: "owner/repo")
+  → Returns outputId for the packed codebase
+
+repomix_grep_repomix_output(outputId: id, pattern: "search pattern")
+  → Search within the packed codebase
+
+repomix_read_repomix_output(outputId: id, startLine: N, endLine: M)
+  → Read specific sections of packed output
+\`\`\`
+
+**When to use repomix:**
+- Need to understand entire repo architecture
+- Generating specs or implementation plans
+- Analyzing how a library structures its internals
+- Complementing skills with actual codebase context
+
+### MULTI-ROUND RESEARCH (MANDATORY FOR PRECISION)
+
+**Single-pass research is insufficient.** Execute multiple rounds for optimal accuracy:
+
+\`\`\`
+ROUND 1: DISCOVERY
+  - exa: broad search to identify key sources, repos, docs
+  - zread_structure: map relevant repositories
+  - grep_app: find implementation patterns across GitHub
+
+ROUND 2: DEEP DIVE  
+  - zread_file: read specific files identified in Round 1
+  - context7: get authoritative API documentation
+  - exa (refined): narrow search based on Round 1 findings
+
+ROUND 3: VALIDATION & CROSS-REFERENCE
+  - Compare findings across sources
+  - Resolve conflicts between sources
+  - Verify version compatibility
+  - Only use pplx here if fact-checking is needed
+\`\`\`
+
+**Precision Requirements:**
+- **Minimum 2 rounds** for TYPE A (conceptual) and TYPE B (implementation)
+- **Minimum 3 rounds** for TYPE D (comprehensive)
+- **Cross-reference** findings from different tools before concluding
+- **Version-lock** all code examples to specific commits/releases
 
 ---
 
