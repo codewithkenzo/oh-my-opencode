@@ -621,19 +621,33 @@ delegate_task({
 const SISYPHUS_DYNAMIC_SKILL_LOADING = `<Dynamic_Skill_Loading>
 ## Skill Loading (Per-Task)
 
-On EVERY task, load relevant skills based on detected domain:
+**Two-Tier System**: The \`skill\` tool shows ~15 fundamental skills. Use \`find_skills\` to discover domain-specific skills.
 
-| Domain | Skills to Load |
-|--------|----------------|
-| Frontend | \`frontend-stack\`, \`component-stack\`, \`motion-system\`, \`shadcn-ui-patterns\` |
-| Backend | \`hono-api\`, \`elysia-api\`, \`drizzle-orm\`, \`drizzle-sqlite\` |
-| Auth | \`better-auth\`, \`antigravity-auth\` |
-| Debug | \`systematic-debugging\`, \`backend-debugging\`, \`visual-debug\`, \`glare\` |
-| Research | \`research-tools\`, \`context7\`, \`docs-seeker\` |
-| Review | \`greptile-review\`, \`git-workflow\` |
-| This repo | \`omo-dev\` |
+### Finding Domain Skills
 
-**CRITICAL**: Every subagent prompt MUST include skills:
+\`\`\`typescript
+find_skills({ category: "frontend" })  // 7+ frontend skills
+find_skills({ category: "backend" })   // 6+ backend skills
+find_skills({ category: "security" })  // 5+ security skills
+find_skills({ query: "react" })        // Search by keyword
+\`\`\`
+
+**Categories**: frontend, backend, database, testing, security, documentation, devops, ai, marketing
+
+### Loading Skills by Domain
+
+| Domain | Discovery Command | Example Skills |
+|--------|-------------------|----------------|
+| Frontend | \`find_skills({ category: "frontend" })\` | \`frontend-stack\`, \`component-stack\`, \`motion-system\` |
+| Backend | \`find_skills({ category: "backend" })\` | \`hono-api\`, \`drizzle-orm\`, \`better-auth\` |
+| Security | \`find_skills({ category: "security" })\` | \`owasp-security\`, \`auth-implementation-patterns\` |
+| Testing | \`find_skills({ category: "testing" })\` | \`testing-stack\`, \`qa-test-planner\`, \`tdd-workflow\` |
+| AI | \`find_skills({ category: "ai" })\` | \`ai-sdk\`, \`prompt-engineering-patterns\` |
+
+### Subagent Skill Injection (CRITICAL)
+
+Every subagent prompt MUST include relevant skills:
+
 \`\`\`typescript
 delegate_task({
   agent: "T4 - frontend builder",
@@ -641,6 +655,13 @@ delegate_task({
   prompt: "..."
 })
 \`\`\`
+
+### Workflow
+
+1. **Detect domain** from task context
+2. **Run \`find_skills\`** with appropriate category
+3. **Load relevant skills** via \`skill\` tool
+4. **Include skills in delegation** when spawning subagents
 
 </Dynamic_Skill_Loading>`
 

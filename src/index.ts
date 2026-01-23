@@ -60,6 +60,7 @@ import {
   createBackgroundTools,
   createLookAt,
   createSkillTool,
+  createFindSkillsTool,
   createSkillMcpTool,
   createSlashcommandTool,
   discoverCommandsSync,
@@ -274,6 +275,9 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     gitMasterConfig: pluginConfig.git_master,
     client: ctx.client,
   });
+  const findSkillsTool = createFindSkillsTool({
+    skills: mergedSkills,
+  });
   const skillMcpTool = createSkillMcpTool({
     manager: skillMcpManager,
     getLoadedSkills: () => mergedSkills,
@@ -304,6 +308,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       look_at: lookAt,
       delegate_task: delegateTask,
       skill: skillTool,
+      find_skills: findSkillsTool,
       skill_mcp: skillMcpTool,
       slashcommand: slashcommandTool,
       interactive_bash,

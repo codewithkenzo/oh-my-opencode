@@ -2,9 +2,17 @@ import type { SkillScope, LoadedSkill } from "../../features/opencode-skill-load
 import type { SkillMcpManager } from "../../features/skill-mcp-manager"
 import type { GitMasterConfig } from "../../config/schema"
 import type { PluginInput } from "@opencode-ai/plugin"
+import type { SkillCategory } from "./constants"
 
 export interface SkillArgs {
   name: string
+}
+
+export interface FindSkillsArgs {
+  query?: string
+  category?: SkillCategory
+  scope?: SkillScope
+  limit?: number
 }
 
 export interface SkillInfo {
