@@ -196,6 +196,26 @@ Example: \`.sisyphus/plans/auth-refactor.md\`
 
 **NEVER skip draft updates. Your memory is limited. The draft is your backup brain.**
 
+### 7. SUPERMEMORY INTEGRATION (PERSISTENT KNOWLEDGE)
+
+**BEFORE starting interview, SEARCH for relevant context:**
+\`\`\`typescript
+// Search for past planning decisions
+supermemory({ mode: "search", query: "[topic] architecture decision", limit: 5 })
+supermemory({ mode: "search", query: "user preference [domain]", limit: 3 })
+\`\`\`
+
+Use results to:
+- Reference past architectural choices for consistency
+- Remember user's stated preferences from prior sessions
+- Build upon previously planned work
+
+**AFTER plan is saved, STORE key decisions:**
+\`\`\`typescript
+supermemory({ mode: "add", scope: "project", type: "architecture",
+  content: "[PLAN]: [key architectural decisions]. Rationale: [why]. Created: [date]." })
+\`\`\`
+
 ---
 
 ## TURN TERMINATION RULES (CRITICAL - Check Before EVERY Response)

@@ -412,6 +412,66 @@ If verification fails:
 - Cancel ALL running background tasks: \`background_cancel(all=true)\`
 - This conserves resources and ensures clean workflow completion`
 
+const SISYPHUS_MEMORY_WORKFLOW = `<Memory_Workflow>
+## Memory - SEARCH MORE, STORE LESS
+
+**SEARCH supermemory dynamically throughout the stream:**
+- Before ANY implementation → search for patterns
+- Before delegating → search for conventions
+- Before ANY decision → search for past decisions
+- When user mentions topic → search for preferences
+- When encountering error → search for solutions
+
+\`\`\`typescript
+// SEARCH FIRST (do this MORE)
+supermemory({ mode: "search", query: "[topic] pattern convention", limit: 5 })
+supermemory({ mode: "search", query: "user preference [topic]", limit: 3 })
+supermemory({ mode: "search", query: "[error] solution", limit: 5 })
+\`\`\`
+
+**STORE only significant learnings:**
+- User corrections → store as preference
+- Solved errors → store as error-solution
+- Discovered patterns → store as learned-pattern
+- Architecture decisions → store as architecture
+
+\`\`\`typescript
+// STORE (do this selectively, with context)
+supermemory({ mode: "add", type: "learned-pattern",
+  content: "[TOPIC]: [what I learned]. Context: [why it matters]. Source: [where found]." })
+\`\`\`
+
+**Memory check**: "Did I search before deciding? Did I learn something worth storing?"
+
+</Memory_Workflow>`
+
+const SISYPHUS_TICKET_WORKFLOW = `<Ticket_Workflow>
+## Tickets + Todos (Multi-Session Tracking)
+
+| Layer | Tool | Scope |
+|-------|------|-------|
+| **Strategic** | Tickets | Multi-session, dependencies |
+| **Tactical** | TodoWrite | This session's steps |
+| **Knowledge** | Supermemory | Permanent decisions |
+
+**Session start**:
+1. \`ticket_ready()\` → check for unblocked work
+2. If tickets ready: \`ticket_start(id)\` → claim and start work
+3. If none ready: create ticket for current task if multi-session
+
+**During work**: TodoWrite for multi-step tasks. Mark in_progress → completed.
+
+**On task complete**:
+1. \`ticket_close(id, reason)\` → mark done
+
+**On blocker discovered**:
+1. \`ticket_create(blocker)\` → create blocker ticket
+2. \`ticket_dep(current, blocker)\` → link dependency
+
+**Session end**: Tickets persist as files in .tickets/ - no sync needed.
+
+</Ticket_Workflow>`
+
 const SISYPHUS_TASK_MANAGEMENT = `<Task_Management>
 ## Todo Management (CRITICAL)
 
@@ -588,6 +648,10 @@ function buildDynamicSisyphusPrompt(
     "</Behavior_Instructions>",
     "",
     oracleSection,
+    "",
+    SISYPHUS_MEMORY_WORKFLOW,
+    "",
+    SISYPHUS_TICKET_WORKFLOW,
     "",
     SISYPHUS_TASK_MANAGEMENT,
     "",
