@@ -371,8 +371,9 @@ export function createFindSkillsTool(options: SkillLoadOptions = {}): ToolDefini
       let filtered = skills
 
       if (args.category && args.category in SKILL_CATEGORIES) {
-        const categorySkills = new Set(SKILL_CATEGORIES[args.category as keyof typeof SKILL_CATEGORIES])
-        filtered = filtered.filter(s => categorySkills.has(s.name as never))
+        const categorySkillNames = SKILL_CATEGORIES[args.category as keyof typeof SKILL_CATEGORIES]
+        const categorySkills = new Set<string>(categorySkillNames)
+        filtered = filtered.filter(s => categorySkills.has(s.name))
       }
 
       if (args.query) {

@@ -6,7 +6,7 @@
 
 ## OVERVIEW
 
-OpenCode plugin implementing multi-model agent orchestration (Claude Opus 4.5, GPT-5.2, Gemini 3, Grok, GLM-4.7). 31 lifecycle hooks, 20+ tools (LSP, AST-Grep, delegation), 10 specialized agents, Claude Code compatibility layer. "oh-my-zsh" for OpenCode.
+OpenCode plugin implementing multi-model agent orchestration (Claude Opus 4.5, GPT-5.2, Gemini 3, Grok, GLM-4.7). 31 lifecycle hooks, 20+ tools (LSP, AST-Grep, delegation), 11 specialized agents, Claude Code compatibility layer. "oh-my-zsh" for OpenCode.
 
 ## STRUCTURE
 

@@ -106,6 +106,7 @@ $ARGUMENTS
   },
   "memory-search": {
     description: "(builtin) Search supermemory for past decisions and context",
+    agent: "K9 - advisor",
     template: `<command-instruction>
 Search supermemory for relevant context using the provided query.
 

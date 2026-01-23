@@ -2,7 +2,7 @@
 
 ## OVERVIEW
 
-10 AI agents for multi-model orchestration. Sisyphus (primary), oracle, librarian, explore, frontend, document-writer, multimodal-looker, Prometheus, Metis, Momus.
+11 AI agents for multi-model orchestration. Sisyphus (primary), oracle, librarian, explore, frontend, document-writer, multimodal-looker, Prometheus, Metis, Momus, B3 - security.
 
 ## STRUCTURE
 
@@ -18,6 +18,7 @@ agents/
 ├── frontend-ui-ux-engineer.ts  # UI specialist (Gemini 3 Pro)
 ├── document-writer.ts          # Technical writer (Gemini 3 Flash)
 ├── multimodal-looker.ts        # Media analyzer (Gemini 3 Flash)
+├── b3-router.ts                # Security specialist (Sonnet 4.5)
 ├── prometheus-prompt.ts        # Planning (1196 lines) - interview mode
 ├── metis.ts                    # Plan consultant - pre-planning analysis
 ├── momus.ts                    # Plan reviewer - validation
@@ -37,6 +38,7 @@ agents/
 | frontend-ui-ux-engineer | google/gemini-3-pro-preview | 0.7 | UI generation, visual design |
 | document-writer | google/gemini-3-flash | 0.3 | Technical documentation |
 | multimodal-looker | google/gemini-3-flash | 0.1 | PDF/image analysis |
+| B3 - security | anthropic/claude-sonnet-4-5 | 0.1 | OWASP Top 10, CVE scanning, security assessment |
 | Prometheus | anthropic/claude-opus-4-5 | 0.1 | Strategic planning, interview mode |
 | Metis | anthropic/claude-sonnet-4-5 | 0.1 | Pre-planning gap analysis |
 | Momus | anthropic/claude-sonnet-4-5 | 0.1 | Plan validation |
