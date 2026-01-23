@@ -70,6 +70,74 @@ $ARGUMENTS
 </user-request>`,
     argumentHint: "[plan-name]",
   },
+  "security-scan": {
+    description: "(builtin) Trigger B3 security specialist review",
+    agent: "B3 - security",
+    template: `<command-instruction>
+Perform a comprehensive security assessment of the specified target.
+
+## Assessment Protocol
+
+1. **OWASP Top 10 Checklist**: Evaluate all categories systematically
+2. **AST-grep Patterns**: Run vulnerability detection patterns for the target language
+3. **Dependency Audit**: Check for known CVEs in dependencies
+4. **Authentication/Authorization**: Review auth flows and access control
+5. **Input Validation**: Identify injection vectors and sanitization gaps
+
+## Output Format
+
+Produce a structured security assessment report:
+- Executive summary with risk score (Critical/High/Medium/Low)
+- Detailed findings with evidence (file:line references)
+- Remediation recommendations with code examples
+- Compliance notes (OWASP, CWE references)
+
+## Constraints
+
+- READ-ONLY assessment - do NOT modify code
+- Use AST-grep for pattern matching, LSP for navigation
+- Focus on actionable findings, not theoretical risks
+</command-instruction>
+
+<scan-target>
+$ARGUMENTS
+</scan-target>`,
+    argumentHint: "<file|directory|module> [--focus=<auth|api|input|all>]",
+  },
+  "memory-search": {
+    description: "(builtin) Search supermemory for past decisions and context",
+    template: `<command-instruction>
+Search supermemory for relevant context using the provided query.
+
+## Search Protocol
+
+1. **Query Analysis**: Parse the search query for key concepts
+2. **Memory Search**: Search across all memory scopes (project, user, global)
+3. **Relevance Ranking**: Sort results by recency and relevance
+4. **Context Extraction**: Extract relevant snippets with metadata
+
+## Output Format
+
+Return matching memories with:
+- Memory ID and scope (project/user/global)
+- Memory type (decision, pattern, preference, context)
+- Timestamp and relevance score
+- Extracted content with surrounding context
+
+## Usage
+
+This command helps recall:
+- Past architectural decisions and rationale
+- Established patterns and conventions
+- User preferences and workflow history
+- Previous debugging sessions and solutions
+</command-instruction>
+
+<search-query>
+$ARGUMENTS
+</search-query>`,
+    argumentHint: '"search query" [--scope=<project|user|global>] [--limit=N]',
+  },
 }
 
 export function loadBuiltinCommands(
