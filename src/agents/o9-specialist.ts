@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import { isGptModel } from "./types"
 
-const DEFAULT_MODEL = "google/claude-opus-4-5-thinking"
+const DEFAULT_MODEL = "anthropic/claude-opus-4-5"
 
 const O9_SPECIALIST_PROMPT = `# O9 - specialist
 

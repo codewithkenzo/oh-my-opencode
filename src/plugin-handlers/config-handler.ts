@@ -197,7 +197,8 @@ export function createConfigHandler(deps: ConfigHandlerDeps) {
           planConfigWithoutName as Record<string, unknown>
         );
         const prometheusOverride =
-          pluginConfig.agents?.["Prometheus (Planner)"] as
+          (pluginConfig.agents?.["Prometheus (Planner)"] ??
+            pluginConfig.agents?.["Musashi - plan"]) as
             | (Record<string, unknown> & { category?: string; model?: string })
             | undefined;
         const defaultModel = config.model as string | undefined;

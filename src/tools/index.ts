@@ -17,6 +17,7 @@ import {
 
 import { grep } from "./grep"
 import { glob } from "./glob"
+import { multiedit } from "./multiedit"
 export { createSlashcommandTool, discoverCommandsSync } from "./slashcommand"
 
 import {
@@ -110,6 +111,12 @@ import {
 // Custom tools - zread
 import { zread_search, zread_file, zread_structure } from "./zread"
 
+// Research tools - exa, context7, grep-app, webfetch
+import { websearch } from "./exa"
+import { context7_resolve_library_id, context7_query_docs } from "./context7"
+import { grep_app_searchGitHub } from "./grep-app"
+import { webfetch } from "./webfetch"
+
 // Custom tools - agent-browser
 import { browserTools } from "./agent-browser"
 
@@ -197,6 +204,12 @@ export const builtinTools: Record<string, ToolDefinition> = {
   zread_search,
   zread_file,
   zread_structure,
+  websearch,
+  context7_resolve_library_id,
+  context7_query_docs,
+  grep_app_searchGitHub,
+  webfetch,
   system_notify,
+  multiedit,
   ...browserTools,
 }
