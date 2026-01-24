@@ -19,6 +19,7 @@ interface SessionInfo {
 interface MessageInfo {
   role?: string
   content?: string
+  id?: string
 }
 
 export interface MemoryPersistenceHookOptions {
@@ -45,6 +46,8 @@ export function createMemoryPersistenceHook(
   const processingInProgress = new Set<string>()
   // Store messages by ID to dedupe streaming updates (message.updated fires per-token)
   const sessionMessages = new Map<string, Map<string, { role: string; content: string }>>()
+  // Counter for fallback key generation when messageID is not available
+  const sessionMessageCounters = new Map<string, number>()
   const MAX_MESSAGES_PER_SESSION = 100
 
   async function handleSessionCreated(sessionInfo: SessionInfo): Promise<void> {
@@ -118,7 +121,7 @@ export function createMemoryPersistenceHook(
     }
   }
 
-  function handleMessageUpdated(info: MessageInfo & { sessionID?: string; messageID?: string }): void {
+  function handleMessageUpdated(info: MessageInfo & { sessionID?: string }): void {
     if (!info.sessionID || !info.role || !info.content) return
 
     let messageMap = sessionMessages.get(info.sessionID)
@@ -127,9 +130,17 @@ export function createMemoryPersistenceHook(
       sessionMessages.set(info.sessionID, messageMap)
     }
 
-    // Use messageID to dedupe streaming updates (message.updated fires per-token)
-    // If no messageID, use content hash as fallback
-    const key = info.messageID || `${info.role}:${info.content.slice(0, 50)}`
+    // Use message.id to dedupe streaming updates (message.updated fires per-token)
+    // If no id, use stable counter-based key (role + sequential number)
+    let key = info.id
+    if (!key) {
+      const counter = sessionMessageCounters.get(info.sessionID) || 0
+      key = `${info.role}:${counter}`
+      // Only increment counter for new messages (check if key exists and content differs)
+      if (!messageMap.has(key) || messageMap.get(key)?.content !== info.content) {
+        sessionMessageCounters.set(info.sessionID, counter + 1)
+      }
+    }
     messageMap.set(key, { role: info.role, content: info.content })
 
     // Enforce max messages by removing oldest entries
@@ -144,6 +155,7 @@ export function createMemoryPersistenceHook(
   function handleSessionDeleted(sessionId: string): void {
     processedSessions.delete(sessionId)
     sessionMessages.delete(sessionId)
+    sessionMessageCounters.delete(sessionId)
   }
 
   const eventHandler = async (input: { event: { type: string; properties?: unknown } }): Promise<void> => {

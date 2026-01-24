@@ -375,6 +375,8 @@ export const MemoryPersistenceConfigSchema = z.object({
   min_session_length: z.number().min(1).max(50).default(5),
   /** Min confidence for patterns (default: 0.7) */
   pattern_confidence_threshold: z.number().min(0).max(1).default(0.7),
+  /** Lookback window for error context detection (default: 10) */
+  error_lookback_window: z.number().min(1).max(50).default(10),
 })
 
 export const CategorySkillsConfigSchema = z.record(z.string(), z.array(z.string()))
