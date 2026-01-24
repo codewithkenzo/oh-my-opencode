@@ -229,23 +229,20 @@ export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 
 export const CATEGORY_SKILLS: Record<string, string[]> = {
   "visual-engineering": [
-    "component-stack",
-    "shadcn-ui-patterns",
-    "frontend-ui-ux",
+    "frontend-ui-ux", // builtin - Designer-turned-developer for UI/UX
   ],
-  ultrabrain: [
-    "effect-ts-expert",
-    "drizzle-orm",
-    "hono-api",
-  ],
+  ultrabrain: [], // No matching skills available yet
   artistry: [
-    "asset-prompts",
-    "runware-assets",
+    "frontend-ui-ux", // builtin - Strong aesthetic focus for creative UI work
   ],
-  quick: [],
-  "most-capable": [],
-  writing: [],
-  general: [],
+  quick: [
+    "git-master", // builtin - Atomic commits, rebase/squash, history search
+  ],
+  "most-capable": [], // Intentionally empty - agent chooses skills dynamically
+  writing: [], // No matching skills available yet
+  general: [
+    "linearis", // builtin - Linear CLI for issue tracking
+  ],
 }
 
 const BUILTIN_CATEGORIES = Object.keys(DEFAULT_CATEGORIES).join(", ")
@@ -255,7 +252,7 @@ export const DELEGATE_TASK_DESCRIPTION = `Spawn agent task with category-based o
 MUTUALLY EXCLUSIVE: Provide EITHER category OR agent, not both (unless resuming).
 
 - category: Use predefined category (${BUILTIN_CATEGORIES}) → Spawns Sisyphus-Junior with category config
-- agent: Use specific agent directly (e.g., "oracle", "explore")
+- agent: Use specific agent directly (e.g., "K9 - advisor", "X1 - explorer")
 - background: true=async (returns task_id), false=sync (waits for result). Default: false. Use background=true ONLY for parallel exploration with 5+ independent queries.
 - resume: Session ID to resume (from previous task output). Continues agent with FULL CONTEXT PRESERVED - saves tokens, maintains continuity.
 - skills: Array of skill names to prepend to prompt (e.g., ["playwright", "frontend-ui-ux"]). Use [] (empty array) if no skills needed.

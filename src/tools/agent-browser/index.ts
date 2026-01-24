@@ -1,4 +1,5 @@
 export * from "./types"
+export * from "./adapters"
 export {
   browser_open,
   browser_snapshot,

@@ -17,6 +17,7 @@ import {
 
 import { grep } from "./grep"
 import { glob } from "./glob"
+import { multiedit } from "./multiedit"
 export { createSlashcommandTool, discoverCommandsSync } from "./slashcommand"
 
 import {
@@ -29,7 +30,7 @@ import {
 export { sessionExists } from "./session-manager/storage"
 
 export { interactive_bash, startBackgroundCheck as startTmuxCheck } from "./interactive-bash"
-export { createSkillTool } from "./skill"
+export { createSkillTool, createFindSkillsTool } from "./skill"
 export { getTmuxPath } from "./interactive-bash/utils"
 export { createSkillMcpTool } from "./skill-mcp"
 
@@ -110,6 +111,12 @@ import {
 // Custom tools - zread
 import { zread_search, zread_file, zread_structure } from "./zread"
 
+// Research tools - exa, context7, grep-app, webfetch
+import { websearch } from "./exa"
+import { context7_resolve_library_id, context7_query_docs } from "./context7"
+import { grep_app_searchGitHub } from "./grep-app"
+import { webfetch } from "./webfetch"
+
 // Custom tools - agent-browser
 import { browserTools } from "./agent-browser"
 
@@ -117,8 +124,9 @@ import { browserTools } from "./agent-browser"
 import { system_notify } from "./system-notify"
 export { sendSystemNotification } from "./system-notify"
 
-// Custom tools - supermemory (factory function)
-export { createSupermemoryTool } from "./supermemory"
+// Custom tools - supermemory
+import { createSupermemoryTool } from "./supermemory"
+export { createSupermemoryTool }
 
 type OpencodeClient = PluginInput["client"]
 
@@ -197,6 +205,12 @@ export const builtinTools: Record<string, ToolDefinition> = {
   zread_search,
   zread_file,
   zread_structure,
+  websearch,
+  context7_resolve_library_id,
+  context7_query_docs,
+  grep_app_searchGitHub,
+  webfetch,
   system_notify,
+  multiedit,
   ...browserTools,
 }

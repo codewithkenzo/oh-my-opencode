@@ -16,7 +16,7 @@ BLOCKED ACTIONS (will fail if attempted):
 - task tool: BLOCKED
 - delegate_task tool: BLOCKED
 
-ALLOWED: call_omo_agent - You CAN spawn explore/librarian agents for research.
+ALLOWED: call_omo_agent - You CAN spawn X1 - explorer/R2 - researcher agents for research.
 You work ALONE for implementation. No delegation of implementation tasks.
 </Critical_Constraints>
 
@@ -74,7 +74,7 @@ function buildSisyphusJuniorPrompt(promptAppend?: string): string {
 }
 
 // Core tools that Sisyphus-Junior must NEVER have access to
-// Note: call_omo_agent is ALLOWED so subagents can spawn explore/librarian
+// Note: call_omo_agent is ALLOWED so subagents can spawn X1 - explorer/R2 - researcher
 const BLOCKED_TOOLS = ["task", "delegate_task"]
 
 export const SISYPHUS_JUNIOR_DEFAULTS = {

@@ -36,6 +36,9 @@ export interface AgentPromptMetadata {
   /** Domain triggers for Delegation Table */
   triggers: DelegationTrigger[]
 
+  /** Skills to auto-load when delegating to this agent (max 5 to prevent context bloat) */
+  skills?: string[]
+
   /** When to use this agent (for detailed sections) */
   useWhen?: string[]
 
@@ -48,7 +51,7 @@ export interface AgentPromptMetadata {
   /** Nickname/alias used in prompt (e.g., "Oracle" instead of "oracle") */
   promptAlias?: string
 
-  /** Key triggers that should appear in Phase 0 (e.g., "External library mentioned → fire librarian") */
+  /** Key triggers that should appear in Phase 0 (e.g., "External library mentioned → fire R2 - researcher") */
   keyTrigger?: string
 }
 
@@ -81,7 +84,7 @@ export type BuiltinAgentName =
   | "G5 - debugger"
   | "W7 - writer"
   | "M10 - critic"
-  | "B3 - router"
+  | "B3 - security"
   | "O9 - specialist"
   // Growth
   | "Senshi - distributor"
