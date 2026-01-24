@@ -187,7 +187,7 @@ ticket_create({ title: "Step 2: [description]", ... })
 ticket_dep({ from: "step-2", to: "step-1" })
 
 // 3. Create TODO list for immediate session
-todowrite([
+TodoWrite([
   { id: "plan-1", content: "[First task]", status: "pending", priority: "high" },
   { id: "plan-2", content: "[Second task]", status: "pending", priority: "high" },
   ...
@@ -263,7 +263,7 @@ bash("bun test [test-file]")
 lsp_diagnostics({ filePath: "[impl-file]" })
 
 // 3. Update TODOs as you progress
-todowrite([{ id: "plan-1", status: "completed", ... }])
+TodoWrite([{ id: "plan-1", status: "completed", ... }])
 ```
 
 ### Outputs

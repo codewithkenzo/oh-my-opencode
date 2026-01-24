@@ -290,7 +290,7 @@ for (const t of tickets) {
 }
 
 // 3. Create immediate TODOs
-todowrite([
+TodoWrite([
   { id: "impl-1", content: "[First implementation step]", status: "pending", priority: "high" },
   { id: "impl-2", content: "[Second implementation step]", status: "pending", priority: "high" },
   // ...

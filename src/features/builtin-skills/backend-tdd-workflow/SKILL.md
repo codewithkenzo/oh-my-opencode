@@ -62,7 +62,7 @@ supermemory({
 ### 0.3 Create TODO List
 
 ```typescript
-todowrite([
+TodoWrite([
   { id: "tdd-1", content: "Write failing test for [feature]", status: "pending", priority: "high" },
   { id: "tdd-2", content: "Implement minimum code to pass", status: "pending", priority: "high" },
   { id: "tdd-3", content: "Refactor while keeping tests green", status: "pending", priority: "medium" },
@@ -79,7 +79,7 @@ todowrite([
 
 ```typescript
 // Mark TODO in_progress
-todowrite([{ id: "tdd-1", status: "in_progress", ... }])
+TodoWrite([{ id: "tdd-1", status: "in_progress", ... }])
 
 delegate_task({
   subagent_type: "D5 - backend builder",
@@ -125,7 +125,7 @@ bun test [test-file-path]
 
 ```typescript
 // Mark complete
-todowrite([{ id: "tdd-1", status: "completed", ... }])
+TodoWrite([{ id: "tdd-1", status: "completed", ... }])
 ```
 
 ---
@@ -136,7 +136,7 @@ todowrite([{ id: "tdd-1", status: "completed", ... }])
 
 ```typescript
 // Mark TODO in_progress
-todowrite([{ id: "tdd-2", status: "in_progress", ... }])
+TodoWrite([{ id: "tdd-2", status: "in_progress", ... }])
 
 delegate_task({
   subagent_type: "D5 - backend builder",
@@ -183,7 +183,7 @@ bun test [test-file-path]
 ### 2.3 Complete GREEN Phase
 
 ```typescript
-todowrite([{ id: "tdd-2", status: "completed", ... }])
+TodoWrite([{ id: "tdd-2", status: "completed", ... }])
 ```
 
 ---
@@ -194,7 +194,7 @@ todowrite([{ id: "tdd-2", status: "completed", ... }])
 
 ```typescript
 // Mark TODO in_progress
-todowrite([{ id: "tdd-3", status: "in_progress", ... }])
+TodoWrite([{ id: "tdd-3", status: "in_progress", ... }])
 
 // Check diagnostics before refactoring
 lsp_diagnostics({ filePath: "[implementation-file]" })
@@ -252,7 +252,7 @@ bun test [test-file-path]
 ### 3.4 Complete REFACTOR Phase
 
 ```typescript
-todowrite([{ id: "tdd-3", status: "completed", ... }])
+TodoWrite([{ id: "tdd-3", status: "completed", ... }])
 ```
 
 ---
@@ -263,7 +263,7 @@ todowrite([{ id: "tdd-3", status: "completed", ... }])
 
 ```typescript
 // Mark TODO in_progress
-todowrite([{ id: "tdd-4", status: "in_progress", ... }])
+TodoWrite([{ id: "tdd-4", status: "in_progress", ... }])
 
 // Run full test suite
 bash("bun test")
@@ -297,7 +297,7 @@ supermemory({
 ### 4.3 Complete Verification
 
 ```typescript
-todowrite([{ id: "tdd-4", status: "completed", ... }])
+TodoWrite([{ id: "tdd-4", status: "completed", ... }])
 ```
 
 ---
@@ -308,7 +308,7 @@ todowrite([{ id: "tdd-4", status: "completed", ... }])
 
 ```typescript
 // Mark TODO in_progress
-todowrite([{ id: "tdd-5", status: "in_progress", ... }])
+TodoWrite([{ id: "tdd-5", status: "in_progress", ... }])
 
 // Close the ticket
 ticket_close({
@@ -317,7 +317,7 @@ ticket_close({
 })
 
 // Complete final TODO
-todowrite([{ id: "tdd-5", status: "completed", ... }])
+TodoWrite([{ id: "tdd-5", status: "completed", ... }])
 ```
 
 ### 5.2 Commit (if requested)

@@ -86,7 +86,7 @@ supermemory({
 
 ```typescript
 // Create actionable steps for this session
-todowrite([
+TodoWrite([
   { id: "step-1", content: "[First actionable step]", status: "pending", priority: "high" },
   { id: "step-2", content: "[Second actionable step]", status: "pending", priority: "high" },
   { id: "step-3", content: "[Third actionable step]", status: "pending", priority: "medium" },
@@ -122,13 +122,13 @@ ticket_dep({ from: "T-001", to: "BLOCKER-ID" })
 
 ```typescript
 // For each TODO item:
-todowrite([{ id: "step-1", status: "in_progress", ... }])
+TodoWrite([{ id: "step-1", status: "in_progress", ... }])
 
 // Do the work...
 // Use appropriate agents for different domains
 
 // Mark complete when done
-todowrite([{ id: "step-1", status: "completed", ... }])
+TodoWrite([{ id: "step-1", status: "completed", ... }])
 ```
 
 ### 2.2 Handle Discovered Blockers
@@ -190,7 +190,7 @@ bash("bun test")
 bash("bun run typecheck")
 
 // Mark verification TODO complete
-todowrite([{ id: "verify", status: "completed", ... }])
+TodoWrite([{ id: "verify", status: "completed", ... }])
 ```
 
 ### 3.2 Close Ticket
@@ -329,7 +329,7 @@ supermemory({ mode: "search", query: "[domain]" })
 ticket_start({ id: "[ticket-id]" })
 
 // 4. Create TODOs
-todowrite([...])
+TodoWrite([...])
 ```
 
 ### Session End Ritual
