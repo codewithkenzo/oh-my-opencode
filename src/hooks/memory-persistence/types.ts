@@ -18,6 +18,8 @@ export interface MemoryPersistenceConfig {
   min_session_length: number
   /** Minimum confidence for storing patterns (0-1) */
   pattern_confidence_threshold: number
+  /** Lookback window for error context detection (default: 10) */
+  error_lookback_window: number
 }
 
 /**

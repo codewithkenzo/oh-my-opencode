@@ -34,7 +34,7 @@ export async function extractPatterns(
   }
 
   try {
-    const patterns = detectPatterns(messages, config.pattern_confidence_threshold)
+    const patterns = detectPatterns(messages, config.pattern_confidence_threshold, config.error_lookback_window)
 
     if (patterns.length === 0) {
       return emptyResult
@@ -88,7 +88,7 @@ export async function extractPatterns(
   }
 }
 
-function detectPatterns(messages: MessageLike[], minConfidence: number): ExtractedPattern[] {
+function detectPatterns(messages: MessageLike[], minConfidence: number, errorLookbackWindow: number): ExtractedPattern[] {
   const patterns: ExtractedPattern[] = []
 
   for (let i = 0; i < messages.length; i++) {
@@ -109,7 +109,7 @@ function detectPatterns(messages: MessageLike[], minConfidence: number): Extract
     }
 
     if (message.role === "assistant") {
-      const errorFix = detectErrorResolution(messages, i)
+      const errorFix = detectErrorResolution(messages, i, errorLookbackWindow)
       if (errorFix && errorFix.confidence >= minConfidence) {
         patterns.push(errorFix)
       }
@@ -156,7 +156,7 @@ function detectExplicitRemember(content: string): ExtractedPattern | null {
   }
 }
 
-function detectErrorResolution(messages: MessageLike[], index: number): ExtractedPattern | null {
+function detectErrorResolution(messages: MessageLike[], index: number, lookbackWindow: number): ExtractedPattern | null {
   const message = messages[index]
   const content = message.content.toLowerCase()
 
@@ -167,7 +167,7 @@ function detectErrorResolution(messages: MessageLike[], index: number): Extracte
   }
 
   let errorContext = ""
-  for (let i = index - 1; i >= Math.max(0, index - 3); i--) {
+  for (let i = index - 1; i >= Math.max(0, index - lookbackWindow); i--) {
     const prev = messages[i]
     if (prev.content.toLowerCase().includes("error") || prev.content.toLowerCase().includes("failed")) {
       errorContext = prev.content.slice(0, 300)

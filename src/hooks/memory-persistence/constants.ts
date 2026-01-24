@@ -16,6 +16,7 @@ export const DEFAULT_MEMORY_CONFIG: MemoryPersistenceConfig = {
   recall_limit: 5,
   min_session_length: 5,
   pattern_confidence_threshold: 0.7,
+  error_lookback_window: 10,
 }
 
 /**

@@ -43,7 +43,8 @@ export function createMemoryPersistenceHook(
   const contextCollector = options?.contextCollector
   const processedSessions = new Set<string>()
   const processingInProgress = new Set<string>()
-  const sessionMessages = new Map<string, Array<{ role: string; content: string }>>()
+  // Store messages by ID to dedupe streaming updates (message.updated fires per-token)
+  const sessionMessages = new Map<string, Map<string, { role: string; content: string }>>()
   const MAX_MESSAGES_PER_SESSION = 100
 
   async function handleSessionCreated(sessionInfo: SessionInfo): Promise<void> {
@@ -90,14 +91,17 @@ export function createMemoryPersistenceHook(
     if (!config.enabled || !config.extract_patterns) return
     if (!isConfigured()) return
 
-    const messages = sessionMessages.get(sessionId)
-    if (!messages || messages.length < config.min_session_length) {
+    const messageMap = sessionMessages.get(sessionId)
+    if (!messageMap || messageMap.size < config.min_session_length) {
       log("[memory-persistence] skip extraction - insufficient messages", {
         sessionId,
-        count: messages?.length || 0,
+        count: messageMap?.size || 0,
       })
       return
     }
+
+    // Convert map to array for extraction
+    const messages = Array.from(messageMap.values())
 
     try {
       const result = await extractPatterns(sessionId, ctx.directory, config, messages)
@@ -108,22 +112,32 @@ export function createMemoryPersistenceHook(
       })
     } catch (error) {
       log("[memory-persistence] extraction failed", { sessionId, error: String(error) })
+    } finally {
+      // Clear messages after extraction to prevent memory bloat on long-running sessions
+      sessionMessages.delete(sessionId)
     }
   }
 
-  function handleMessageUpdated(info: MessageInfo & { sessionID?: string }): void {
+  function handleMessageUpdated(info: MessageInfo & { sessionID?: string; messageID?: string }): void {
     if (!info.sessionID || !info.role || !info.content) return
 
-    let messages = sessionMessages.get(info.sessionID)
-    if (!messages) {
-      messages = []
-      sessionMessages.set(info.sessionID, messages)
+    let messageMap = sessionMessages.get(info.sessionID)
+    if (!messageMap) {
+      messageMap = new Map()
+      sessionMessages.set(info.sessionID, messageMap)
     }
 
-    messages.push({ role: info.role, content: info.content })
+    // Use messageID to dedupe streaming updates (message.updated fires per-token)
+    // If no messageID, use content hash as fallback
+    const key = info.messageID || `${info.role}:${info.content.slice(0, 50)}`
+    messageMap.set(key, { role: info.role, content: info.content })
 
-    if (messages.length > MAX_MESSAGES_PER_SESSION) {
-      messages.splice(0, messages.length - MAX_MESSAGES_PER_SESSION)
+    // Enforce max messages by removing oldest entries
+    if (messageMap.size > MAX_MESSAGES_PER_SESSION) {
+      const keysToDelete = Array.from(messageMap.keys()).slice(0, messageMap.size - MAX_MESSAGES_PER_SESSION)
+      for (const k of keysToDelete) {
+        messageMap.delete(k)
+      }
     }
   }
 

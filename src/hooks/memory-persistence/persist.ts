@@ -59,11 +59,18 @@ function buildSessionState(sessionId: string, summary?: string): SessionState {
     const lines = summary.split("\n")
     for (const line of lines) {
       const trimmed = line.trim()
-      if (trimmed.startsWith("- Decision:") || trimmed.includes("decided to")) {
+      const lower = trimmed.toLowerCase()
+
+      // Match decision patterns: "- Decision:", "decided to", "chose to", "will use"
+      if (trimmed.startsWith("- Decision:") || lower.includes("decided to") || lower.includes("chose to") || lower.includes("will use")) {
         decisions.push(trimmed)
-      } else if (trimmed.startsWith("- Blocker:") || trimmed.includes("blocked by")) {
+      }
+      // Match blocker patterns: "- Blocker:", "blocked by", "waiting on", "depends on"
+      else if (trimmed.startsWith("- Blocker:") || lower.includes("blocked by") || lower.includes("waiting on") || lower.includes("depends on")) {
         blockers.push(trimmed)
-      } else if (trimmed.startsWith("- Next:") || trimmed.includes("next step")) {
+      }
+      // Match next step patterns: "- Next:", "next step", "todo:", "remaining:", "will need to"
+      else if (trimmed.startsWith("- Next:") || lower.includes("next step") || lower.startsWith("todo:") || lower.startsWith("remaining:") || lower.includes("will need to")) {
         nextSteps.push(trimmed)
       }
     }
