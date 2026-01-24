@@ -45,11 +45,6 @@ export async function extractPatterns(
     let skippedCount = 0
 
     for (const pattern of patterns) {
-      if (pattern.confidence < config.pattern_confidence_threshold) {
-        skippedCount++
-        continue
-      }
-
       const content = formatPatternForStorage(pattern)
       const sanitizedContent = stripPrivateContent(content)
 

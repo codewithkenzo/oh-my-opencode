@@ -21,40 +21,31 @@ export async function recallMemories(
 
   try {
     const tags = getTags(directory)
+    const seenIds = new Set<string>()
     const memories: RecalledMemory[] = []
 
+    const searchQuery = "session context decisions patterns preferences errors solutions"
+
     const [userResults, projectResults] = await Promise.all([
-      supermemoryClient.searchMemories("recent session context decisions", tags.user),
-      supermemoryClient.searchMemories("recent session context decisions", tags.project),
+      supermemoryClient.searchMemories(searchQuery, tags.user),
+      supermemoryClient.searchMemories(searchQuery, tags.project),
     ])
 
-    if (userResults.results) {
-      for (const result of userResults.results) {
-        if (result.similarity >= MIN_SIMILARITY_SCORE) {
-          memories.push({
-            id: result.id,
-            content: result.memory || result.chunk || "",
-            type: (result.metadata?.type as RecalledMemory["type"]) || "session-context",
-            similarity: result.similarity,
-            createdAt: result.metadata?.createdAt as string | undefined,
-          })
-        }
-      }
+    const addMemory = (result: typeof userResults.results extends (infer T)[] | undefined ? T : never) => {
+      if (!result || result.similarity < MIN_SIMILARITY_SCORE) return
+      if (seenIds.has(result.id)) return
+      seenIds.add(result.id)
+      memories.push({
+        id: result.id,
+        content: result.memory || result.chunk || "",
+        type: (result.metadata?.type as RecalledMemory["type"]) || "session-context",
+        similarity: result.similarity,
+        createdAt: result.metadata?.createdAt as string | undefined,
+      })
     }
 
-    if (projectResults.results) {
-      for (const result of projectResults.results) {
-        if (result.similarity >= MIN_SIMILARITY_SCORE) {
-          memories.push({
-            id: result.id,
-            content: result.memory || result.chunk || "",
-            type: (result.metadata?.type as RecalledMemory["type"]) || "session-context",
-            similarity: result.similarity,
-            createdAt: result.metadata?.createdAt as string | undefined,
-          })
-        }
-      }
-    }
+    userResults.results?.forEach(addMemory)
+    projectResults.results?.forEach(addMemory)
 
     memories.sort((a, b) => b.similarity - a.similarity)
 

@@ -42,7 +42,9 @@ export function createMemoryPersistenceHook(
 
   const contextCollector = options?.contextCollector
   const processedSessions = new Set<string>()
+  const processingInProgress = new Set<string>()
   const sessionMessages = new Map<string, Array<{ role: string; content: string }>>()
+  const MAX_MESSAGES_PER_SESSION = 100
 
   async function handleSessionCreated(sessionInfo: SessionInfo): Promise<void> {
     if (!config.enabled || !config.recall_on_start) return
@@ -52,13 +54,14 @@ export function createMemoryPersistenceHook(
       return
     }
     if (processedSessions.has(sessionInfo.id)) return
+    if (processingInProgress.has(sessionInfo.id)) return
 
     if (!isConfigured()) {
       log("[memory-persistence] supermemory not configured, skip recall")
       return
     }
 
-    processedSessions.add(sessionInfo.id)
+    processingInProgress.add(sessionInfo.id)
 
     try {
       const result = await recallMemories(sessionInfo.id, ctx.directory, config)
@@ -77,6 +80,9 @@ export function createMemoryPersistenceHook(
       }
     } catch (error) {
       log("[memory-persistence] recall failed", { sessionId: sessionInfo.id, error: String(error) })
+    } finally {
+      processingInProgress.delete(sessionInfo.id)
+      processedSessions.add(sessionInfo.id)
     }
   }
 
@@ -115,6 +121,10 @@ export function createMemoryPersistenceHook(
     }
 
     messages.push({ role: info.role, content: info.content })
+
+    if (messages.length > MAX_MESSAGES_PER_SESSION) {
+      messages.splice(0, messages.length - MAX_MESSAGES_PER_SESSION)
+    }
   }
 
   function handleSessionDeleted(sessionId: string): void {
