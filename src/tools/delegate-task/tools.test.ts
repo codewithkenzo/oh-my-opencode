@@ -1089,16 +1089,16 @@ describe("sisyphus-task", () => {
       expect(Array.isArray(skills)).toBe(true)
     })
 
-    test("quick category has empty skills array (no skills needed)", () => {
+    test("quick category has git-master skill for fast git operations", () => {
       // #given
       const { CATEGORY_SKILLS } = require("./constants")
       
       // #when
       const skills = CATEGORY_SKILLS["quick"]
       
-      // #then - quick tasks don't need domain skills
+      // #then - quick tasks benefit from git-master for atomic commits
       expect(skills).toBeDefined()
-      expect(skills).toEqual([])
+      expect(skills).toContain("git-master")
     })
 
     test("all default categories have CATEGORY_SKILLS entry", () => {
