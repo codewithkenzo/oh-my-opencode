@@ -72,11 +72,36 @@ gh pr view <PR_NUMBER> --comments --json comments -q '.comments[-1]'
 
 ### Parse Greptile Score
 
-Look for patterns like:
-- "Score: X/5"
-- "Rating: X/5"  
-- "Overall: X/5"
-- Count of issues/suggestions (0 issues = likely 5/5)
+Greptile uses a consistent format with `<h3>Confidence Score: X/5</h3>` in their HTML response.
+
+**Primary Detection (Recommended):**
+```bash
+# Extract score from Greptile's HTML comment
+gh pr view <PR_NUMBER> --comments --json comments \
+  -q '.comments[] | select(.author.login == "greptile-apps") | .body' \
+  | grep -oP 'Confidence Score: \K[0-9]/5' | tail -1
+```
+
+**Fallback Detection (if format changes):**
+Look for these patterns in the review comment:
+- `Confidence Score: X/5` (current Greptile format)
+- `Score: X/5`
+- `Rating: X/5`
+- "Safe to merge" language typically indicates 4/5 or 5/5
+
+**Score Interpretation:**
+| Score | Meaning | Action |
+|-------|---------|--------|
+| 5/5 | No issues found | Ready to merge |
+| 4/5 | Minor issues, safe to merge | Fix if quick, otherwise merge |
+| 3/5 | Notable issues | Must fix before merge |
+| 2/5 | Significant problems | Requires substantial work |
+| 1/5 | Critical issues | Likely needs redesign |
+
+**Important:** If Greptile changes their format and detection fails, fall back to reading the review text manually. The key signals are:
+- Presence/absence of "Issues Found" section
+- Language like "safe to merge" vs "must address"
+- Number and severity of bullet points in findings
 
 ## Rules
 
