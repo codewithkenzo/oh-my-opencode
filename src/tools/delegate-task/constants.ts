@@ -229,14 +229,20 @@ export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 
 export const CATEGORY_SKILLS: Record<string, string[]> = {
   "visual-engineering": [
-    "frontend-ui-ux",
+    "frontend-ui-ux", // builtin - Designer-turned-developer for UI/UX
   ],
-  ultrabrain: [],
-  artistry: [],
-  quick: [],
-  "most-capable": [],
-  writing: [],
-  general: [],
+  ultrabrain: [], // No matching skills available yet
+  artistry: [
+    "frontend-ui-ux", // builtin - Strong aesthetic focus for creative UI work
+  ],
+  quick: [
+    "git-master", // builtin - Atomic commits, rebase/squash, history search
+  ],
+  "most-capable": [], // Intentionally empty - agent chooses skills dynamically
+  writing: [], // No matching skills available yet
+  general: [
+    "linearis", // builtin - Linear CLI for issue tracking
+  ],
 }
 
 const BUILTIN_CATEGORIES = Object.keys(DEFAULT_CATEGORIES).join(", ")
