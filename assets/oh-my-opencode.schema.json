@@ -101,7 +101,8 @@
           "delegate-task-retry",
           "prometheus-md-only",
           "start-work",
-          "sisyphus-orchestrator"
+          "sisyphus-orchestrator",
+          "memory-persistence"
         ]
       }
     },
@@ -5494,6 +5495,51 @@
         "wsl_auto_launch": {
           "default": true,
           "type": "boolean"
+        }
+      }
+    },
+    "memory_persistence": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "type": "boolean"
+        },
+        "recall_on_start": {
+          "default": true,
+          "type": "boolean"
+        },
+        "persist_on_compact": {
+          "default": true,
+          "type": "boolean"
+        },
+        "extract_patterns": {
+          "default": true,
+          "type": "boolean"
+        },
+        "recall_limit": {
+          "default": 5,
+          "type": "number",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "min_session_length": {
+          "default": 5,
+          "type": "number",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "pattern_confidence_threshold": {
+          "default": 0.7,
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "error_lookback_window": {
+          "default": 10,
+          "type": "number",
+          "minimum": 1,
+          "maximum": 50
         }
       }
     }
