@@ -113,6 +113,7 @@ export const HookNameSchema = z.enum([
   "prometheus-md-only",
   "start-work",
   "sisyphus-orchestrator",
+  "memory-persistence",
 ])
 
 export const BuiltinCommandNameSchema = z.enum([
@@ -359,6 +360,23 @@ export const BrowserConfigSchema = z.object({
   wsl_auto_launch: z.boolean().default(true),
 })
 
+export const MemoryPersistenceConfigSchema = z.object({
+  /** Enable memory persistence (default: true) */
+  enabled: z.boolean().default(true),
+  /** Recall memories on session start (default: true) */
+  recall_on_start: z.boolean().default(true),
+  /** Persist state before compaction (default: true) */
+  persist_on_compact: z.boolean().default(true),
+  /** Extract patterns on session end (default: true) */
+  extract_patterns: z.boolean().default(true),
+  /** Max memories to recall (default: 5) */
+  recall_limit: z.number().min(1).max(20).default(5),
+  /** Min messages for extraction (default: 5) */
+  min_session_length: z.number().min(1).max(50).default(5),
+  /** Min confidence for patterns (default: 0.7) */
+  pattern_confidence_threshold: z.number().min(0).max(1).default(0.7),
+})
+
 export const CategorySkillsConfigSchema = z.record(z.string(), z.array(z.string()))
 
 export const OhMyOpenCodeConfigSchema = z.object({
@@ -382,6 +400,7 @@ export const OhMyOpenCodeConfigSchema = z.object({
   notification: NotificationConfigSchema.optional(),
   git_master: GitMasterConfigSchema.optional(),
   browser: BrowserConfigSchema.optional(),
+  memory_persistence: MemoryPersistenceConfigSchema.optional(),
 })
 
 export type OhMyOpenCodeConfig = z.infer<typeof OhMyOpenCodeConfigSchema>
@@ -404,6 +423,7 @@ export type CategoryConfig = z.infer<typeof CategoryConfigSchema>
 export type CategoriesConfig = z.infer<typeof CategoriesConfigSchema>
 export type CategorySkillsConfig = z.infer<typeof CategorySkillsConfigSchema>
 export type BuiltinCategoryName = z.infer<typeof BuiltinCategoryNameSchema>
+export type MemoryPersistenceConfig = z.infer<typeof MemoryPersistenceConfigSchema>
 export type GitMasterConfig = z.infer<typeof GitMasterConfigSchema>
 export type BrowserConfig = z.infer<typeof BrowserConfigSchema>
 

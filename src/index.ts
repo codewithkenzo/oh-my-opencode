@@ -31,6 +31,7 @@ import {
   createStartWorkHook,
   createSisyphusOrchestratorHook,
   createPrometheusMdOnlyHook,
+  createMemoryPersistenceHook,
 } from "./hooks";
 import {
   contextCollector,
@@ -206,6 +207,13 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
 
   const prometheusMdOnly = isHookEnabled("prometheus-md-only")
     ? createPrometheusMdOnlyHook(ctx)
+    : null;
+
+  const memoryPersistence = isHookEnabled("memory-persistence")
+    ? createMemoryPersistenceHook(ctx, {
+        config: pluginConfig.memory_persistence,
+        contextCollector,
+      })
     : null;
 
   const taskResumeInfo = createTaskResumeInfoHook();
@@ -423,6 +431,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await interactiveBashSession?.event(input);
       await ralphLoop?.event(input);
       await sisyphusOrchestrator?.handler(input);
+      await memoryPersistence?.event(input);
 
       const { event } = input;
       const props = event.properties as Record<string, unknown> | undefined;
