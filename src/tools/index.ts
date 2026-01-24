@@ -124,8 +124,9 @@ import { browserTools } from "./agent-browser"
 import { system_notify } from "./system-notify"
 export { sendSystemNotification } from "./system-notify"
 
-// Custom tools - supermemory (factory function)
-export { createSupermemoryTool } from "./supermemory"
+// Custom tools - supermemory
+import { createSupermemoryTool } from "./supermemory"
+export { createSupermemoryTool }
 
 type OpencodeClient = PluginInput["client"]
 

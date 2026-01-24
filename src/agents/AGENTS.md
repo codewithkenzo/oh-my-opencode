@@ -101,27 +101,39 @@ agents/
 
 ## AGENT MODELS
 
-| Agent | Model | Temperature | Purpose |
-|-------|-------|-------------|---------|
-| Musashi | anthropic/claude-opus-4-5 | 0.1 | Primary orchestrator |
-| Musashi - boulder | anthropic/claude-opus-4-5 | 0.1 | Execution orchestrator |
-| Musashi - plan | anthropic/claude-opus-4-5 | 0.1 | Strategic planning |
-| M1 - analyst | anthropic/claude-sonnet-4-5 | 0.1 | Pre-planning analysis |
-| M2 - reviewer | anthropic/claude-sonnet-4-5 | 0.1 | Plan validation |
-| K9 - advisor | openai/gpt-5.2 | 0.1 | Read-only consultation |
-| X1 - explorer | opencode/grok-code | 0.1 | Fast contextual grep |
-| R2 - researcher | opencode/glm-4.7-free | 0.1 | Docs, GitHub search |
-| V1 - viewer | google/gemini-3-flash | 0.1 | PDF/image analysis |
-| T4 - frontend builder | google/gemini-3-pro-preview | 0.7 | UI generation |
-| D5 - backend builder | opencode/glm-4.7-free | 0.1 | Backend logic |
-| H3 - bulk builder | x-ai/grok-3-beta | 0.1 | Bulk operations |
-| F1 - fast builder | google/gemini-3-flash | 0.3 | Fast scaffolding |
-| S6 - designer | google/gemini-3-pro-preview | 0.7 | Design systems |
-| G5 - debugger | anthropic/claude-sonnet-4-5 | 0.1 | Debugging |
-| W7 - writer | google/gemini-3-flash | 0.3 | Documentation |
-| M10 - critic | google/gemini-3-pro-preview | 0.5 | Visual critique |
-| B3 - security | anthropic/claude-sonnet-4-5 | 0.1 | Security assessment |
+Models are configurable via `~/.config/opencode/oh-my-opencode.json` under `agents.<name>.model`.
+
+| Agent | Default Model | Temperature | Purpose |
+|-------|---------------|-------------|---------|
+| Musashi | system default | 0.1 | Primary orchestrator |
+| Musashi - boulder | system default | 0.1 | Execution orchestrator |
+| Musashi - plan | system default | 0.1 | Strategic planning |
+| M1 - analyst | system default | 0.1 | Pre-planning analysis |
+| M2 - reviewer | system default | 0.1 | Plan validation |
+| K9 - advisor | system default | 0.1 | Read-only consultation |
+| X1 - explorer | system default | 0.1 | Fast contextual grep |
+| R2 - researcher | system default | 0.1 | Docs, GitHub search |
+| V1 - viewer | system default | 0.1 | PDF/image analysis |
+| T4 - frontend builder | system default | 0.7 | UI generation |
+| D5 - backend builder | zai-coding-plan/glm-4.7 | 0.1 | Backend logic |
+| H3 - bulk builder | opencode/grok-code | 0.1 | Bulk operations |
+| F1 - fast builder | system default | 0.3 | Fast scaffolding |
+| S6 - designer | system default | 0.7 | Design systems |
+| G5 - debugger | system default | 0.1 | Debugging |
+| W7 - writer | system default | 0.3 | Documentation |
+| M10 - critic | system default | 0.5 | Visual critique |
+| B3 - security | system default | 0.1 | Security assessment |
 | O9 - specialist | anthropic/claude-opus-4-5 | 0.1 | Complex problems |
+
+Example config override:
+```json
+{
+  "agents": {
+    "X1 - explorer": { "model": "google/antigravity-gemini-3-flash" },
+    "R2 - researcher": { "model": "google/antigravity-gemini-3-flash" }
+  }
+}
+```
 
 ## LEGACY NAME MAPPING
 

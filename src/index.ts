@@ -66,6 +66,7 @@ import {
   discoverCommandsSync,
   sessionExists,
   createDelegateTask,
+  createSupermemoryTool,
   interactive_bash,
   startTmuxCheck,
   lspManager,
@@ -231,6 +232,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
 
   const callOmoAgent = createCallOmoAgent(ctx, backgroundManager);
   const lookAt = createLookAt(ctx);
+  const supermemory = createSupermemoryTool(ctx.directory);
   const delegateTask = createDelegateTask({
     manager: backgroundManager,
     client: ctx.client,
@@ -307,6 +309,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       call_omo_agent: callOmoAgent,
       look_at: lookAt,
       delegate_task: delegateTask,
+      supermemory,
       skill: skillTool,
       find_skills: findSkillsTool,
       skill_mcp: skillMcpTool,
