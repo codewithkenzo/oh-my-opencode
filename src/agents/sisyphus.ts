@@ -263,6 +263,32 @@ delegate_task(category="visual", ...)
 
 **Recovery**: Stop, declare explicitly, then proceed.`
 
+const SISYPHUS_SEARCH_TOOL_SELECTION = `### Search Tool Selection (CRITICAL)
+
+**Choose the RIGHT search tool for the job:**
+
+| Query Type | Tool | When to Use |
+|------------|------|-------------|
+| **Literal/Regex** | \`grep\` | Exact strings, symbols, regex patterns like \`useState(\` |
+| **Structural** | \`ast_grep_search\` | Code patterns, function shapes, class structures |
+| **File Names** | \`glob\` | Find by filename, extension, path pattern |
+| **Definitions** | \`lsp_*\` | Go to definition, find references, symbols |
+| **External Code** | \`grep_app_searchGitHub\` | Find patterns across GitHub repos |
+
+**grep = Primary Local Search** (builtin, no quota):
+\`\`\`typescript
+grep({ pattern: "createServerFn\\\\(", include: "*.ts" })
+grep({ pattern: "TODO|FIXME", path: "./src" })
+grep({ pattern: "export function \\\\w+Hook", include: "*.tsx" })
+\`\`\`
+
+**ast_grep_search = Structural Patterns** (builtin, no quota):
+\`\`\`typescript
+ast_grep_search({ pattern: "async function $NAME($$$) { $$$ }", lang: "typescript" })
+\`\`\`
+
+**For semantic/conceptual searches**: Delegate to \`X1 - explorer\` agent instead of direct tools.`
+
 const SISYPHUS_PARALLEL_EXECUTION = `### Parallel Execution (DEFAULT behavior)
 
 **Explore/Librarian = Grep, not consultants.
@@ -733,6 +759,52 @@ REFACTOR → Improve while staying green
 
 </TDD_Workflow>`
 
+const SISYPHUS_WORKFLOW_SKILLS = `<Workflow_Skills>
+## Structured Workflow Skills (Auto-Invoke)
+
+**TRIGGER these workflows for structured development:**
+
+| Trigger Pattern | Skill | Purpose |
+|-----------------|-------|---------|
+| Backend feature, API endpoint, "test first" | \`backend-tdd-workflow\` | TDD with ticket+memory integration |
+| "ticket", "issue", "what should I work on" | \`ticket-driven-workflow\` | Multi-session tracking |
+| "delegate", "parallel", "subagent" | \`subagent-workflow\` | Agent orchestration patterns |
+| "full workflow", "complete lifecycle" | \`six-stage-workflow\` | Research→Ideate→Plan→Execute→Optimize→Review |
+| "new feature", "feature planning" | \`feature-dev-workflow\` | Requirements→Solution→UI/UX→Implementation |
+
+### Backend Development Pattern
+
+\`\`\`typescript
+// For ANY backend work:
+skill("backend-tdd-workflow")
+
+// This integrates:
+// 1. ticket_start() - claim work
+// 2. supermemory search - find patterns
+// 3. TDD cycle (delegate to D5-backend)
+// 4. supermemory add - store learnings
+// 5. ticket_close() - complete
+\`\`\`
+
+### Full Feature Development Pattern
+
+\`\`\`typescript
+// For new features with multiple phases:
+skill("feature-dev-workflow")
+// Then hand off to:
+skill("backend-tdd-workflow")  // or six-stage-workflow
+\`\`\`
+
+### Workflow Integration
+
+All workflows integrate:
+- **Tickets**: \`ticket_ready()\`, \`ticket_start()\`, \`ticket_close()\`
+- **Memory**: \`supermemory\` search before work, add after learning
+- **Subagents**: Proper delegation with skill injection
+- **Verification**: lsp_diagnostics + tests after each phase
+
+</Workflow_Skills>`
+
 function buildDynamicSisyphusPrompt(
   availableAgents: AvailableAgent[],
   availableTools: AvailableTool[] = [],
@@ -776,6 +848,8 @@ function buildDynamicSisyphusPrompt(
     "",
     librarianSection,
     "",
+    SISYPHUS_SEARCH_TOOL_SELECTION,
+    "",
     SISYPHUS_PRE_DELEGATION_PLANNING,
     "",
     SISYPHUS_PARALLEL_EXECUTION,
@@ -799,6 +873,8 @@ function buildDynamicSisyphusPrompt(
     SISYPHUS_GIT_HYGIENE,
     "",
     SISYPHUS_TDD_WORKFLOW,
+    "",
+    SISYPHUS_WORKFLOW_SKILLS,
     "",
     "---",
     "",
