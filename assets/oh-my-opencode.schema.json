@@ -5476,6 +5476,26 @@
           "type": "boolean"
         }
       }
+    },
+    "browser": {
+      "type": "object",
+      "properties": {
+        "backend": {
+          "default": "agent-browser",
+          "type": "string",
+          "enum": [
+            "agent-browser",
+            "browser"
+          ]
+        },
+        "cdp_port": {
+          "type": "number"
+        },
+        "wsl_auto_launch": {
+          "default": true,
+          "type": "boolean"
+        }
+      }
     }
   }
 }

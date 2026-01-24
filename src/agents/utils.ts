@@ -21,7 +21,7 @@ import { createG5DebuggerAgent } from "./g5-debugger"
 import { createW7WriterAgent } from "./w7-writer"
 import { createKenjaAdvisorAgent } from "./kenja-advisor"
 import { createMiruCriticAgent } from "./m10-critic"
-import { createB3RouterAgent } from "./b3-router"
+import { createB3SecurityAgent } from "./b3-security"
 import { createO9SpecialistAgent } from "./o9-specialist"
 import { createSenshiDistributorAgent } from "./senshi-distributor"
 import { createSeichouGrowthAgent } from "./seichou-growth"
@@ -90,7 +90,7 @@ const agentSources: Record<BuiltinAgentName, AgentSource> = {
   "G5 - debugger": createG5DebuggerAgent,
   "W7 - writer": createW7WriterAgent,
   "M10 - critic": createMiruCriticAgent,
-  "B3 - router": createB3RouterAgent,
+  "B3 - security": createB3SecurityAgent,
   "O9 - specialist": createO9SpecialistAgent,
   // Growth
   "Senshi - distributor": createSenshiDistributorAgent,
@@ -108,28 +108,35 @@ const agentMetadata: Partial<Record<BuiltinAgentName, AgentPromptMetadata>> = {
     category: "advisor",
     cost: "EXPENSIVE",
     triggers: [],
+    skills: ["git-workflow", "test-driven-development", "verification-before-completion"],
   },
   // Validation
   "M1 - analyst": {
     category: "specialist",
     cost: "CHEAP",
     triggers: [{ domain: "Planning", trigger: "Pre-planning analysis needed" }],
+    skills: ["intent-critique", "problem-solving"],
   },
   "M2 - reviewer": {
     category: "specialist",
     cost: "CHEAP",
     triggers: [{ domain: "Planning", trigger: "Plan validation needed" }],
+    skills: ["code-review-excellence", "frontend-code-review"],
   },
   // Explorers
   "X1 - explorer": EXPLORE_PROMPT_METADATA,
   "R2 - researcher": LIBRARIAN_PROMPT_METADATA,
   "V1 - viewer": MULTIMODAL_LOOKER_PROMPT_METADATA,
   // Builders
-  "T4 - frontend builder": FRONTEND_PROMPT_METADATA,
+  "T4 - frontend builder": {
+    ...FRONTEND_PROMPT_METADATA,
+    skills: ["frontend-stack", "component-stack", "motion-system", "tailwind-design-system"],
+  },
   "D5 - backend builder": {
     category: "specialist",
     cost: "CHEAP",
     triggers: [{ domain: "Backend Development", trigger: "API routes, database, server-side logic" }],
+    skills: ["bun-hono-api", "hono-api", "elysiajs", "drizzle-sqlite", "better-auth", "effect-ts-expert"],
   },
   "H3 - bulk builder": {
     category: "utility",
@@ -145,23 +152,29 @@ const agentMetadata: Partial<Record<BuiltinAgentName, AgentPromptMetadata>> = {
     category: "advisor",
     cost: "CHEAP",
     triggers: [{ domain: "Design", trigger: "Design systems, visual hierarchy, color palettes" }],
+    skills: ["ui-designer", "design-system-patterns", "color-palette", "visual-design-foundations"],
   },
   // Specialists
   "G5 - debugger": {
     category: "specialist",
     cost: "CHEAP",
     triggers: [{ domain: "Debugging", trigger: "Bugs, errors, crashes, unexpected behavior" }],
+    skills: ["systematic-debugging", "backend-debugging", "visual-debug", "memory-leak-detection"],
   },
-  "W7 - writer": DOCUMENT_WRITER_PROMPT_METADATA,
+  "W7 - writer": {
+    ...DOCUMENT_WRITER_PROMPT_METADATA,
+    skills: ["crafting-effective-readmes", "writing-clearly-and-concisely", "api-documentation-generator"],
+  },
   "M10 - critic": {
     category: "specialist",
     cost: "CHEAP",
     triggers: [{ domain: "Visual Review", trigger: "UI/UX feedback, accessibility, visual bugs" }],
   },
-  "B3 - router": {
-    category: "utility",
+  "B3 - security": {
+    category: "specialist",
     cost: "CHEAP",
-    triggers: [{ domain: "Task Delegation", trigger: "Builder dispatcher, task routing" }],
+    triggers: [{ domain: "Security", trigger: "Vulnerability assessment, code review, OWASP compliance" }],
+    skills: ["owasp-security", "api-security-best-practices", "vulnerability-scanning", "auth-implementation-patterns"],
   },
   "O9 - specialist": {
     category: "specialist",
@@ -300,8 +313,21 @@ export function createBuiltinAgents(
 
     const override = agentOverrides[agentName]
     const model = override?.model ?? systemDefaultModel
+    const metadata = agentMetadata[agentName]
 
     let config = buildAgent(source, model, mergedCategories, gitMasterConfig)
+
+    if (metadata?.skills?.length && !("skills" in config)) {
+      const configWithSkills = config as AgentConfig & { skills?: string[] }
+      configWithSkills.skills = metadata.skills.slice(0, 5)
+      const { resolved } = resolveMultipleSkills(configWithSkills.skills, { gitMasterConfig })
+      if (resolved.size > 0) {
+        const skillContent = Array.from(resolved.values()).join("\n\n")
+        if (skillContent.length > 0) {
+          config.prompt = config.prompt ? skillContent + "\n\n" + config.prompt : skillContent
+        }
+      }
+    }
 
     if (agentName === "R2 - researcher" && directory && config.prompt) {
       const envContext = createEnvContext()
@@ -314,7 +340,6 @@ export function createBuiltinAgents(
 
     result[name] = config
 
-    const metadata = agentMetadata[agentName]
     if (metadata) {
       availableAgents.push({
         name: agentName,
@@ -349,6 +374,15 @@ export function createBuiltinAgents(
       model: orchestratorModel,
       availableAgents,
     })
+
+    const boulderMetadata = agentMetadata["Musashi - boulder"]
+    if (boulderMetadata?.skills?.length) {
+      const { resolved } = resolveMultipleSkills(boulderMetadata.skills.slice(0, 5), { gitMasterConfig })
+      if (resolved.size > 0) {
+        const skillContent = Array.from(resolved.values()).join("\n\n")
+        orchestratorConfig.prompt = skillContent + (orchestratorConfig.prompt ? "\n\n" + orchestratorConfig.prompt : "")
+      }
+    }
 
     if (orchestratorOverride) {
       orchestratorConfig = mergeAgentConfig(orchestratorConfig, orchestratorOverride)

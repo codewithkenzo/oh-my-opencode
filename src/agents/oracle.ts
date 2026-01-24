@@ -12,6 +12,7 @@ export const ORACLE_PROMPT_METADATA: AgentPromptMetadata = {
     { domain: "Self-review", trigger: "After completing significant implementation" },
     { domain: "Hard debugging", trigger: "After 2+ failed fix attempts" },
   ],
+  skills: ["senior-architect", "software-architecture", "architecture-decision-records"],
   useWhen: [
     "Complex architecture design",
     "After completing significant work",

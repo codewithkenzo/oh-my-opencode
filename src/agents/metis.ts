@@ -130,7 +130,7 @@ call_omo_agent(subagent_type="R2 - researcher", prompt="Find best practices for 
 
 **Behavior**:
 1. Start with open-ended exploration questions
-2. Use explore/librarian to gather context as user provides direction
+2. Use X1 - explorer/R2 - researcher to gather context as user provides direction
 3. Incrementally refine understanding
 4. Don't finalize until user confirms direction
 
@@ -217,7 +217,7 @@ call_omo_agent(subagent_type="R2 - researcher", prompt="Find OSS implementations
 **Rationale**: [Why this classification]
 
 ## Pre-Analysis Findings
-[Results from explore/librarian agents if launched]
+[Results from X1 - explorer/R2 - researcher agents if launched]
 [Relevant codebase patterns discovered]
 
 ## Questions for User
@@ -250,9 +250,9 @@ call_omo_agent(subagent_type="R2 - researcher", prompt="Find OSS implementations
 | \`lsp_find_references\` | Map impact before changes | Refactoring |
 | \`lsp_rename\` | Safe symbol renames | Refactoring |
 | \`ast_grep_search\` | Find structural patterns | Refactoring, Build |
-| \`explore\` agent | Codebase pattern discovery | Build, Research |
-| \`librarian\` agent | External docs, best practices | Build, Architecture, Research |
-| \`oracle\` agent | Read-only consultation. High-IQ debugging, architecture | Architecture |
+| \`X1 - explorer\` agent | Codebase pattern discovery | Build, Research |
+| \`R2 - researcher\` agent | External docs, best practices | Build, Architecture, Research |
+| \`K9 - advisor\` agent | Read-only consultation. High-IQ debugging, architecture | Architecture |
 
 ---
 

@@ -1,7 +1,7 @@
 import { dirname } from "node:path"
 import { tool, type ToolDefinition } from "@opencode-ai/plugin"
-import { TOOL_DESCRIPTION_NO_SKILLS, TOOL_DESCRIPTION_PREFIX } from "./constants"
-import type { SkillArgs, SkillInfo, SkillLoadOptions } from "./types"
+import { TOOL_DESCRIPTION_NO_SKILLS, TOOL_DESCRIPTION_PREFIX, FUNDAMENTAL_SKILLS, SKILL_CATEGORIES } from "./constants"
+import type { SkillArgs, SkillInfo, SkillLoadOptions, FindSkillsArgs } from "./types"
 import type { LoadedSkill } from "../../features/opencode-skill-loader"
 import { getAllSkills, extractSkillTemplate } from "../../features/opencode-skill-loader/skill-content"
 import { injectGitMasterConfig } from "../../features/opencode-skill-loader/skill-content"
@@ -217,10 +217,20 @@ export function createSkillTool(options: SkillLoadOptions = {}): ToolDefinition 
   const getDescription = async (): Promise<string> => {
     if (cachedDescription) return cachedDescription
     const skills = await getSkills()
-    const skillInfos = skills.map(loadedSkillToInfo)
-    cachedDescription = skillInfos.length === 0
-      ? TOOL_DESCRIPTION_NO_SKILLS
-      : TOOL_DESCRIPTION_PREFIX + formatSkillsXml(skillInfos)
+    
+    const fundamentalSet = new Set<string>(FUNDAMENTAL_SKILLS)
+    const fundamentalSkills = skills.filter(s => fundamentalSet.has(s.name))
+    const fundamentalInfos = fundamentalSkills.map(loadedSkillToInfo)
+    
+    if (skills.length === 0) {
+      cachedDescription = TOOL_DESCRIPTION_NO_SKILLS
+    } else {
+      const extraCount = skills.length - fundamentalSkills.length
+      const suffix = extraCount > 0
+        ? `\n\n<note>+${extraCount} more skills available. Use find_skills tool to discover domain-specific skills by category or query.</note>`
+        : ""
+      cachedDescription = TOOL_DESCRIPTION_PREFIX + formatSkillsXml(fundamentalInfos) + suffix
+    }
     return cachedDescription
   }
 
@@ -335,3 +345,62 @@ export function createSkillTool(options: SkillLoadOptions = {}): ToolDefinition 
 }
 
 export const skill: ToolDefinition = createSkillTool()
+
+const FIND_SKILLS_DESCRIPTION = `List all available skills in the project, personal, and superpowers skill libraries.
+
+Use this to discover domain-specific skills beyond the fundamental ones shown in the skill tool.
+
+Categories: ${Object.keys(SKILL_CATEGORIES).join(", ")}`
+
+export function createFindSkillsTool(options: SkillLoadOptions = {}): ToolDefinition {
+  const getSkills = async () => {
+    if (options.skills) return options.skills
+    return getAllSkills()
+  }
+
+  const CATEGORY_KEYS = Object.keys(SKILL_CATEGORIES) as [string, ...string[]]
+  const SCOPE_KEYS = ["project", "user", "opencode", "opencode-project"] as [string, ...string[]]
+
+  return tool({
+    description: FIND_SKILLS_DESCRIPTION,
+    args: {
+      query: tool.schema.string().optional().describe("Search term to filter skills by name/description"),
+      category: tool.schema.enum(CATEGORY_KEYS).optional().describe("Filter by skill category"),
+      scope: tool.schema.enum(SCOPE_KEYS).optional().describe("Filter by skill scope"),
+      limit: tool.schema.number().optional().describe("Max results to return (default: 20)"),
+    },
+    async execute(args: FindSkillsArgs) {
+      const skills = await getSkills()
+      let filtered = skills
+
+      if (args.category && args.category in SKILL_CATEGORIES) {
+        const categorySkillNames = SKILL_CATEGORIES[args.category as keyof typeof SKILL_CATEGORIES]
+        const categorySkills = new Set<string>(categorySkillNames)
+        filtered = filtered.filter(s => categorySkills.has(s.name))
+      }
+
+      if (args.query) {
+        const q = args.query.toLowerCase()
+        filtered = filtered.filter(s =>
+          s.name.toLowerCase().includes(q) ||
+          (s.definition.description?.toLowerCase().includes(q) ?? false)
+        )
+      }
+
+      if (args.scope) {
+        filtered = filtered.filter(s => s.scope === args.scope)
+      }
+
+      const limited = filtered.slice(0, args.limit || 20)
+      const skillInfos = limited.map(loadedSkillToInfo)
+
+      if (skillInfos.length === 0) {
+        return "No skills found matching the criteria."
+      }
+
+      return formatSkillsXml(skillInfos)
+    },
+  })
+}
+
+export const find_skills: ToolDefinition = createFindSkillsTool()

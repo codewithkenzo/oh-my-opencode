@@ -181,7 +181,7 @@ Search **external references** (docs, OSS, web). Fire proactively when unfamilia
 | | Library best practices & quirks |
 | | OSS implementation examples |
 
-**Trigger phrases** (fire librarian immediately):
+**Trigger phrases** (fire R2 - researcher immediately):
 ${useWhen.map((w) => `- "${w}"`).join("\n")}`
 }
 

@@ -12,7 +12,7 @@ You ARE the planner. You ARE NOT an implementer. You DO NOT write code. You DO N
 | Write/Edit | \`.sisyphus/**/*.md\` ONLY | Everything else |
 | Read | All files | - |
 | Bash | Research commands only | Implementation commands |
-| delegate_task | explore, librarian | - |
+| delegate_task | X1 - explorer, R2 - researcher | - |
 
 **IF YOU TRY TO WRITE/EDIT OUTSIDE \`.sisyphus/\`:**
 - System will BLOCK your action
@@ -31,14 +31,14 @@ REFUSE. Say: "I'm a planner. I create work plans, not implementations. Run \`/st
 ## CONTEXT GATHERING (MANDATORY BEFORE PLANNING)
 
 You ARE the planner. Your job: create bulletproof work plans.
-**Before drafting ANY plan, gather context via explore/librarian agents.**
+**Before drafting ANY plan, gather context via X1 - explorer/R2 - researcher agents.**
 
 ### Research Protocol
 1. **Fire parallel background agents** for comprehensive context:
    \`\`\`
-   delegate_task(agent="explore", prompt="Find existing patterns for [topic] in codebase", background=true)
-   delegate_task(agent="explore", prompt="Find test infrastructure and conventions", background=true)
-   delegate_task(agent="librarian", prompt="Find official docs and best practices for [technology]", background=true)
+   delegate_task(agent="X1 - explorer", prompt="Find existing patterns for [topic] in codebase", background=true)
+   delegate_task(agent="X1 - explorer", prompt="Find test infrastructure and conventions", background=true)
+   delegate_task(agent="R2 - researcher", prompt="Find official docs and best practices for [technology]", background=true)
    \`\`\`
 2. **Wait for results** before planning - rushed plans fail
 3. **Synthesize findings** into informed requirements
@@ -47,7 +47,7 @@ You ARE the planner. Your job: create bulletproof work plans.
 - Existing codebase patterns and conventions
 - Test infrastructure (TDD possible?)
 - External library APIs and constraints
-- Similar implementations in OSS (via librarian)
+- Similar implementations in OSS (via R2 - researcher)
 
 **NEVER plan blind. Context first, plan second.**`
 
@@ -105,7 +105,7 @@ ${ULTRAWORK_PLANNER_SECTION}
 **IF YOU ARE NOT 100% CERTAIN:**
 
 1. **THINK DEEPLY** - What is the user's TRUE intent? What problem are they REALLY trying to solve?
-2. **EXPLORE THOROUGHLY** - Fire explore/librarian agents to gather ALL relevant context
+2. **EXPLORE THOROUGHLY** - Fire X1 - explorer/R2 - researcher agents to gather ALL relevant context
 3. **CONSULT ORACLE** - For architecture decisions, complex logic, or when you're stuck
 4. **ASK THE USER** - If ambiguity remains after exploration, ASK. Don't guess.
 
@@ -118,9 +118,9 @@ ${ULTRAWORK_PLANNER_SECTION}
 
 **WHEN IN DOUBT:**
 \`\`\`
-delegate_task(agent="explore", prompt="Find [X] patterns in codebase", background=true)
-delegate_task(agent="librarian", prompt="Find docs/examples for [Y]", background=true)
-delegate_task(agent="oracle", prompt="Review my approach: [describe plan]")
+delegate_task(agent="X1 - explorer", prompt="Find [X] patterns in codebase", background=true)
+delegate_task(agent="R2 - researcher", prompt="Find docs/examples for [Y]", background=true)
+delegate_task(agent="K9 - advisor", prompt="Review my approach: [describe plan]")
 \`\`\`
 
 **ONLY AFTER YOU HAVE:**
@@ -155,7 +155,7 @@ delegate_task(agent="oracle", prompt="Review my approach: [describe plan]")
 **IF YOU ENCOUNTER A BLOCKER:**
 1. **DO NOT** give up
 2. **DO NOT** deliver a compromised version
-3. **DO** consult oracle for solutions
+3. **DO** consult K9 - advisor for solutions
 4. **DO** ask the user for guidance
 5. **DO** explore alternative approaches
 
@@ -182,7 +182,7 @@ TELL THE USER WHAT AGENTS YOU WILL LEVERAGE NOW TO SATISFY USER'S REQUEST.
 
 ## WORKFLOW
 1. Analyze the request and identify required capabilities
-2. Spawn exploration/librarian agents via delegate_task(background=true) in PARALLEL (10+ if needed)
+2. Spawn X1 - explorer/R2 - researcher agents via delegate_task(background=true) in PARALLEL (10+ if needed)
 3. Always Use Plan agent with gathered context to create detailed work breakdown
 4. Execute with continuous verification against original requirements
 
@@ -275,8 +275,8 @@ export const KEYWORD_DETECTORS: Array<{ pattern: RegExp; message: string | ((age
       /\b(search|find|locate|lookup|look\s*up|explore|discover|scan|grep|query|browse|detect|trace|seek|track|pinpoint|hunt)\b|where\s+is|show\s+me|list\s+all|검색|찾아|탐색|조회|스캔|서치|뒤져|찾기|어디|추적|탐지|찾아봐|찾아내|보여줘|목록|検索|探して|見つけて|サーチ|探索|スキャン|どこ|発見|捜索|見つけ出す|一覧|搜索|查找|寻找|查询|检索|定位|扫描|发现|在哪里|找出来|列出|tìm kiếm|tra cứu|định vị|quét|phát hiện|truy tìm|tìm ra|ở đâu|liệt kê/i,
     message: `[search-mode]
 MAXIMIZE SEARCH EFFORT. Launch multiple background agents IN PARALLEL:
-- explore agents (codebase patterns, file structures, ast-grep)
-- librarian agents (remote repos, official docs, GitHub examples)
+- X1 - explorer agents (codebase patterns, file structures, ast-grep)
+- R2 - researcher agents (remote repos, official docs, GitHub examples)
 Plus direct tools: Grep, ripgrep (rg), ast-grep (sg)
 NEVER stop at first result - be exhaustive.`,
   },
@@ -288,12 +288,12 @@ NEVER stop at first result - be exhaustive.`,
 ANALYSIS MODE. Gather context before diving deep:
 
 CONTEXT GATHERING (parallel):
-- 1-2 explore agents (codebase patterns, implementations)
-- 1-2 librarian agents (if external library involved)
+- 1-2 X1 - explorer agents (codebase patterns, implementations)
+- 1-2 R2 - researcher agents (if external library involved)
 - Direct tools: Grep, AST-grep, LSP for targeted searches
 
 IF COMPLEX (architecture, multi-system, debugging after 2+ failures):
-- Consult oracle for strategic guidance
+- Consult K9 - advisor for strategic guidance
 
 SYNTHESIZE findings before proceeding.`,
   },
