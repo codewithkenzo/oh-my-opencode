@@ -112,7 +112,8 @@ import {
 import { zread_search, zread_file, zread_structure } from "./zread"
 
 // Research tools - exa, context7, grep-app, webfetch
-import { websearch } from "./exa"
+import { websearch as exa_websearch } from "./exa"
+import { codesearch as exa_codesearch } from "./codesearch"
 import { context7_resolve_library_id, context7_query_docs } from "./context7"
 import { grep_app_searchGitHub } from "./grep-app"
 import { webfetch } from "./webfetch"
@@ -205,7 +206,8 @@ export const builtinTools: Record<string, ToolDefinition> = {
   zread_search,
   zread_file,
   zread_structure,
-  websearch,
+  exa_websearch,
+  exa_codesearch,
   context7_resolve_library_id,
   context7_query_docs,
   grep_app_searchGitHub,
