@@ -796,8 +796,7 @@ describe("ralph-loop", () => {
   })
 
   describe("API timeout protection", () => {
-    // FIXME: Flaky in CI - times out intermittently
-    test.skip("should not hang when session.messages() times out", async () => {
+    test("should not hang when session.messages() times out", async () => {
       // #given - slow API that takes longer than timeout
       const slowMock = {
         ...createMockPluginInput(),
@@ -807,7 +806,7 @@ describe("ralph-loop", () => {
             ...createMockPluginInput().client.session,
             messages: async () => {
               // Simulate slow API (would hang without timeout)
-              await new Promise((resolve) => setTimeout(resolve, 10000))
+              await new Promise((resolve) => setTimeout(resolve, 200))
               return { data: [] }
             },
           },

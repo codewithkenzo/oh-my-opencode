@@ -31,6 +31,10 @@ export function getMainSessionID(): string | undefined {
   return _mainSessionID
 }
 
+export function clearMainSession(): void {
+  _mainSessionID = undefined
+}
+
 /** @internal For testing only */
 export function _resetForTesting(): void {
   _mainSessionID = undefined
