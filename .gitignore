@@ -15,6 +15,10 @@ packages/*/bin/oh-my-opencode.exe
 *.swp
 *.swo
 
+# Editor backups
+.backup/
+.claude.bak/
+
 # OS
 .DS_Store
 Thumbs.db
