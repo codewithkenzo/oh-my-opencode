@@ -294,7 +294,8 @@ export class LSPClient {
             this.stderrBuffer.shift()
           }
         }
-      } catch {
+      } catch (err) {
+        console.error('[LSP] stderr read error:', err)
       }
     }
     read()
@@ -366,7 +367,8 @@ export class LSPClient {
             handler.resolve(msg.result)
           }
         }
-      } catch {
+      } catch (err) {
+        console.error('[LSP] JSON parse error:', err)
       }
     }
   }

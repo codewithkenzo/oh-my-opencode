@@ -13,7 +13,10 @@ export function detectPlatform(): Platform {
     try {
       const release = readFileSync("/proc/version", "utf8")
       if (release.toLowerCase().includes("microsoft")) return "wsl"
-    } catch {}
+    } catch (err) {
+      // /proc/version may not exist on all Linux systems
+      console.debug('[system-notify] Could not read /proc/version:', err)
+    }
     return "linux"
   }
   return "unsupported"
