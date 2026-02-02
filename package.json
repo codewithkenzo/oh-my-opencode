@@ -57,7 +57,7 @@
     "@code-yeongyu/comment-checker": "^0.6.1",
     "@modelcontextprotocol/sdk": "^1.25.1",
     "@opencode-ai/plugin": "^1.1.30",
-    "@opencode-ai/sdk": "1.1.30",
+    "@opencode-ai/sdk": "^1.1.30",
     "@types/express": "^5.0.6",
     "@types/turndown": "^5.0.6",
     "commander": "^14.0.2",
