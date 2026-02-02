@@ -9,6 +9,18 @@ import { consumeNewMessages } from "../../shared/session-cursor"
 import { findFirstMessageWithAgent, findNearestMessageWithFields, MESSAGE_STORAGE } from "../../features/hook-message-injector"
 import { getSessionAgent } from "../../features/claude-code-session-state"
 
+export interface MessagePart {
+  type?: string
+  text?: string
+  content?: string | Array<{ type: string; text?: string }>
+  name?: string
+}
+
+export interface Message {
+  info?: { role?: string; time?: { created: number; completed?: number } }
+  parts?: MessagePart[]
+}
+
 function getMessageDir(sessionID: string): string | null {
   if (!existsSync(MESSAGE_STORAGE)) return null
 
@@ -303,8 +315,7 @@ async function executeSync(
   const extractedContent: string[] = []
 
   for (const message of newMessages) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const part of (message as any).parts ?? []) {
+    for (const part of (message as Message).parts ?? []) {
       // Handle both "text" and "reasoning" parts (thinking models use "reasoning")
       if ((part.type === "text" || part.type === "reasoning") && part.text) {
         extractedContent.push(part.text)

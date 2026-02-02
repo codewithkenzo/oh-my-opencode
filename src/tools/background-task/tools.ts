@@ -11,6 +11,18 @@ import { consumeNewMessages } from "../../shared/session-cursor"
 
 type OpencodeClient = PluginInput["client"]
 
+export interface MessagePart {
+  type?: string
+  text?: string
+  content?: string | Array<{ type: string; text?: string }>
+  name?: string
+}
+
+export interface Message {
+  info?: { role?: string; time?: { created: number; completed?: number } }
+  parts?: MessagePart[]
+}
+
 function getMessageDir(sessionID: string): string | null {
   if (!existsSync(MESSAGE_STORAGE)) return null
 
@@ -207,16 +219,7 @@ async function formatTaskResult(task: BackgroundTask, client: OpencodeClient): P
   }
 
   // Handle both SDK response structures: direct array or wrapped in .data
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const messages = ((messagesResult as any).data ?? messagesResult) as Array<{
-    info?: { role?: string; time?: string }
-    parts?: Array<{ 
-      type?: string
-      text?: string
-      content?: string | Array<{ type: string; text?: string }>
-      name?: string
-    }>
-  }>
+  const messages = ((messagesResult as { data?: Message[] }).data ?? messagesResult) as Message[]
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return `Task Result
