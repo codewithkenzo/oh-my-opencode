@@ -4,6 +4,12 @@ import type { ConcurrencyManager } from "../background-agent/concurrency"
 
 type OpencodeClient = PluginInput["client"]
 
+interface TuiClient {
+  tui?: {
+    showToast: (args: { body: { title: string; message: string; variant: string; duration: number } }) => Promise<unknown>
+  }
+}
+
 export class TaskToastManager {
   private tasks: Map<string, TrackedTask> = new Map()
   private client: OpencodeClient
@@ -149,8 +155,7 @@ export class TaskToastManager {
    * Show consolidated toast with all running/queued tasks
    */
   private showTaskListToast(newTask: TrackedTask): void {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tuiClient = this.client as any
+    const tuiClient = this.client as TuiClient
     if (!tuiClient.tui?.showToast) return
 
     const message = this.buildTaskListMessage(newTask)
@@ -168,15 +173,14 @@ export class TaskToastManager {
         variant: "info",
         duration: running.length + queued.length > 2 ? 5000 : 3000,
       },
-    }).catch(() => {})
+    }).catch((err) => console.error('Task toast error:', err))
   }
 
   /**
    * Show task completion toast
    */
   showCompletionToast(task: { id: string; description: string; duration: string }): void {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tuiClient = this.client as any
+    const tuiClient = this.client as TuiClient
     if (!tuiClient.tui?.showToast) return
 
     this.removeTask(task.id)
@@ -196,7 +200,7 @@ export class TaskToastManager {
         variant: "success",
         duration: 5000,
       },
-    }).catch(() => {})
+    }).catch((err) => console.error('Task toast error:', err))
   }
 }
 
