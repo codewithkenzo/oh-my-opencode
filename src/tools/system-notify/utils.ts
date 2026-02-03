@@ -15,7 +15,6 @@ export function detectPlatform(): Platform {
       if (release.toLowerCase().includes("microsoft")) return "wsl"
     } catch (err) {
       // /proc/version may not exist on all Linux systems
-      console.debug('[system-notify] Could not read /proc/version:', err)
     }
     return "linux"
   }

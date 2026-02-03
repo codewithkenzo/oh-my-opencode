@@ -127,7 +127,6 @@ export async function downloadCommentChecker(): Promise<string | null> {
   const downloadUrl = `https://github.com/${REPO}/releases/download/v${version}/${assetName}`
   
   debugLog(`Downloading from: ${downloadUrl}`)
-  console.log(`[oh-my-opencode] Downloading comment-checker binary...`)
   
   try {
     // Ensure cache directory exists
@@ -166,7 +165,6 @@ export async function downloadCommentChecker(): Promise<string | null> {
     }
     
     debugLog(`Successfully downloaded binary to: ${binaryPath}`)
-    console.log(`[oh-my-opencode] comment-checker binary ready.`)
     
     return binaryPath
     

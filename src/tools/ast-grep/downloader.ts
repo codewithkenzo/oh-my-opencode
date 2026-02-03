@@ -79,7 +79,6 @@ export async function downloadAstGrep(version: string = DEFAULT_VERSION): Promis
   const assetName = `app-${arch}-${os}.zip`
   const downloadUrl = `https://github.com/${REPO}/releases/download/${version}/${assetName}`
 
-  console.log(`[oh-my-opencode] Downloading ast-grep binary...`)
 
   try {
     if (!existsSync(cacheDir)) {
@@ -106,7 +105,6 @@ export async function downloadAstGrep(version: string = DEFAULT_VERSION): Promis
       chmodSync(binaryPath, 0o755)
     }
 
-    console.log(`[oh-my-opencode] ast-grep binary ready.`)
 
     return binaryPath
   } catch (err) {

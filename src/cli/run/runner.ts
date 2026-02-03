@@ -55,7 +55,6 @@ export async function run(options: RunOptions): Promise<number> {
         return 1
       }
 
-      console.log(pc.dim(`Session: ${sessionID}`))
 
       const ctx: RunContext = {
         client,
