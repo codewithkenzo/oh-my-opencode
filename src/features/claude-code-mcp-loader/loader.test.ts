@@ -160,3 +160,124 @@ describe("getSystemMcpServerNames", () => {
     }
   })
 })
+
+describe("loadRawMcpConfigs", () => {
+  beforeEach(() => {
+    mkdirSync(TEST_DIR, { recursive: true })
+  })
+
+  afterEach(() => {
+    rmSync(TEST_DIR, { recursive: true, force: true })
+  })
+
+  it("loads raw project MCP server configs", async () => {
+    // #given
+    writeFileSync(
+      join(TEST_DIR, ".mcp.json"),
+      JSON.stringify({
+        mcpServers: {
+          playwright: {
+            command: "npx",
+            args: ["@playwright/mcp@latest"],
+          },
+        },
+      })
+    )
+
+    const originalCwd = process.cwd()
+    process.chdir(TEST_DIR)
+
+    try {
+      // #when
+      const { loadRawMcpConfigs } = await import("./loader")
+      const result = await loadRawMcpConfigs()
+
+      // #then
+      expect(result.servers.playwright).toBeDefined()
+      expect(result.servers.playwright.scope).toBe("project")
+      expect(result.servers.playwright.config.command).toBe("npx")
+    } finally {
+      process.chdir(originalCwd)
+    }
+  })
+
+  it("prefers higher-priority scope for duplicate server names", async () => {
+    // #given
+    mkdirSync(join(TEST_DIR, ".claude"), { recursive: true })
+
+    writeFileSync(
+      join(TEST_DIR, ".mcp.json"),
+      JSON.stringify({
+        mcpServers: {
+          shared: {
+            command: "node",
+            args: ["project-server.js"],
+          },
+        },
+      })
+    )
+
+    writeFileSync(
+      join(TEST_DIR, ".claude", ".mcp.json"),
+      JSON.stringify({
+        mcpServers: {
+          shared: {
+            command: "node",
+            args: ["local-server.js"],
+          },
+        },
+      })
+    )
+
+    const originalCwd = process.cwd()
+    process.chdir(TEST_DIR)
+
+    try {
+      // #when
+      const { loadRawMcpConfigs } = await import("./loader")
+      const result = await loadRawMcpConfigs()
+
+      // #then
+      expect(result.servers.shared.scope).toBe("local")
+      expect(result.servers.shared.config.args?.[0]).toBe("local-server.js")
+      expect(result.loadedServers.filter((s) => s.name === "shared")).toHaveLength(1)
+    } finally {
+      process.chdir(originalCwd)
+    }
+  })
+
+  it("excludes disabled MCP servers from raw results", async () => {
+    // #given
+    writeFileSync(
+      join(TEST_DIR, ".mcp.json"),
+      JSON.stringify({
+        mcpServers: {
+          disabledOne: {
+            command: "node",
+            args: ["disabled.js"],
+            disabled: true,
+          },
+          activeOne: {
+            command: "node",
+            args: ["active.js"],
+          },
+        },
+      })
+    )
+
+    const originalCwd = process.cwd()
+    process.chdir(TEST_DIR)
+
+    try {
+      // #when
+      const { loadRawMcpConfigs } = await import("./loader")
+      const result = await loadRawMcpConfigs()
+
+      // #then
+      expect(result.servers.disabledOne).toBeUndefined()
+      expect(result.servers.activeOne).toBeDefined()
+    } finally {
+      process.chdir(originalCwd)
+    }
+  })
+})

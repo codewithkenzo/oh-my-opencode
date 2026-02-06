@@ -3,9 +3,11 @@ import { join } from "path"
 import { getClaudeConfigDir } from "../../shared"
 import type {
   ClaudeCodeMcpConfig,
+  ClaudeCodeMcpServer,
   LoadedMcpServer,
   McpLoadResult,
   McpScope,
+  RawMcpLoadResult,
 } from "./types"
 import { transformMcpServer } from "./transformer"
 import { log } from "../../shared/logger"
@@ -96,6 +98,45 @@ export async function loadMcpConfigs(): Promise<McpLoadResult> {
       } catch (error) {
         log(`Failed to transform MCP server "${name}"`, error)
       }
+    }
+  }
+
+  return { servers, loadedServers }
+}
+
+export async function loadRawMcpConfigs(): Promise<RawMcpLoadResult> {
+  const servers: RawMcpLoadResult["servers"] = {}
+  const loadedServers: RawMcpLoadResult["loadedServers"] = []
+  const paths = getMcpConfigPaths()
+
+  for (const { path, scope } of paths) {
+    const config = await loadMcpConfigFile(path)
+    if (!config?.mcpServers) continue
+
+    for (const [name, serverConfig] of Object.entries(config.mcpServers)) {
+      if (serverConfig.disabled) {
+        log(`Skipping disabled MCP server "${name}"`, { path })
+        continue
+      }
+
+      const rawServer: ClaudeCodeMcpServer = {
+        ...serverConfig,
+      }
+
+      const loaded = {
+        name,
+        scope,
+        config: rawServer,
+      }
+
+      servers[name] = loaded
+
+      const existingIndex = loadedServers.findIndex((s) => s.name === name)
+      if (existingIndex !== -1) {
+        loadedServers.splice(existingIndex, 1)
+      }
+
+      loadedServers.push(loaded)
     }
   }
 
