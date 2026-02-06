@@ -5,7 +5,7 @@ import {
   statSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, relative } from "node:path";
+import { dirname, join, relative, sep } from "node:path";
 import {
   GITHUB_INSTRUCTIONS_PATTERN,
   PROJECT_MARKERS,
@@ -38,11 +38,17 @@ export function findProjectRoot(startPath: string): string | null {
   let current: string;
   const systemTempDir = tmpdir();
   const resolvedSystemTempDir = realpathSync(systemTempDir);
+  const normalizedTempDir = resolvedSystemTempDir.endsWith(sep)
+    ? resolvedSystemTempDir.slice(0, -1)
+    : resolvedSystemTempDir;
 
-  const isSystemTempRoot = (pathValue: string): boolean => {
-    if (pathValue === systemTempDir) return true;
+  const isAtOrUnderSystemTempDir = (pathValue: string): boolean => {
     try {
-      return realpathSync(pathValue) === resolvedSystemTempDir;
+      const resolvedPath = realpathSync(pathValue);
+      return (
+        resolvedPath === normalizedTempDir ||
+        resolvedPath.startsWith(`${normalizedTempDir}${sep}`)
+      );
     } catch {
       return false;
     }
@@ -59,14 +65,13 @@ export function findProjectRoot(startPath: string): string | null {
     for (const marker of PROJECT_MARKERS) {
       const markerPath = join(current, marker);
       if (existsSync(markerPath)) {
-        // Avoid treating shared system temp roots as project roots.
-        // Projects under temp still resolve correctly before reaching this boundary.
-        if (isSystemTempRoot(current)) return null;
+        // Avoid treating shared or nested system-temp paths as project roots.
+        if (isAtOrUnderSystemTempDir(current)) return null;
         return current;
       }
     }
 
-    if (isSystemTempRoot(current)) {
+    if (isAtOrUnderSystemTempDir(current)) {
       return null;
     }
 

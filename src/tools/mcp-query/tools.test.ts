@@ -21,6 +21,18 @@ function createServer(name: string, scope: "user" | "project" | "local"): Loaded
   }
 }
 
+function createServerWithConfig(
+  name: string,
+  scope: "user" | "project" | "local",
+  config: LoadedRawMcpServer["config"]
+): LoadedRawMcpServer {
+  return {
+    name,
+    scope,
+    config,
+  }
+}
+
 describe("mcp_query tool", () => {
   const listTools = mock(async () => [
     { name: "query", description: "Run SQL query" },
@@ -132,6 +144,31 @@ describe("mcp_query tool", () => {
     // #then
     expect(parsed.servers[0]?.errors).toBeDefined()
     expect(parsed.servers[0]?.errors?.some((entry) => entry.includes("prompt API unavailable"))).toBe(true)
+  })
+
+  it("honors explicit stdio type over url in transport labeling", async () => {
+    // #given
+    const tool = createMcpQueryTool({
+      manager,
+      getSessionID: () => "session-1",
+      loadServers: async () => [
+        createServerWithConfig("hybrid", "project", {
+          type: "stdio",
+          command: "node",
+          args: ["server.js"],
+          url: "https://example.com/mcp",
+        }),
+      ],
+    })
+
+    // #when
+    const output = await tool.execute({ include_operations: false }, mockContext)
+    const parsed = JSON.parse(output as string) as {
+      servers: Array<{ transport: string }>
+    }
+
+    // #then
+    expect(parsed.servers[0]?.transport).toBe("stdio")
   })
 
   it("rejects query usage when claude_code.mcp is disabled", async () => {

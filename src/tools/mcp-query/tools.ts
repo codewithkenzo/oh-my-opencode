@@ -37,6 +37,9 @@ function normalizeText(value: string | undefined): string {
 
 function inferTransport(server: LoadedRawMcpServer): "http" | "stdio" {
   const type = server.config.type
+  if (type === "stdio") {
+    return "stdio"
+  }
   if (type === "http" || type === "sse" || server.config.url) {
     return "http"
   }
