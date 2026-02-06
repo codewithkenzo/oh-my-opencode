@@ -29,9 +29,10 @@ import {
   createDelegateTaskRetryHook,
   createTaskResumeInfoHook,
   createStartWorkHook,
-  createSisyphusOrchestratorHook,
+  createAtlasHook,
   createPrometheusMdOnlyHook,
   createMemoryPersistenceHook,
+  createQuestionLabelTruncatorHook,
 } from "./hooks";
 import {
   contextCollector,
@@ -76,7 +77,7 @@ import { BackgroundManager } from "./features/background-agent";
 import { SkillMcpManager } from "./features/skill-mcp-manager";
 import { initTaskToastManager } from "./features/task-toast-manager";
 import { type HookName } from "./config";
-import { log, detectExternalNotificationPlugin, getNotificationConflictWarning, resetMessageCursor } from "./shared";
+import { log, detectExternalNotificationPlugin, getNotificationConflictWarning, resetMessageCursor, includesCaseInsensitive } from "./shared";
 import { loadPluginConfig } from "./plugin-config";
 import { createModelCacheState, getModelLimit } from "./plugin-state";
 import { createConfigHandler } from "./plugin-handlers";
@@ -201,8 +202,12 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     ? createStartWorkHook(ctx)
     : null;
 
-  const sisyphusOrchestrator = isHookEnabled("sisyphus-orchestrator")
-    ? createSisyphusOrchestratorHook(ctx)
+  const questionLabelTruncator = createQuestionLabelTruncatorHook();
+
+  const backgroundManager = new BackgroundManager(ctx, pluginConfig.background_task);
+
+  const atlasHook = isHookEnabled("atlas")
+    ? createAtlasHook(ctx, { directory: ctx.directory, backgroundManager })
     : null;
 
   const prometheusMdOnly = isHookEnabled("prometheus-md-only")
@@ -217,8 +222,6 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     : null;
 
   const taskResumeInfo = createTaskResumeInfoHook();
-
-  const backgroundManager = new BackgroundManager(ctx);
 
   initTaskToastManager(ctx.client);
 
@@ -239,7 +242,14 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
   const backgroundTools = createBackgroundTools(backgroundManager, ctx.client);
 
   const callOmoAgent = createCallOmoAgent(ctx, backgroundManager);
-  const lookAt = createLookAt(ctx);
+  const isLookAtEnabled = !includesCaseInsensitive(
+    pluginConfig.disabled_agents ?? [],
+    "multimodal-looker"
+  ) && !includesCaseInsensitive(
+    pluginConfig.disabled_agents ?? [],
+    "T4 - frontend builder"
+  );
+  const lookAt = isLookAtEnabled ? createLookAt(ctx) : null;
   const supermemory = createSupermemoryTool(ctx.directory);
   const delegateTask = createDelegateTask({
     manager: backgroundManager,
@@ -248,12 +258,15 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     userCategories: pluginConfig.categories,
     userCategorySkills: pluginConfig.category_skills,
     gitMasterConfig: pluginConfig.git_master,
-    sisyphusJuniorModel: pluginConfig.agents?.["Sisyphus-Junior"]?.model ?? pluginConfig.agents?.["J1 - junior"]?.model,
+    sisyphusJuniorModel: (pluginConfig.agents as Record<string, { model?: string }> | undefined)?.["D5 - backend builder"]?.model,
   });
   const disabledSkills = new Set(pluginConfig.disabled_skills ?? []);
   const systemMcpNames = getSystemMcpServerNames();
-  const builtinSkills = createBuiltinSkills().filter((skill) => {
-    if (disabledSkills.has(skill.name as never)) return false;
+  const browserProvider = pluginConfig.browser_automation_engine?.provider ?? "playwright";
+  const builtinSkills = createBuiltinSkills({
+    browserProvider,
+    disabledSkills: disabledSkills.size > 0 ? disabledSkills as Set<string> : undefined,
+  }).filter((skill) => {
     if (skill.mcpConfig) {
       for (const mcpName of Object.keys(skill.mcpConfig)) {
         if (systemMcpNames.has(mcpName)) return false;
@@ -294,7 +307,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     getSessionID: getSessionIDForMcp,
   });
 
-  const commands = discoverCommandsSync(pluginConfig.disabled_commands);
+  const commands = discoverCommandsSync();
   const slashcommandTool = createSlashcommandTool({
     commands,
     skills: mergedSkills,
@@ -315,7 +328,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       ...builtinTools,
       ...backgroundTools,
       call_omo_agent: callOmoAgent,
-      look_at: lookAt,
+      ...(lookAt ? { look_at: lookAt } : {}),
       delegate_task: delegateTask,
       supermemory,
       skill: skillTool,
@@ -327,7 +340,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
 
     "chat.message": async (input, output) => {
       if (input.agent) {
-        updateSessionAgent(input.sessionID, input.agent);
+        setSessionAgent(input.sessionID, input.agent);
       }
 
       const message = (output as { message: { variant?: string } }).message
@@ -430,7 +443,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await agentUsageReminder?.event(input);
       await interactiveBashSession?.event(input);
       await ralphLoop?.event(input);
-      await sisyphusOrchestrator?.handler(input);
+      await atlasHook?.handler(input);
       await memoryPersistence?.event(input);
 
       const { event } = input;
@@ -505,12 +518,15 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await directoryReadmeInjector?.["tool.execute.before"]?.(input, output);
       await rulesInjector?.["tool.execute.before"]?.(input, output);
       await prometheusMdOnly?.["tool.execute.before"]?.(input, output);
+      await questionLabelTruncator["tool.execute.before"]?.(input, output);
+      await atlasHook?.["tool.execute.before"]?.(input, output);
 
       if (input.tool === "task") {
         const args = output.args as Record<string, unknown>;
         const subagentType = args.subagent_type as string;
-        const isExploreOrLibrarian = ["explore", "librarian"].includes(
-          subagentType
+        const isExploreOrLibrarian = includesCaseInsensitive(
+          ["explore", "librarian", "X1 - explorer", "R2 - researcher"],
+          subagentType ?? ""
         );
 
         args.tools = {
@@ -585,7 +601,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await interactiveBashSession?.["tool.execute.after"](input, output);
 await editErrorRecovery?.["tool.execute.after"](input, output);
         await delegateTaskRetry?.["tool.execute.after"](input, output);
-        await sisyphusOrchestrator?.["tool.execute.after"]?.(input, output);
+        await atlasHook?.["tool.execute.after"]?.(input, output);
       await taskResumeInfo["tool.execute.after"](input, output);
     },
   };

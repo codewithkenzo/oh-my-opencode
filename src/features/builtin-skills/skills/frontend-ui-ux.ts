@@ -1,32 +1,10 @@
-import type { AgentConfig } from "@opencode-ai/sdk"
-import type { AgentPromptMetadata } from "./types"
-import { createAgentToolRestrictions } from "../shared/permission-compat"
+import type { BuiltinSkill } from "../types"
 
-export const FRONTEND_PROMPT_METADATA: AgentPromptMetadata = {
-  category: "specialist",
-  cost: "CHEAP",
-  promptAlias: "Frontend UI/UX Engineer",
-  triggers: [
-    { domain: "Frontend UI/UX", trigger: "Visual changes only (styling, layout, animation). Pure logic changes in frontend files → handle directly" },
-  ],
-  useWhen: [
-    "Visual/UI/UX changes: Color, spacing, layout, typography, animation, responsive breakpoints, hover states, shadows, borders, icons, images",
-  ],
-  avoidWhen: [
-    "Pure logic: API calls, data fetching, state management, event handlers (non-visual), type definitions, utility functions, business logic",
-  ],
-}
+export const frontendUiUxSkill: BuiltinSkill = {
 
-export function createFrontendUiUxEngineerAgent(model: string): AgentConfig {
-  const restrictions = createAgentToolRestrictions([])
-
-  return {
-    description:
-      "A designer-turned-developer who crafts stunning UI/UX even without design mockups. Code may be a bit messy, but the visual output is always fire.",
-    mode: "subagent" as const,
-    model,
-    ...restrictions,
-    prompt: `# Role: Designer-Turned-Developer
+  name: "frontend-ui-ux",
+  description: "Designer-turned-developer who crafts stunning UI/UX even without design mockups",
+  template: `# Role: Designer-Turned-Developer
 
 You are a designer who learned to code. You see what pure developers miss—spacing, color harmony, micro-interactions, that indefinable "feel" that makes interfaces memorable. Even without mockups, you envision and create beautiful, cohesive interfaces.
 
@@ -37,7 +15,7 @@ You are a designer who learned to code. You see what pure developers miss—spac
 # Work Principles
 
 1. **Complete what's asked** — Execute the exact task. No scope creep. Work until it works. Never mark work complete without proper verification.
-2. **Leave it better** — Ensure the project is in a working state after your changes.
+2. **Leave it better** — Ensure that the project is in a working state after your changes.
 3. **Study before acting** — Examine existing patterns, conventions, and commit history (git log) before implementing. Understand why code is structured the way it is.
 4. **Blend seamlessly** — Match existing code patterns. Your code should look like the team wrote it.
 5. **Be transparent** — Announce each step. Explain reasoning. Report both successes and failures.
@@ -99,6 +77,4 @@ Match implementation complexity to aesthetic vision:
 - **Minimalist** → Restraint, precision, careful spacing and typography
 
 Interpret creatively and make unexpected choices that feel genuinely designed for the context. No design should be the same. Vary between light and dark themes, different fonts, different aesthetics. You are capable of extraordinary creative work—don't hold back.`,
-  }
 }
-

@@ -20,62 +20,43 @@ export const BuiltinAgentNameSchema = z.enum([
   "Musashi",
   "Musashi - boulder",
   "Musashi - plan",
-  "M1 - analyst",
-  "M2 - reviewer",
-  "J1 - junior",
   "K9 - advisor",
-  "X1 - explorer",
   "R2 - researcher",
-  "V1 - viewer",
+  "X1 - explorer",
   "T4 - frontend builder",
   "D5 - backend builder",
-  "H3 - bulk builder",
-  "F1 - fast builder",
-  "S6 - designer",
-  "G5 - debugger",
-  "W7 - writer",
-  "M10 - critic",
-  "B3 - router",
-  "O9 - specialist",
-  "Senshi - distributor",
-  "Seichou - growth",
-  "Tsunagi - networker",
-  // Legacy names (backward compatibility)
-  "oracle",
-  "librarian",
-  "explore",
-  "frontend-ui-ux-engineer",
-  "document-writer",
-  "multimodal-looker",
-  "orchestrator-sisyphus",
-  "Sisyphus",
-  "Sisyphus-Junior",
-  "Prometheus (Planner)",
 ])
 
 export const BuiltinSkillNameSchema = z.enum([
   "playwright",
+  "agent-browser",
+  "dev-browser",
   "frontend-ui-ux",
   "git-master",
 ])
 
+export const BrowserAutomationProviderSchema = z.enum(["playwright", "agent-browser", "dev-browser"])
+
+export const BrowserAutomationConfigSchema = z.object({
+  /**
+   * Which browser automation provider to use.
+   * - "playwright": Playwright MCP (default)
+   * - "agent-browser": agent-browser CLI
+   * - "dev-browser": Dev browser with persistent page state
+   */
+  provider: BrowserAutomationProviderSchema.default("playwright"),
+})
+
 export const OverridableAgentNameSchema = z.enum([
+  "build",
+  "Musashi",
+  "Musashi - boulder",
+  "Musashi - plan",
+  "K9 - advisor",
+  "R2 - researcher",
+  "X1 - explorer",
   "T4 - frontend builder",
   "D5 - backend builder",
-  "Musashi",
-  "J1 - junior",
-  "K9 - advisor",
-  "X1 - explorer",
-  "R2 - researcher",
-  "V1 - viewer",
-  "W7 - writer",
-  "S6 - designer",
-  "M10 - critic",
-  "B3 - router",
-  "O9 - specialist",
-  "Senshi - distributor",
-  "Seichou - growth",
-  "Tsunagi - networker",
 ])
 
 export const AgentNameSchema = BuiltinAgentNameSchema
@@ -112,7 +93,7 @@ export const HookNameSchema = z.enum([
   "delegate-task-retry",
   "prometheus-md-only",
   "start-work",
-  "sisyphus-orchestrator",
+  "atlas",
   "memory-persistence",
 ])
 
@@ -144,50 +125,31 @@ export const AgentOverrideConfigSchema = z.object({
   permission: AgentPermissionSchema.optional(),
 })
 
-export const AgentOverridesSchema = z.object({
-  // Categories
-  build: AgentOverrideConfigSchema.optional(),
-  plan: AgentOverrideConfigSchema.optional(),
-  // Orchestrators
-  Sisyphus: AgentOverrideConfigSchema.optional(),
-  "Musashi": AgentOverrideConfigSchema.optional(),
-  "Musashi - boulder": AgentOverrideConfigSchema.optional(),
-  "Musashi - plan": AgentOverrideConfigSchema.optional(),
-  // Legacy (backward compatibility)
-  "Sisyphus-Junior": AgentOverrideConfigSchema.optional(),
-  "OpenCode-Builder": AgentOverrideConfigSchema.optional(),
-  "Prometheus (Planner)": AgentOverrideConfigSchema.optional(),
-  "Metis (Plan Consultant)": AgentOverrideConfigSchema.optional(),
-  "Momus (Plan Reviewer)": AgentOverrideConfigSchema.optional(),
-  oracle: AgentOverrideConfigSchema.optional(),
-  librarian: AgentOverrideConfigSchema.optional(),
-  explore: AgentOverrideConfigSchema.optional(),
-  "frontend-ui-ux-engineer": AgentOverrideConfigSchema.optional(),
-  "document-writer": AgentOverrideConfigSchema.optional(),
-  "multimodal-looker": AgentOverrideConfigSchema.optional(),
-  "orchestrator-sisyphus": AgentOverrideConfigSchema.optional(),
-  // Musashi-style names (new naming convention)
-  "M1 - analyst": AgentOverrideConfigSchema.optional(),
-  "M2 - reviewer": AgentOverrideConfigSchema.optional(),
-  "J1 - junior": AgentOverrideConfigSchema.optional(),
-  "K9 - advisor": AgentOverrideConfigSchema.optional(),
-  "X1 - explorer": AgentOverrideConfigSchema.optional(),
-  "R2 - researcher": AgentOverrideConfigSchema.optional(),
-  "V1 - viewer": AgentOverrideConfigSchema.optional(),
-  "T4 - frontend builder": AgentOverrideConfigSchema.optional(),
-  "D5 - backend builder": AgentOverrideConfigSchema.optional(),
-  "H3 - bulk builder": AgentOverrideConfigSchema.optional(),
-  "F1 - fast builder": AgentOverrideConfigSchema.optional(),
-  "S6 - designer": AgentOverrideConfigSchema.optional(),
-  "G5 - debugger": AgentOverrideConfigSchema.optional(),
-  "W7 - writer": AgentOverrideConfigSchema.optional(),
-  "M10 - critic": AgentOverrideConfigSchema.optional(),
-  "B3 - router": AgentOverrideConfigSchema.optional(),
-  "O9 - specialist": AgentOverrideConfigSchema.optional(),
-  "Senshi - distributor": AgentOverrideConfigSchema.optional(),
-  "Seichou - growth": AgentOverrideConfigSchema.optional(),
-  "Tsunagi - networker": AgentOverrideConfigSchema.optional(),
-}).catchall(AgentOverrideConfigSchema.optional())
+/**
+ * Legacy → v4 agent name mapping for backward compatibility.
+ * Users with old configs using "sisyphus", "oracle", etc. get auto-migrated.
+ */
+const SCHEMA_AGENT_NAME_MAP: Record<string, string> = {
+  sisyphus: "Musashi",
+  oracle: "K9 - advisor",
+  librarian: "R2 - researcher",
+  explore: "X1 - explorer",
+  atlas: "Musashi - boulder",
+  prometheus: "Musashi - plan",
+  metis: "Musashi - plan",
+  momus: "Musashi - plan",
+  "multimodal-looker": "T4 - frontend builder",
+}
+
+export const AgentOverridesSchema = z.record(z.string(), AgentOverrideConfigSchema.optional())
+  .transform((agents) => {
+    const result: Record<string, z.infer<typeof AgentOverrideConfigSchema> | undefined> = {}
+    for (const [key, value] of Object.entries(agents)) {
+      const mappedKey = SCHEMA_AGENT_NAME_MAP[key] ?? key
+      result[mappedKey] = value
+    }
+    return result as Partial<Record<string, z.infer<typeof AgentOverrideConfigSchema>>>
+  })
 
 export const ClaudeCodeConfigSchema = z.object({
   mcp: z.boolean().optional(),
@@ -207,6 +169,8 @@ export const SisyphusAgentConfigSchema = z.object({
 })
 
 export const CategoryConfigSchema = z.object({
+  /** Human-readable description of the category's purpose. Shown in delegate_task prompt. */
+  description: z.string().optional(),
   model: z.string().optional(),
   variant: z.string().optional(),
   temperature: z.number().min(0).max(2).optional(),
@@ -216,10 +180,12 @@ export const CategoryConfigSchema = z.object({
     type: z.enum(["enabled", "disabled"]),
     budgetTokens: z.number().optional(),
   }).optional(),
-  reasoningEffort: z.enum(["low", "medium", "high"]).optional(),
+  reasoningEffort: z.enum(["low", "medium", "high", "xhigh"]).optional(),
   textVerbosity: z.enum(["low", "medium", "high"]).optional(),
   tools: z.record(z.string(), z.boolean()).optional(),
   prompt_append: z.string().optional(),
+  /** Mark agent as unstable - forces background mode for monitoring. Auto-enabled for gemini models. */
+  is_unstable_agent: z.boolean().optional(),
 })
 
 export const BuiltinCategoryNameSchema = z.enum([
@@ -227,9 +193,9 @@ export const BuiltinCategoryNameSchema = z.enum([
   "ultrabrain",
   "artistry",
   "quick",
-  "most-capable",
+  "unspecified-low",
+  "unspecified-high",
   "writing",
-  "general",
 ])
 
 export const CategoriesConfigSchema = z.record(z.string(), CategoryConfigSchema)
@@ -333,8 +299,8 @@ export const RalphLoopConfigSchema = z.object({
 
 export const BackgroundTaskConfigSchema = z.object({
   defaultConcurrency: z.number().min(1).optional(),
-  providerConcurrency: z.record(z.string(), z.number().min(1)).optional(),
-  modelConcurrency: z.record(z.string(), z.number().min(1)).optional(),
+  providerConcurrency: z.record(z.string(), z.number().min(0)).optional(),
+  modelConcurrency: z.record(z.string(), z.number().min(0)).optional(),
   /** Stale timeout in milliseconds - interrupt tasks with no activity for this duration (default: 180000 = 3 minutes, minimum: 60000 = 1 minute) */
   staleTimeoutMs: z.number().min(60000).optional(),
 })
@@ -351,35 +317,18 @@ export const GitMasterConfigSchema = z.object({
   include_co_authored_by: z.boolean().default(true),
 })
 
-export const BrowserConfigSchema = z.object({
-  /** Browser backend: "agent-browser" (default, more features) or "browser" (camhahu/browser, faster) */
-  backend: z.enum(["agent-browser", "browser"]).default("agent-browser"),
-  /** Default CDP port for connecting to existing Chrome (e.g., 9222) */
-  cdp_port: z.number().optional(),
-  /** Auto-launch Windows Chrome on WSL if no CDP port active (default: true) */
-  wsl_auto_launch: z.boolean().default(true),
-})
-
 export const MemoryPersistenceConfigSchema = z.object({
-  /** Enable memory persistence (default: true) */
-  enabled: z.boolean().default(true),
-  /** Recall memories on session start (default: true) */
+  enabled: z.boolean().default(false),
   recall_on_start: z.boolean().default(true),
-  /** Persist state before compaction (default: true) */
   persist_on_compact: z.boolean().default(true),
-  /** Extract patterns on session end (default: true) */
   extract_patterns: z.boolean().default(true),
-  /** Max memories to recall (default: 5) */
-  recall_limit: z.number().min(1).max(20).default(5),
-  /** Min messages for extraction (default: 5) */
-  min_session_length: z.number().min(1).max(50).default(5),
-  /** Min confidence for patterns (default: 0.7) */
-  pattern_confidence_threshold: z.number().min(0).max(1).default(0.7),
-  /** Lookback window for error context detection (default: 10) */
-  error_lookback_window: z.number().min(1).max(50).default(10),
+  min_session_length: z.number().min(1).default(5),
 })
 
-export const CategorySkillsConfigSchema = z.record(z.string(), z.array(z.string()))
+export const CategorySkillsConfigSchema = z.record(
+  z.string(),
+  z.array(z.string())
+)
 
 export const OhMyOpenCodeConfigSchema = z.object({
   $schema: z.string().optional(),
@@ -401,7 +350,7 @@ export const OhMyOpenCodeConfigSchema = z.object({
   background_task: BackgroundTaskConfigSchema.optional(),
   notification: NotificationConfigSchema.optional(),
   git_master: GitMasterConfigSchema.optional(),
-  browser: BrowserConfigSchema.optional(),
+  browser_automation_engine: BrowserAutomationConfigSchema.optional(),
   memory_persistence: MemoryPersistenceConfigSchema.optional(),
 })
 
@@ -423,10 +372,11 @@ export type RalphLoopConfig = z.infer<typeof RalphLoopConfigSchema>
 export type NotificationConfig = z.infer<typeof NotificationConfigSchema>
 export type CategoryConfig = z.infer<typeof CategoryConfigSchema>
 export type CategoriesConfig = z.infer<typeof CategoriesConfigSchema>
-export type CategorySkillsConfig = z.infer<typeof CategorySkillsConfigSchema>
 export type BuiltinCategoryName = z.infer<typeof BuiltinCategoryNameSchema>
-export type MemoryPersistenceConfig = z.infer<typeof MemoryPersistenceConfigSchema>
 export type GitMasterConfig = z.infer<typeof GitMasterConfigSchema>
-export type BrowserConfig = z.infer<typeof BrowserConfigSchema>
+export type BrowserAutomationProvider = z.infer<typeof BrowserAutomationProviderSchema>
+export type BrowserAutomationConfig = z.infer<typeof BrowserAutomationConfigSchema>
+export type MemoryPersistenceConfig = z.infer<typeof MemoryPersistenceConfigSchema>
+export type CategorySkillsConfig = z.infer<typeof CategorySkillsConfigSchema>
 
 export { AnyMcpNameSchema, type AnyMcpName, McpNameSchema, type McpName } from "../mcp/types"

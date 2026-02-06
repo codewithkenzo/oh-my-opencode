@@ -3,7 +3,7 @@ import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { parseJsonc, getUserConfigDir } from "../../shared"
-import type { BrowserConfig } from "../../config/schema"
+import type { BrowserAutomationConfig } from "../../config/schema"
 import {
   type BrowserBackend,
   type BrowserAdapter,
@@ -40,7 +40,7 @@ function getBrowserConfig(): { backend: BrowserBackend; cdpPort?: number; wslAut
     const userConfigPath = join(getUserConfigDir(), "opencode", "oh-my-opencode.json")
     const projectConfigPath = join(process.cwd(), ".opencode", "oh-my-opencode.json")
     
-    let browserConfig: BrowserConfig | undefined
+    let browserConfig: BrowserAutomationConfig | undefined
     
     // Check project config first, then user config (to match load priority, though simple override here)
     // Actually standard is user base + project override.
@@ -49,20 +49,20 @@ function getBrowserConfig(): { backend: BrowserBackend; cdpPort?: number; wslAut
     
     if (existsSync(projectConfigPath)) {
         const content = readFileSync(projectConfigPath, "utf-8")
-        const config = parseJsonc<{ browser?: BrowserConfig }>(content)
-        if (config?.browser) browserConfig = config.browser
+        const config = parseJsonc<{ browser_automation_engine?: BrowserAutomationConfig }>(content)
+        if (config?.browser_automation_engine) browserConfig = config.browser_automation_engine
     }
     
     if (!browserConfig && existsSync(userConfigPath)) {
         const content = readFileSync(userConfigPath, "utf-8")
-        const config = parseJsonc<{ browser?: BrowserConfig }>(content)
-        if (config?.browser) browserConfig = config.browser
+        const config = parseJsonc<{ browser_automation_engine?: BrowserAutomationConfig }>(content)
+        if (config?.browser_automation_engine) browserConfig = config.browser_automation_engine
     }
     
     return {
-      backend: browserConfig?.backend ?? "agent-browser",
-      cdpPort: browserConfig?.cdp_port,
-      wslAutoLaunch: browserConfig?.wsl_auto_launch ?? true,
+      backend: browserConfig?.provider ?? "agent-browser",
+      cdpPort: undefined,
+      wslAutoLaunch: true,
     }
   } catch {
     return defaultConfig
