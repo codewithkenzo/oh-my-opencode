@@ -2,7 +2,7 @@ import { spawn, execSync } from "node:child_process"
 import { existsSync, mkdirSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 
-export type BrowserBackend = "agent-browser" | "browser"
+export type BrowserBackend = "agent-browser" | "browser" | "playwright" | "dev-browser"
 
 export interface BrowserAdapter {
   open(url: string): Promise<string>

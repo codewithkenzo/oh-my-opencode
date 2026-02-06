@@ -5,198 +5,69 @@ import { createSisyphusAgent } from "./sisyphus"
 import { createOracleAgent, ORACLE_PROMPT_METADATA } from "./oracle"
 import { createLibrarianAgent, LIBRARIAN_PROMPT_METADATA } from "./librarian"
 import { createExploreAgent, EXPLORE_PROMPT_METADATA } from "./explore"
-import { createFrontendUiUxEngineerAgent, FRONTEND_PROMPT_METADATA } from "./frontend-ui-ux-engineer"
-import { createDocumentWriterAgent, DOCUMENT_WRITER_PROMPT_METADATA } from "./document-writer"
-import { createMultimodalLookerAgent, MULTIMODAL_LOOKER_PROMPT_METADATA } from "./multimodal-looker"
 import { createMetisAgent } from "./metis"
-import { createOrchestratorSisyphusAgent } from "./orchestrator-sisyphus"
+import { createAtlasAgent } from "./atlas"
 import { createMomusAgent } from "./momus"
-import { createSisyphusJuniorAgentWithOverrides } from "./sisyphus-junior"
-import { createTakumiBuilderAgent } from "./takumi-builder"
-import { createDaikuBuilderAgent } from "./builder"
-import { createHayaiBuilderAgent } from "./hayai-builder"
-import { createF1FastBuilderAgent } from "./f1-fast-builder"
-import { createShokuninDesignerAgent } from "./shokunin-designer"
-import { createG5DebuggerAgent } from "./g5-debugger"
-import { createW7WriterAgent } from "./w7-writer"
-import { createKenjaAdvisorAgent } from "./kenja-advisor"
-import { createMiruCriticAgent } from "./m10-critic"
-import { createB3SecurityAgent } from "./b3-security"
-import { createO9SpecialistAgent } from "./o9-specialist"
-import { createSenshiDistributorAgent } from "./senshi-distributor"
-import { createSeichouGrowthAgent } from "./seichou-growth"
-import { createTsunagiNetworkerAgent } from "./tsunagi-networker"
-import type { AvailableAgent } from "./sisyphus-prompt-builder"
-import { deepMerge } from "../shared"
-import { DEFAULT_CATEGORIES } from "../tools/delegate-task/constants"
+import type { AvailableAgent, AvailableCategory, AvailableSkill } from "./sisyphus-prompt-builder"
+import { deepMerge, fetchAvailableModels, resolveModelWithFallback, AGENT_MODEL_REQUIREMENTS, findCaseInsensitive, includesCaseInsensitive } from "../shared"
+import { DEFAULT_CATEGORIES, CATEGORY_DESCRIPTIONS } from "../tools/delegate-task/constants"
 import { resolveMultipleSkills } from "../features/opencode-skill-loader/skill-content"
+import { createBuiltinSkills } from "../features/builtin-skills"
+import type { LoadedSkill, SkillScope } from "../features/opencode-skill-loader/types"
+
+export const LEGACY_TO_MUSASHI_NAME: Record<string, BuiltinAgentName> = {
+  "sisyphus": "Musashi",
+  "Sisyphus": "Musashi",
+  "oracle": "K9 - advisor",
+  "Oracle": "K9 - advisor",
+  "librarian": "R2 - researcher",
+  "Librarian": "R2 - researcher",
+  "explore": "X1 - explorer",
+  "Explore": "X1 - explorer",
+  "atlas": "Musashi - boulder",
+  "Atlas": "Musashi - boulder",
+  "metis": "Musashi - plan",
+  "momus": "Musashi - plan",
+  "multimodal-looker": "T4 - frontend builder",
+  "Sisyphus-Junior": "D5 - backend builder",
+  "J1 - junior": "D5 - backend builder",
+  "M1 - analyst": "Musashi - plan",
+  "M2 - reviewer": "Musashi - plan",
+  "V1 - viewer": "T4 - frontend builder",
+  "H3 - bulk builder": "D5 - backend builder",
+  "F1 - fast builder": "D5 - backend builder",
+  "S6 - designer": "T4 - frontend builder",
+  "G5 - debugger": "K9 - advisor",
+  "W7 - writer": "D5 - backend builder",
+  "M10 - critic": "T4 - frontend builder",
+  "B3 - security": "K9 - advisor",
+  "O9 - specialist": "K9 - advisor",
+  "Senshi - distributor": "Musashi",
+  "Seichou - growth": "Musashi",
+  "Tsunagi - networker": "Musashi",
+}
 
 type AgentSource = AgentFactory | AgentConfig
 
-/**
- * Maps legacy agent names to Musashi-style names.
- * Used to support backward compatibility in disabled_agents config.
- */
-const LEGACY_TO_MUSASHI_NAME: Record<string, BuiltinAgentName> = {
-  // Legacy → Musashi
-  "Sisyphus": "Musashi",
-  "orchestrator-sisyphus": "Musashi - boulder",
-  "Prometheus (Planner)": "Musashi - plan",
-  "explore": "X1 - explorer",
-  "librarian": "R2 - researcher",
-  "oracle": "K9 - advisor",
-  "frontend-ui-ux-engineer": "T4 - frontend builder",
-  "document-writer": "W7 - writer",
-  "multimodal-looker": "V1 - viewer",
-}
-
-/**
- * Normalizes agent names to Musashi-style.
- * Accepts both legacy and new names, returns Musashi name.
- */
-export function normalizeAgentName(name: string): BuiltinAgentName {
-  return (LEGACY_TO_MUSASHI_NAME[name] ?? name) as BuiltinAgentName
-}
-
-/**
- * Normalizes an array of agent names (legacy or new) to Musashi-style.
- */
-export function normalizeAgentNames(names: string[]): BuiltinAgentName[] {
-  return names.map(normalizeAgentName)
-}
-
 const agentSources: Record<BuiltinAgentName, AgentSource> = {
-  // Orchestration
   "Musashi": createSisyphusAgent,
-  "Musashi - boulder": createOrchestratorSisyphusAgent as unknown as AgentFactory,
-  "Musashi - plan": null as unknown as AgentFactory, // Handled by config-handler.ts
-  // Validation
-  "M1 - analyst": createMetisAgent,
-  "M2 - reviewer": createMomusAgent,
-  // Execution
-  "J1 - junior": createSisyphusJuniorAgentWithOverrides as unknown as AgentFactory,
-  "K9 - advisor": createKenjaAdvisorAgent,
-  // Explorers
+  "Musashi - boulder": createAtlasAgent as unknown as AgentFactory,
+  "Musashi - plan": createMetisAgent,  // Prometheus/planning agent
+  "K9 - advisor": createOracleAgent,
   "X1 - explorer": createExploreAgent,
   "R2 - researcher": createLibrarianAgent,
-  "V1 - viewer": createMultimodalLookerAgent,
-  // Builders
-  "T4 - frontend builder": createTakumiBuilderAgent,
-  "D5 - backend builder": createDaikuBuilderAgent,
-  "H3 - bulk builder": createHayaiBuilderAgent,
-  "F1 - fast builder": createF1FastBuilderAgent,
-  "S6 - designer": createShokuninDesignerAgent,
-  // Specialists
-  "G5 - debugger": createG5DebuggerAgent,
-  "W7 - writer": createW7WriterAgent,
-  "M10 - critic": createMiruCriticAgent,
-  "B3 - security": createB3SecurityAgent,
-  "O9 - specialist": createO9SpecialistAgent,
-  // Growth
-  "Senshi - distributor": createSenshiDistributorAgent,
-  "Seichou - growth": createSeichouGrowthAgent,
-  "Tsunagi - networker": createTsunagiNetworkerAgent,
+  "T4 - frontend builder": createOracleAgent,  // Placeholder, will be configured via overrides
+  "D5 - backend builder": createOracleAgent,    // Placeholder, will be configured via overrides
 }
 
 /**
- * Metadata for each agent, used to build Musashi's dynamic prompt sections
+ * Metadata for each agent, used to build Sisyphus's dynamic prompt sections
  * (Delegation Table, Tool Selection, Key Triggers, etc.)
  */
 const agentMetadata: Partial<Record<BuiltinAgentName, AgentPromptMetadata>> = {
-  // Orchestration
-  "Musashi - boulder": {
-    category: "advisor",
-    cost: "EXPENSIVE",
-    triggers: [],
-    skills: ["git-workflow", "test-driven-development", "verification-before-completion"],
-  },
-  // Validation
-  "M1 - analyst": {
-    category: "specialist",
-    cost: "CHEAP",
-    triggers: [{ domain: "Planning", trigger: "Pre-planning analysis needed" }],
-    skills: ["intent-critique", "problem-solving"],
-  },
-  "M2 - reviewer": {
-    category: "specialist",
-    cost: "CHEAP",
-    triggers: [{ domain: "Planning", trigger: "Plan validation needed" }],
-    skills: ["code-review-excellence", "frontend-code-review"],
-  },
-  // Explorers
-  "X1 - explorer": EXPLORE_PROMPT_METADATA,
+  "K9 - advisor": ORACLE_PROMPT_METADATA,
   "R2 - researcher": LIBRARIAN_PROMPT_METADATA,
-  "V1 - viewer": MULTIMODAL_LOOKER_PROMPT_METADATA,
-  // Builders
-  "T4 - frontend builder": {
-    ...FRONTEND_PROMPT_METADATA,
-    skills: ["frontend-stack", "component-stack", "motion-system", "tailwind-design-system"],
-  },
-  "D5 - backend builder": {
-    category: "specialist",
-    cost: "CHEAP",
-    triggers: [{ domain: "Backend Development", trigger: "API routes, database, server-side logic" }],
-    skills: ["bun-hono-api", "hono-api", "elysiajs", "drizzle-sqlite", "better-auth", "effect-ts-expert"],
-  },
-  "H3 - bulk builder": {
-    category: "utility",
-    cost: "CHEAP",
-    triggers: [{ domain: "Bulk Editing", trigger: "Multiple files, large refactors" }],
-  },
-  "F1 - fast builder": {
-    category: "utility",
-    cost: "CHEAP",
-    triggers: [{ domain: "Scaffolding", trigger: "Fast code generation" }],
-  },
-  "S6 - designer": {
-    category: "advisor",
-    cost: "CHEAP",
-    triggers: [{ domain: "Design", trigger: "Design systems, visual hierarchy, color palettes" }],
-    skills: ["ui-designer", "design-system-patterns", "color-palette", "visual-design-foundations"],
-  },
-  // Specialists
-  "G5 - debugger": {
-    category: "specialist",
-    cost: "CHEAP",
-    triggers: [{ domain: "Debugging", trigger: "Bugs, errors, crashes, unexpected behavior" }],
-    skills: ["systematic-debugging", "backend-debugging", "visual-debug", "memory-leak-detection"],
-  },
-  "W7 - writer": {
-    ...DOCUMENT_WRITER_PROMPT_METADATA,
-    skills: ["crafting-effective-readmes", "writing-clearly-and-concisely", "api-documentation-generator"],
-  },
-  "M10 - critic": {
-    category: "specialist",
-    cost: "CHEAP",
-    triggers: [{ domain: "Visual Review", trigger: "UI/UX feedback, accessibility, visual bugs" }],
-  },
-  "B3 - security": {
-    category: "specialist",
-    cost: "CHEAP",
-    triggers: [{ domain: "Security", trigger: "Vulnerability assessment, code review, OWASP compliance" }],
-    skills: ["owasp-security", "api-security-best-practices", "vulnerability-scanning", "auth-implementation-patterns"],
-  },
-  "O9 - specialist": {
-    category: "specialist",
-    cost: "EXPENSIVE",
-    triggers: [{ domain: "Complex Problems", trigger: "Hard problems requiring Opus" }],
-  },
-  // Growth
-  "Senshi - distributor": {
-    category: "utility",
-    cost: "CHEAP",
-    triggers: [{ domain: "Distribution", trigger: "Product launch, release orchestration" }],
-  },
-  "Seichou - growth": {
-    category: "utility",
-    cost: "CHEAP",
-    triggers: [{ domain: "Growth", trigger: "Social media, content strategy, marketing" }],
-  },
-  "Tsunagi - networker": {
-    category: "utility",
-    cost: "CHEAP",
-    triggers: [{ domain: "Networking", trigger: "Community building, partnerships" }],
-  },
+  "X1 - explorer": EXPLORE_PROMPT_METADATA,
 }
 
 function isFactory(source: AgentSource): source is AgentFactory {
@@ -245,14 +116,21 @@ export function buildAgent(
  * Creates OmO-specific environment context (time, timezone, locale).
  * Note: Working directory, platform, and date are already provided by OpenCode's system.ts,
  * so we only include fields that OpenCode doesn't provide to avoid duplication.
- * See: https://github.com/codewithkenzo/oh-my-opencode/issues/379
+ * See: https://github.com/code-yeongyu/oh-my-opencode/issues/379
  */
 export function createEnvContext(): string {
   const now = new Date()
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const locale = Intl.DateTimeFormat().resolvedOptions().locale
 
-  const timeStr = now.toLocaleTimeString("en-US", {
+  const dateStr = now.toLocaleDateString(locale, {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  })
+
+  const timeStr = now.toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
@@ -261,6 +139,7 @@ export function createEnvContext(): string {
 
   return `
 <omo-env>
+  Current date: ${dateStr}
   Current time: ${timeStr}
   Timezone: ${timezone}
   Locale: ${locale}
@@ -281,17 +160,28 @@ function mergeAgentConfig(
   return merged
 }
 
-export function createBuiltinAgents(
-  disabledAgents: BuiltinAgentName[] = [],
+function mapScopeToLocation(scope: SkillScope): AvailableSkill["location"] {
+  if (scope === "user" || scope === "opencode") return "user"
+  if (scope === "project" || scope === "opencode-project") return "project"
+  return "plugin"
+}
+
+export async function createBuiltinAgents(
+  disabledAgents: string[] = [],
   agentOverrides: AgentOverrides = {},
   directory?: string,
   systemDefaultModel?: string,
   categories?: CategoriesConfig,
-  gitMasterConfig?: GitMasterConfig
-): Record<string, AgentConfig> {
+  gitMasterConfig?: GitMasterConfig,
+  discoveredSkills: LoadedSkill[] = [],
+  client?: any
+): Promise<Record<string, AgentConfig>> {
   if (!systemDefaultModel) {
     throw new Error("createBuiltinAgents requires systemDefaultModel")
   }
+
+  // Fetch available models at plugin init
+  const availableModels = client ? await fetchAvailableModels(client) : new Set<string>()
 
   const result: Record<string, AgentConfig> = {}
   const availableAgents: AvailableAgent[] = []
@@ -300,33 +190,57 @@ export function createBuiltinAgents(
     ? { ...DEFAULT_CATEGORIES, ...categories }
     : DEFAULT_CATEGORIES
 
-  const normalizedDisabled = normalizeAgentNames(disabledAgents)
+  const availableCategories: AvailableCategory[] = Object.entries(mergedCategories).map(([name]) => ({
+    name,
+    description: categories?.[name]?.description ?? CATEGORY_DESCRIPTIONS[name] ?? "General tasks",
+  }))
 
-  for (const [name, source] of Object.entries(agentSources)) {
-    const agentName = name as BuiltinAgentName
+  const builtinSkills = createBuiltinSkills()
+  const builtinSkillNames = new Set(builtinSkills.map(s => s.name))
 
-    if (agentName === "Musashi") continue
-    if (agentName === "Musashi - boulder") continue
-    if (agentName === "Musashi - plan") continue
-    if (normalizedDisabled.includes(agentName)) continue
-    if (!source) continue // Skip null placeholders
+  const builtinAvailable: AvailableSkill[] = builtinSkills.map((skill) => ({
+    name: skill.name,
+    description: skill.description,
+    location: "plugin" as const,
+  }))
 
-    const override = agentOverrides[agentName]
-    const model = override?.model ?? systemDefaultModel
-    const metadata = agentMetadata[agentName]
+  const discoveredAvailable: AvailableSkill[] = discoveredSkills
+    .filter(s => !builtinSkillNames.has(s.name))
+    .map((skill) => ({
+      name: skill.name,
+      description: skill.definition.description ?? "",
+      location: mapScopeToLocation(skill.scope),
+    }))
+
+  const availableSkills: AvailableSkill[] = [...builtinAvailable, ...discoveredAvailable]
+
+   for (const [name, source] of Object.entries(agentSources)) {
+     const agentName = name as BuiltinAgentName
+
+     if (agentName === "Musashi") continue
+     if (agentName === "Musashi - boulder") continue
+     if (includesCaseInsensitive(disabledAgents, agentName)) continue
+
+    // Resolve legacy names to new v4 names for override lookup
+    const resolvedLegacyName = LEGACY_TO_MUSASHI_NAME[agentName] ?? agentName
+    const override = findCaseInsensitive(agentOverrides, resolvedLegacyName) ?? findCaseInsensitive(agentOverrides, agentName)
+    const requirement = AGENT_MODEL_REQUIREMENTS[agentName]
+    
+    // Use resolver to determine model
+    const { model, variant: resolvedVariant } = resolveModelWithFallback({
+      userModel: override?.model,
+      fallbackChain: requirement?.fallbackChain,
+      availableModels,
+      systemDefaultModel,
+    })
 
     let config = buildAgent(source, model, mergedCategories, gitMasterConfig)
-
-    if (metadata?.skills?.length && !("skills" in config)) {
-      const configWithSkills = config as AgentConfig & { skills?: string[] }
-      configWithSkills.skills = metadata.skills.slice(0, 5)
-      const { resolved } = resolveMultipleSkills(configWithSkills.skills, { gitMasterConfig })
-      if (resolved.size > 0) {
-        const skillContent = Array.from(resolved.values()).join("\n\n")
-        if (skillContent.length > 0) {
-          config.prompt = config.prompt ? skillContent + "\n\n" + config.prompt : skillContent
-        }
-      }
+    
+    // Apply variant from override or resolved fallback chain
+    if (override?.variant) {
+      config = { ...config, variant: override.variant }
+    } else if (resolvedVariant) {
+      config = { ...config, variant: resolvedVariant }
     }
 
     if (agentName === "R2 - researcher" && directory && config.prompt) {
@@ -340,6 +254,7 @@ export function createBuiltinAgents(
 
     result[name] = config
 
+    const metadata = agentMetadata[agentName]
     if (metadata) {
       availableAgents.push({
         name: agentName,
@@ -349,11 +264,32 @@ export function createBuiltinAgents(
     }
   }
 
-  if (!normalizedDisabled.includes("Musashi")) {
-    const sisyphusOverride = agentOverrides["Musashi"]
-    const sisyphusModel = sisyphusOverride?.model ?? systemDefaultModel
+   if (!disabledAgents.includes("Musashi")) {
+     const sisyphusOverride = agentOverrides["Musashi"] ?? (agentOverrides as Record<string, AgentOverrideConfig>)["sisyphus"]
+     const sisyphusRequirement = AGENT_MODEL_REQUIREMENTS["Musashi"] ?? AGENT_MODEL_REQUIREMENTS["sisyphus"]
+    
+    // Use resolver to determine model
+    const { model: sisyphusModel, variant: sisyphusResolvedVariant } = resolveModelWithFallback({
+      userModel: sisyphusOverride?.model,
+      fallbackChain: sisyphusRequirement?.fallbackChain,
+      availableModels,
+      systemDefaultModel,
+    })
 
-    let sisyphusConfig = createSisyphusAgent(sisyphusModel, availableAgents)
+    let sisyphusConfig = createSisyphusAgent(
+      sisyphusModel,
+      availableAgents,
+      undefined,
+      availableSkills,
+      availableCategories
+    )
+    
+    // Apply variant from override or resolved fallback chain
+    if (sisyphusOverride?.variant) {
+      sisyphusConfig = { ...sisyphusConfig, variant: sisyphusOverride.variant }
+    } else if (sisyphusResolvedVariant) {
+      sisyphusConfig = { ...sisyphusConfig, variant: sisyphusResolvedVariant }
+    }
 
     if (directory && sisyphusConfig.prompt) {
       const envContext = createEnvContext()
@@ -364,32 +300,41 @@ export function createBuiltinAgents(
       sisyphusConfig = mergeAgentConfig(sisyphusConfig, sisyphusOverride)
     }
 
-    result["Musashi"] = sisyphusConfig
-  }
+     result["Musashi"] = sisyphusConfig
+   }
 
-  if (!normalizedDisabled.includes("Musashi - boulder")) {
-    const orchestratorOverride = agentOverrides["Musashi - boulder"]
-    const orchestratorModel = orchestratorOverride?.model ?? systemDefaultModel
-    let orchestratorConfig = createOrchestratorSisyphusAgent({
-      model: orchestratorModel,
-      availableAgents,
+   if (!disabledAgents.includes("Musashi - boulder")) {
+     const orchestratorOverride = agentOverrides["Musashi - boulder"] ?? (agentOverrides as Record<string, AgentOverrideConfig>)["atlas"]
+     const atlasRequirement = AGENT_MODEL_REQUIREMENTS["Musashi - boulder"] ?? AGENT_MODEL_REQUIREMENTS["atlas"]
+    
+    // Use resolver to determine model
+    const { model: atlasModel, variant: atlasResolvedVariant } = resolveModelWithFallback({
+      userModel: orchestratorOverride?.model,
+      fallbackChain: atlasRequirement?.fallbackChain,
+      availableModels,
+      systemDefaultModel,
     })
-
-    const boulderMetadata = agentMetadata["Musashi - boulder"]
-    if (boulderMetadata?.skills?.length) {
-      const { resolved } = resolveMultipleSkills(boulderMetadata.skills.slice(0, 5), { gitMasterConfig })
-      if (resolved.size > 0) {
-        const skillContent = Array.from(resolved.values()).join("\n\n")
-        orchestratorConfig.prompt = skillContent + (orchestratorConfig.prompt ? "\n\n" + orchestratorConfig.prompt : "")
-      }
+    
+    let orchestratorConfig = createAtlasAgent({
+      model: atlasModel,
+      availableAgents,
+      availableSkills,
+      userCategories: categories,
+    })
+    
+    // Apply variant from override or resolved fallback chain
+    if (orchestratorOverride?.variant) {
+      orchestratorConfig = { ...orchestratorConfig, variant: orchestratorOverride.variant }
+    } else if (atlasResolvedVariant) {
+      orchestratorConfig = { ...orchestratorConfig, variant: atlasResolvedVariant }
     }
 
     if (orchestratorOverride) {
       orchestratorConfig = mergeAgentConfig(orchestratorConfig, orchestratorOverride)
     }
 
-    result["Musashi - boulder"] = orchestratorConfig
-  }
+     result["Musashi - boulder"] = orchestratorConfig
+   }
 
-  return result
-}
+   return result
+ }

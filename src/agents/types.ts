@@ -36,9 +36,6 @@ export interface AgentPromptMetadata {
   /** Domain triggers for Delegation Table */
   triggers: DelegationTrigger[]
 
-  /** Skills to auto-load when delegating to this agent (max 5 to prevent context bloat) */
-  skills?: string[]
-
   /** When to use this agent (for detailed sections) */
   useWhen?: string[]
 
@@ -51,8 +48,11 @@ export interface AgentPromptMetadata {
   /** Nickname/alias used in prompt (e.g., "Oracle" instead of "oracle") */
   promptAlias?: string
 
-  /** Key triggers that should appear in Phase 0 (e.g., "External library mentioned → fire R2 - researcher") */
+  /** Key triggers that should appear in Phase 0 (e.g., "External library mentioned → fire librarian") */
   keyTrigger?: string
+
+  /** Skills to auto-load for this agent */
+  skills?: string[]
 }
 
 export function isGptModel(model: string): boolean {
@@ -60,36 +60,14 @@ export function isGptModel(model: string): boolean {
 }
 
 export type BuiltinAgentName =
-  // Orchestration (Opus)
   | "Musashi"
   | "Musashi - boulder"
   | "Musashi - plan"
-  // Validation (Sonnet)
-  | "M1 - analyst"
-  | "M2 - reviewer"
-  // Execution (Sonnet)
-  | "J1 - junior"
   | "K9 - advisor"
-  // Explorers (Grok/Flash)
   | "X1 - explorer"
   | "R2 - researcher"
-  | "V1 - viewer"
-  // Builders
   | "T4 - frontend builder"
   | "D5 - backend builder"
-  | "H3 - bulk builder"
-  | "F1 - fast builder"
-  | "S6 - designer"
-  // Specialists
-  | "G5 - debugger"
-  | "W7 - writer"
-  | "M10 - critic"
-  | "B3 - security"
-  | "O9 - specialist"
-  // Growth
-  | "Senshi - distributor"
-  | "Seichou - growth"
-  | "Tsunagi - networker"
 
 export type OverridableAgentName =
   | "build"

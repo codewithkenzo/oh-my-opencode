@@ -27,7 +27,7 @@ describe("mergeConfigs", () => {
             temperature: 0.3,
           },
           visual: {
-            model: "google/gemini-3-pro-preview",
+            model: "google/gemini-3-pro",
           },
         },
       } as unknown as OhMyOpenCodeConfig;
@@ -41,7 +41,7 @@ describe("mergeConfigs", () => {
       // #then quick should be preserved from base
       expect(result.categories?.quick?.model).toBe("anthropic/claude-haiku-4-5");
       // #then visual should be added from override
-      expect(result.categories?.visual?.model).toBe("google/gemini-3-pro-preview");
+      expect(result.categories?.visual?.model).toBe("google/gemini-3-pro");
     });
 
     it("should preserve base categories when override has no categories", () => {
@@ -81,22 +81,22 @@ describe("mergeConfigs", () => {
     it("should deep merge agents", () => {
       const base: OhMyOpenCodeConfig = {
         agents: {
-          oracle: { model: "openai/gpt-5.2" },
+          "K9 - advisor": { model: "openai/gpt-5.2" },
         },
       };
 
       const override: OhMyOpenCodeConfig = {
         agents: {
-          oracle: { temperature: 0.5 },
-          explore: { model: "anthropic/claude-haiku-4-5" },
+          "K9 - advisor": { temperature: 0.5 },
+          "X1 - explorer": { model: "anthropic/claude-haiku-4-5" },
         },
       };
 
       const result = mergeConfigs(base, override);
 
-      expect(result.agents?.oracle?.model).toBe("openai/gpt-5.2");
-      expect(result.agents?.oracle?.temperature).toBe(0.5);
-      expect(result.agents?.explore?.model).toBe("anthropic/claude-haiku-4-5");
+      expect(result.agents?.["K9 - advisor"]?.model).toBe("openai/gpt-5.2");
+      expect(result.agents?.["K9 - advisor"]?.temperature).toBe(0.5);
+      expect(result.agents?.["X1 - explorer"]?.model).toBe("anthropic/claude-haiku-4-5");
     });
 
     it("should merge disabled arrays without duplicates", () => {

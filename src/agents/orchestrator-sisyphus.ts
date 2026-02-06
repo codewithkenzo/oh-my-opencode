@@ -31,7 +31,7 @@ function buildAgentSelectionSection(agents: AvailableAgent[]): string {
 | \`T4 - frontend builder\` | Visual design, UI implementation |
 | \`W7 - writer\` | README, API docs, guides |
 | \`git-master\` | Git commits (ALWAYS use for commits) |
-| \`debugging-master\` | Complex debugging sessions |`
+| \`G5 - debugger\` | Complex debugging sessions |`
   }
 
   const rows = agents.map((a) => {
@@ -45,7 +45,7 @@ function buildAgentSelectionSection(agents: AvailableAgent[]): string {
 |-------|----------|
 ${rows.join("\n")}
 | \`git-master\` | Git commits (ALWAYS use for commits) |
-| \`debugging-master\` | Complex debugging sessions |`
+| \`G5 - debugger\` | Complex debugging sessions |`
 }
 
 function buildCategorySection(userCategories?: Record<string, CategoryConfig>): string {
@@ -120,7 +120,7 @@ function buildDecisionMatrix(agents: AvailableAgent[], userCategories?: Record<s
   if (agentNames.includes("X1 - explorer")) rows.push("| Find code in codebase | `agent=\"X1 - explorer\"` |")
   if (agentNames.includes("R2 - researcher")) rows.push("| Look up library docs | `agent=\"R2 - researcher\"` |")
   rows.push("| Git commit | `agent=\"git-master\"` |")
-  rows.push("| Debug complex issue | `agent=\"debugging-master\"` |")
+  rows.push("| Debug complex issue | `agent=\"G5 - debugger\"` |")
 
   return `##### Decision Matrix
 
@@ -375,10 +375,6 @@ style, className, tailwind, color, background, border, shadow, margin, padding, 
 | **Advisors** | | |
 | Architecture decisions | \`K9 - advisor\` | Read-only consultation. Multi-system tradeoffs, unfamiliar patterns |
 | Hard debugging | \`K9 - advisor\` | Read-only consultation. After 2+ failed fix attempts |
-| **Growth** | | |
-| Distribution | \`Senshi - distributor\` | Product launch, release orchestration |
-| Growth | \`Seichou - growth\` | Social media, content strategy, marketing |
-| Networking | \`Tsunagi - networker\` | Community building, partnerships |
 
 ### Workflow Phases (For Complex Tasks)
 
@@ -1301,7 +1297,7 @@ The answer is almost always YES.
 - [X] Write/Edit/Create any code files
 - [X] Fix ANY bugs (delegate to appropriate agent)
 - [X] Write ANY tests (delegate to strategic/visual category)
-- [X] Create ANY documentation (delegate to document-writer)
+- [X] Create ANY documentation (delegate to W7 - writer)
 - [X] Modify ANY configuration files
 - [X] Git commits (delegate to git-master)
 
@@ -1309,8 +1305,8 @@ The answer is almost always YES.
 - \`delegate_task(category="ultrabrain", background=false)\` → backend/logic implementation
 - \`delegate_task(category="visual-engineering", background=false)\` → frontend/UI implementation
 - \`delegate_task(agent="git-master", background=false)\` → ALL git commits
-- \`delegate_task(agent="document-writer", background=false)\` → documentation
-- \`delegate_task(agent="debugging-master", background=false)\` → complex debugging
+- \`delegate_task(agent="W7 - writer", background=false)\` → documentation
+- \`delegate_task(agent="G5 - debugger", background=false)\` → complex debugging
 
 **⚠️ CRITICAL: background=false is MANDATORY for all task delegations.**
 

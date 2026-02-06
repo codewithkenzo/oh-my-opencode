@@ -17,6 +17,11 @@ export interface AvailableSkill {
   location: "user" | "project" | "plugin"
 }
 
+export interface AvailableCategory {
+  name: string
+  description: string
+}
+
 export function categorizeTools(toolNames: string[]): AvailableTool[] {
   return toolNames.map((name) => {
     let category: AvailableTool["category"] = "other"
@@ -356,4 +361,84 @@ export function buildUltraworkAgentSection(agents: AvailableAgent[]): string {
   }
 
   return lines.join("\n")
+}
+
+export function buildCategorySkillsDelegationGuide(categories: AvailableCategory[], skills: AvailableSkill[]): string {
+  if (categories.length === 0 && skills.length === 0) return ""
+
+  const categoryRows = categories.map((c) => {
+    const desc = c.description || c.name
+    return `| \`${c.name}\` | ${desc} |`
+  })
+
+  const skillRows = skills.map((s) => {
+    const desc = s.description.split(".")[0] || s.description
+    return `| \`${s.name}\` | ${desc} |`
+  })
+
+  return `### Category + Skills Delegation System
+
+**delegate_task() combines categories and skills for optimal task execution.**
+
+#### Available Categories (Domain-Optimized Models)
+
+Each category is configured with a model optimized for that domain. Read the description to understand when to use it.
+
+| Category | Domain / Best For |
+|----------|-------------------|
+${categoryRows.join("\n")}
+
+#### Available Skills (Domain Expertise Injection)
+
+Skills inject specialized instructions into the subagent. Read the description to understand when each skill applies.
+
+| Skill | Expertise Domain |
+|-------|------------------|
+${skillRows.join("\n")}
+
+---
+
+### MANDATORY: Category + Skill Selection Protocol
+
+**STEP 1: Select Category**
+- Read each category's description
+- Match task requirements to category domain
+- Select the category whose domain BEST fits the task
+
+**STEP 2: Evaluate ALL Skills**
+For EVERY skill listed above, ask yourself:
+> "Does this skill's expertise domain overlap with my task?"
+
+- If YES → INCLUDE in \`load_skills=[...]\`
+- If NO → You MUST justify why (see below)
+
+**STEP 3: Justify Omissions**
+
+If you choose NOT to include a skill that MIGHT be relevant, you MUST provide:
+
+\`\`\`
+SKILL EVALUATION for "[skill-name]":
+- Skill domain: [what the skill description says]
+- Task domain: [what your task is about]
+- Decision: OMIT
+- Reason: [specific explanation of why domains don't overlap]
+\`\`\`
+
+**WHY JUSTIFICATION IS MANDATORY:**
+- Forces you to actually READ skill descriptions
+- Prevents lazy omission of potentially useful skills
+- Subagents are STATELESS - they only know what you tell them
+- Missing a relevant skill = suboptimal output
+
+---
+
+### Delegation Pattern
+
+\`\`\`typescript
+delegate_task(
+  category="[selected-category]",
+  load_skills=["skill-1", "skill-2"],  // Include ALL relevant skills
+  prompt="..."
+)
+\`\`\``
 }

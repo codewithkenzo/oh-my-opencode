@@ -3,24 +3,37 @@ import { discoverSkills } from "./loader"
 import type { LoadedSkill } from "./types"
 import { parseFrontmatter } from "../../shared/frontmatter"
 import { readFileSync } from "node:fs"
-import type { GitMasterConfig } from "../../config/schema"
+import type { GitMasterConfig, BrowserAutomationProvider } from "../../config/schema"
 
 export interface SkillResolutionOptions {
 	gitMasterConfig?: GitMasterConfig
+	browserProvider?: BrowserAutomationProvider
+	disabledSkills?: Set<string>
 }
 
-let cachedSkills: LoadedSkill[] | null = null
+const cachedSkillsByProvider = new Map<string, LoadedSkill[]>()
 
 function clearSkillCache(): void {
-	cachedSkills = null
+	cachedSkillsByProvider.clear()
 }
 
-async function getAllSkills(): Promise<LoadedSkill[]> {
-	if (cachedSkills) return cachedSkills
+async function getAllSkills(options?: SkillResolutionOptions): Promise<LoadedSkill[]> {
+	const cacheKey = options?.browserProvider ?? "playwright"
+	const hasDisabledSkills = options?.disabledSkills && options.disabledSkills.size > 0
+
+	if (!hasDisabledSkills) {
+		const cached = cachedSkillsByProvider.get(cacheKey)
+		if (cached) return cached
+	}
 
 	const [discoveredSkills, builtinSkillDefs] = await Promise.all([
 		discoverSkills({ includeClaudeCodePaths: true }),
-		Promise.resolve(createBuiltinSkills()),
+		Promise.resolve(
+			createBuiltinSkills({
+				browserProvider: options?.browserProvider,
+				disabledSkills: options?.disabledSkills,
+			})
+		),
 	])
 
 	const builtinSkillsAsLoaded: LoadedSkill[] = builtinSkillDefs.map((skill) => ({
@@ -44,15 +57,22 @@ async function getAllSkills(): Promise<LoadedSkill[]> {
 	const discoveredNames = new Set(discoveredSkills.map((s) => s.name))
 	const uniqueBuiltins = builtinSkillsAsLoaded.filter((s) => !discoveredNames.has(s.name))
 
-	cachedSkills = [...discoveredSkills, ...uniqueBuiltins]
-	return cachedSkills
+	let allSkills = [...discoveredSkills, ...uniqueBuiltins]
+
+	if (hasDisabledSkills) {
+		allSkills = allSkills.filter((s) => !options!.disabledSkills!.has(s.name))
+	} else {
+		cachedSkillsByProvider.set(cacheKey, allSkills)
+	}
+
+	return allSkills
 }
 
 async function extractSkillTemplate(skill: LoadedSkill): Promise<string> {
-	if (skill.lazyContent) {
-		const fullTemplate = await skill.lazyContent.load()
-		const templateMatch = fullTemplate.match(/<skill-instruction>([\s\S]*?)<\/skill-instruction>/)
-		return templateMatch ? templateMatch[1].trim() : fullTemplate
+	if (skill.path) {
+		const content = readFileSync(skill.path, "utf-8")
+		const { body } = parseFrontmatter(content)
+		return body.trim()
 	}
 	return skill.definition.template || ""
 }
@@ -77,7 +97,7 @@ export function injectGitMasterConfig(template: string, config?: GitMasterConfig
 	if (commitFooter) {
 		sections.push(`1. **Footer in commit body:**`)
 		sections.push("```")
-		sections.push(`Ultraworked with [Musashi](https://github.com/codewithkenzo/oh-my-opencode)`)
+		sections.push(`Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-opencode)`)
 		sections.push("```")
 		sections.push(``)
 	}
@@ -85,7 +105,7 @@ export function injectGitMasterConfig(template: string, config?: GitMasterConfig
 	if (includeCoAuthoredBy) {
 		sections.push(`${commitFooter ? "2" : "1"}. **Co-authored-by trailer:**`)
 		sections.push("```")
-		sections.push(`Co-authored-by: Musashi <clio-agent@musashi.ai>`)
+		sections.push(`Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>`)
 		sections.push("```")
 		sections.push(``)
 	}
@@ -93,17 +113,17 @@ export function injectGitMasterConfig(template: string, config?: GitMasterConfig
 	if (commitFooter && includeCoAuthoredBy) {
 		sections.push(`**Example (both enabled):**`)
 		sections.push("```bash")
-		sections.push(`git commit -m "{Commit Message}" -m "Ultraworked with [Musashi](https://github.com/codewithkenzo/oh-my-opencode)" -m "Co-authored-by: Musashi <clio-agent@musashi.ai>"`)
+		sections.push(`git commit -m "{Commit Message}" -m "Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-opencode)" -m "Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>"`)
 		sections.push("```")
 	} else if (commitFooter) {
 		sections.push(`**Example:**`)
 		sections.push("```bash")
-		sections.push(`git commit -m "{Commit Message}" -m "Ultraworked with [Musashi](https://github.com/codewithkenzo/oh-my-opencode)"`)
+		sections.push(`git commit -m "{Commit Message}" -m "Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-opencode)"`)
 		sections.push("```")
 	} else if (includeCoAuthoredBy) {
 		sections.push(`**Example:**`)
 		sections.push("```bash")
-		sections.push(`git commit -m "{Commit Message}" -m "Co-authored-by: Musashi <clio-agent@musashi.ai>"`)
+		sections.push(`git commit -m "{Commit Message}" -m "Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>"`)
 		sections.push("```")
 	}
 
@@ -118,7 +138,10 @@ export function injectGitMasterConfig(template: string, config?: GitMasterConfig
 }
 
 export function resolveSkillContent(skillName: string, options?: SkillResolutionOptions): string | null {
-	const skills = createBuiltinSkills()
+	const skills = createBuiltinSkills({
+		browserProvider: options?.browserProvider,
+		disabledSkills: options?.disabledSkills,
+	})
 	const skill = skills.find((s) => s.name === skillName)
 	if (!skill) return null
 
@@ -133,7 +156,10 @@ export function resolveMultipleSkills(skillNames: string[], options?: SkillResol
 	resolved: Map<string, string>
 	notFound: string[]
 } {
-	const skills = createBuiltinSkills()
+	const skills = createBuiltinSkills({
+		browserProvider: options?.browserProvider,
+		disabledSkills: options?.disabledSkills,
+	})
 	const skillMap = new Map(skills.map((s) => [s.name, s.template]))
 
 	const resolved = new Map<string, string>()
@@ -159,7 +185,7 @@ export async function resolveSkillContentAsync(
 	skillName: string,
 	options?: SkillResolutionOptions
 ): Promise<string | null> {
-	const allSkills = await getAllSkills()
+	const allSkills = await getAllSkills(options)
 	const skill = allSkills.find((s) => s.name === skillName)
 	if (!skill) return null
 
@@ -179,7 +205,7 @@ export async function resolveMultipleSkillsAsync(
 	resolved: Map<string, string>
 	notFound: string[]
 }> {
-	const allSkills = await getAllSkills()
+	const allSkills = await getAllSkills(options)
 	const skillMap = new Map<string, LoadedSkill>()
 	for (const skill of allSkills) {
 		skillMap.set(skill.name, skill)

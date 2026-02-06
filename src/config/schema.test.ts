@@ -345,6 +345,20 @@ describe("CategoryConfigSchema", () => {
     }
   })
 
+  test("accepts reasoningEffort as optional string with xhigh", () => {
+    // #given
+    const config = { reasoningEffort: "xhigh" }
+
+    // #when
+    const result = CategoryConfigSchema.safeParse(config)
+
+    // #then
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.reasoningEffort).toBe("xhigh")
+    }
+  })
+
   test("rejects non-string variant", () => {
     // #given
     const config = { model: "openai/gpt-5.2", variant: 123 }
@@ -360,7 +374,7 @@ describe("CategoryConfigSchema", () => {
 describe("BuiltinCategoryNameSchema", () => {
   test("accepts all builtin category names", () => {
     // #given
-    const categories = ["visual-engineering", "ultrabrain", "artistry", "quick", "most-capable", "writing", "general"]
+    const categories = ["visual-engineering", "ultrabrain", "artistry", "quick", "unspecified-low", "unspecified-high", "writing"]
 
     // #when / #then
     for (const cat of categories) {
@@ -375,7 +389,7 @@ describe("Sisyphus-Junior agent override", () => {
     // #given
     const config = {
       agents: {
-        "Sisyphus-Junior": {
+        "D5 - backend builder": {
           model: "openai/gpt-5.2",
           temperature: 0.2,
         },
@@ -388,18 +402,18 @@ describe("Sisyphus-Junior agent override", () => {
     // #then
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.data.agents?.["Sisyphus-Junior"]).toBeDefined()
-      expect(result.data.agents?.["Sisyphus-Junior"]?.model).toBe("openai/gpt-5.2")
-      expect(result.data.agents?.["Sisyphus-Junior"]?.temperature).toBe(0.2)
+      expect(result.data.agents?.["D5 - backend builder"]).toBeDefined()
+      expect(result.data.agents?.["D5 - backend builder"]?.model).toBe("openai/gpt-5.2")
+      expect(result.data.agents?.["D5 - backend builder"]?.temperature).toBe(0.2)
     }
   })
 
-  test("schema accepts Sisyphus-Junior with prompt_append", () => {
+  test("schema accepts sisyphus-junior with prompt_append", () => {
     // #given
     const config = {
       agents: {
-        "Sisyphus-Junior": {
-          prompt_append: "Additional instructions for Sisyphus-Junior",
+        "D5 - backend builder": {
+          prompt_append: "Additional instructions for sisyphus-junior",
         },
       },
     }
@@ -410,17 +424,17 @@ describe("Sisyphus-Junior agent override", () => {
     // #then
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.data.agents?.["Sisyphus-Junior"]?.prompt_append).toBe(
-        "Additional instructions for Sisyphus-Junior"
+      expect(result.data.agents?.["D5 - backend builder"]?.prompt_append).toBe(
+        "Additional instructions for sisyphus-junior"
       )
     }
   })
 
-  test("schema accepts Sisyphus-Junior with tools override", () => {
+  test("schema accepts sisyphus-junior with tools override", () => {
     // #given
     const config = {
       agents: {
-        "Sisyphus-Junior": {
+        "D5 - backend builder": {
           tools: {
             read: true,
             write: false,
@@ -435,10 +449,62 @@ describe("Sisyphus-Junior agent override", () => {
     // #then
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.data.agents?.["Sisyphus-Junior"]?.tools).toEqual({
+      expect(result.data.agents?.["D5 - backend builder"]?.tools).toEqual({
         read: true,
         write: false,
       })
+    }
+  })
+
+  test("schema accepts lowercase agent names (sisyphus, atlas, prometheus)", () => {
+    // #given
+    const config = {
+      agents: {
+        sisyphus: {
+          temperature: 0.1,
+        },
+        atlas: {
+          temperature: 0.2,
+        },
+        prometheus: {
+          temperature: 0.3,
+        },
+      },
+    }
+
+    // #when
+    const result = OhMyOpenCodeConfigSchema.safeParse(config)
+
+    // #then
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.agents?.["Musashi"]?.temperature).toBe(0.1)
+      expect(result.data.agents?.["Musashi - boulder"]?.temperature).toBe(0.2)
+      expect(result.data.agents?.["Musashi - plan"]?.temperature).toBe(0.3)
+    }
+  })
+
+  test("schema accepts v4 agent names", () => {
+    // #given
+    const config = {
+      agents: {
+        "Musashi - plan": {
+          category: "ultrabrain",
+        },
+        "K9 - advisor": {
+          category: "quick",
+        },
+      },
+    }
+
+    // #when
+    const result = OhMyOpenCodeConfigSchema.safeParse(config)
+
+    // #then
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.agents?.["Musashi - plan"]?.category).toBe("ultrabrain")
+      expect(result.data.agents?.["K9 - advisor"]?.category).toBe("quick")
     }
   })
 })

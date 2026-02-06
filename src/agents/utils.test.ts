@@ -5,11 +5,11 @@ import type { AgentConfig } from "@opencode-ai/sdk"
 const TEST_DEFAULT_MODEL = "anthropic/claude-opus-4-5"
 
 describe("createBuiltinAgents with model overrides", () => {
-  test("Musashi with default model has thinking config", () => {
+  test("Sisyphus with default model has thinking config", async () => {
     // #given - no overrides, using systemDefaultModel
 
     // #when
-    const agents = createBuiltinAgents([], {}, undefined, TEST_DEFAULT_MODEL)
+    const agents = await createBuiltinAgents([], {}, undefined, TEST_DEFAULT_MODEL)
 
     // #then
     expect(agents.Musashi.model).toBe("anthropic/claude-opus-4-5")
@@ -17,14 +17,14 @@ describe("createBuiltinAgents with model overrides", () => {
     expect(agents.Musashi.reasoningEffort).toBeUndefined()
   })
 
-  test("Musashi with GPT model override has reasoningEffort, no thinking", () => {
+  test("Sisyphus with GPT model override has reasoningEffort, no thinking", async () => {
     // #given
     const overrides = {
       Musashi: { model: "github-copilot/gpt-5.2" },
     }
 
     // #when
-    const agents = createBuiltinAgents([], overrides, undefined, TEST_DEFAULT_MODEL)
+    const agents = await createBuiltinAgents([], overrides, undefined, TEST_DEFAULT_MODEL)
 
     // #then
     expect(agents.Musashi.model).toBe("github-copilot/gpt-5.2")
@@ -32,40 +32,40 @@ describe("createBuiltinAgents with model overrides", () => {
     expect(agents.Musashi.thinking).toBeUndefined()
   })
 
-  test("Musashi with systemDefaultModel GPT has reasoningEffort, no thinking", () => {
+  test("Sisyphus uses system default when no availableModels provided", async () => {
     // #given
-    const systemDefaultModel = "openai/gpt-5.2"
+    const systemDefaultModel = "anthropic/claude-opus-4-5"
 
     // #when
-    const agents = createBuiltinAgents([], {}, undefined, systemDefaultModel)
+    const agents = await createBuiltinAgents([], {}, undefined, systemDefaultModel)
 
-    // #then
-    expect(agents.Musashi.model).toBe("openai/gpt-5.2")
-    expect(agents.Musashi.reasoningEffort).toBe("medium")
-    expect(agents.Musashi.thinking).toBeUndefined()
+    // #then - falls back to system default when no availability match
+    expect(agents.Musashi.model).toBe("anthropic/claude-opus-4-5")
+    expect(agents.Musashi.thinking).toEqual({ type: "enabled", budgetTokens: 32000 })
+    expect(agents.Musashi.reasoningEffort).toBeUndefined()
   })
 
-  test("K9 - advisor with default model has reasoningEffort", () => {
-    // #given - no overrides, using systemDefaultModel for other agents
-    // K9 - advisor uses its own default model (openai/gpt-5.2) from the factory singleton
+  test("Oracle uses first fallback entry when no availableModels provided (no cache scenario)", async () => {
+    // #given - no available models simulates CI without model cache
 
     // #when
-    const agents = createBuiltinAgents([], {}, undefined, TEST_DEFAULT_MODEL)
+    const agents = await createBuiltinAgents([], {}, undefined, TEST_DEFAULT_MODEL)
 
-    // #then - K9 - advisor uses systemDefaultModel since model is now required
-    expect(agents["K9 - advisor"].model).toBe("anthropic/claude-opus-4-5")
-    expect(agents["K9 - advisor"].thinking).toEqual({ type: "enabled", budgetTokens: 32000 })
-    expect(agents["K9 - advisor"].reasoningEffort).toBeUndefined()
+    // #then - uses first fallback entry (openai/gpt-5.2) instead of system default
+    expect(agents["K9 - advisor"].model).toBe("openai/gpt-5.2")
+    expect(agents["K9 - advisor"].reasoningEffort).toBe("medium")
+    expect(agents["K9 - advisor"].textVerbosity).toBe("high")
+    expect(agents["K9 - advisor"].thinking).toBeUndefined()
   })
 
-  test("K9 - advisor with GPT model override has reasoningEffort, no thinking", () => {
+  test("Oracle with GPT model override has reasoningEffort, no thinking", async () => {
     // #given
     const overrides = {
       "K9 - advisor": { model: "openai/gpt-5.2" },
     }
 
     // #when
-    const agents = createBuiltinAgents([], overrides, undefined, TEST_DEFAULT_MODEL)
+    const agents = await createBuiltinAgents([], overrides, undefined, TEST_DEFAULT_MODEL)
 
     // #then
     expect(agents["K9 - advisor"].model).toBe("openai/gpt-5.2")
@@ -74,14 +74,14 @@ describe("createBuiltinAgents with model overrides", () => {
     expect(agents["K9 - advisor"].thinking).toBeUndefined()
   })
 
-  test("K9 - advisor with Claude model override has thinking, no reasoningEffort", () => {
+  test("Oracle with Claude model override has thinking, no reasoningEffort", async () => {
     // #given
     const overrides = {
       "K9 - advisor": { model: "anthropic/claude-sonnet-4" },
     }
 
     // #when
-    const agents = createBuiltinAgents([], overrides, undefined, TEST_DEFAULT_MODEL)
+    const agents = await createBuiltinAgents([], overrides, undefined, TEST_DEFAULT_MODEL)
 
     // #then
     expect(agents["K9 - advisor"].model).toBe("anthropic/claude-sonnet-4")
@@ -90,19 +90,19 @@ describe("createBuiltinAgents with model overrides", () => {
     expect(agents["K9 - advisor"].textVerbosity).toBeUndefined()
   })
 
-  test("non-model overrides are still applied after factory rebuild", () => {
-    // #given
-    const overrides = {
-      Musashi: { model: "github-copilot/gpt-5.2", temperature: 0.5 },
-    }
+   test("non-model overrides are still applied after factory rebuild", async () => {
+     // #given
+     const overrides = {
+       Musashi: { model: "github-copilot/gpt-5.2", temperature: 0.5 },
+     }
 
-    // #when
-    const agents = createBuiltinAgents([], overrides, undefined, TEST_DEFAULT_MODEL)
+     // #when
+     const agents = await createBuiltinAgents([], overrides, undefined, TEST_DEFAULT_MODEL)
 
-    // #then
-    expect(agents.Musashi.model).toBe("github-copilot/gpt-5.2")
-    expect(agents.Musashi.temperature).toBe(0.5)
-  })
+     // #then
+     expect(agents.Musashi.model).toBe("github-copilot/gpt-5.2")
+     expect(agents.Musashi.temperature).toBe(0.5)
+   })
 })
 
 describe("buildAgent with category and skills", () => {
@@ -122,10 +122,8 @@ describe("buildAgent with category and skills", () => {
     // #when
     const agent = buildAgent(source["test-agent"], TEST_MODEL)
 
-    // #then - DEFAULT_CATEGORIES only has temperature, not model
-    // Model remains undefined since neither factory nor category provides it
-    expect(agent.model).toBeUndefined()
-    expect(agent.temperature).toBe(0.7)
+    // #then - category's built-in model is applied
+    expect(agent.model).toBe("google/gemini-3-pro")
   })
 
   test("agent with category and existing model keeps existing model", () => {
@@ -142,9 +140,8 @@ describe("buildAgent with category and skills", () => {
     // #when
     const agent = buildAgent(source["test-agent"], TEST_MODEL)
 
-    // #then
+    // #then - explicit model takes precedence over category
     expect(agent.model).toBe("custom/model")
-    expect(agent.temperature).toBe(0.7)
   })
 
   test("agent with category inherits variant", () => {
@@ -247,9 +244,9 @@ describe("buildAgent with category and skills", () => {
     // #when
     const agent = buildAgent(source["test-agent"], TEST_MODEL)
 
-    // #then - DEFAULT_CATEGORIES["ultrabrain"] only has temperature, not model
-    expect(agent.model).toBeUndefined()
-    expect(agent.temperature).toBe(0.1)
+    // #then - category's built-in model and skills are applied
+    expect(agent.model).toBe("openai/gpt-5.2-codex")
+    expect(agent.variant).toBe("xhigh")
     expect(agent.prompt).toContain("Role: Designer-Turned-Developer")
     expect(agent.prompt).toContain("Task description")
   })

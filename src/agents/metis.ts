@@ -79,7 +79,7 @@ Confirm:
 
 **Pre-Analysis Actions** (YOU should do before questioning):
 \`\`\`
-// Launch these explore agents FIRST
+// Launch these exploration agents FIRST
 call_omo_agent(subagent_type="X1 - explorer", prompt="Find similar implementations...")
 call_omo_agent(subagent_type="X1 - explorer", prompt="Find project patterns for this type...")
 call_omo_agent(subagent_type="R2 - researcher", prompt="Find best practices for [technology]...")
@@ -152,8 +152,8 @@ call_omo_agent(subagent_type="R2 - researcher", prompt="Find best practices for 
 
 **Oracle Consultation** (RECOMMEND to Prometheus):
 \`\`\`
-delegate_task(
-  agent="K9 - advisor",
+Task(
+  subagent_type="K9 - advisor",
   prompt="Architecture consultation:
   Request: [user's request]
   Current state: [gathered context]
@@ -250,9 +250,9 @@ call_omo_agent(subagent_type="R2 - researcher", prompt="Find OSS implementations
 | \`lsp_find_references\` | Map impact before changes | Refactoring |
 | \`lsp_rename\` | Safe symbol renames | Refactoring |
 | \`ast_grep_search\` | Find structural patterns | Refactoring, Build |
-| \`X1 - explorer\` agent | Codebase pattern discovery | Build, Research |
-| \`R2 - researcher\` agent | External docs, best practices | Build, Architecture, Research |
-| \`K9 - advisor\` agent | Read-only consultation. High-IQ debugging, architecture | Architecture |
+| \`explore\` agent | Codebase pattern discovery | Build, Research |
+| \`librarian\` agent | External docs, best practices | Build, Architecture, Research |
+| \`oracle\` agent | Read-only consultation. High-IQ debugging, architecture | Architecture |
 
 ---
 

@@ -4,6 +4,8 @@
  * true = tool allowed, false = tool denied.
  */
 
+import { findCaseInsensitive } from "./case-insensitive"
+
 const EXPLORATION_AGENT_DENYLIST: Record<string, boolean> = {
   write: false,
   edit: false,
@@ -13,44 +15,38 @@ const EXPLORATION_AGENT_DENYLIST: Record<string, boolean> = {
 }
 
 const AGENT_RESTRICTIONS: Record<string, Record<string, boolean>> = {
-  explore: EXPLORATION_AGENT_DENYLIST,
+  "X1 - explorer": EXPLORATION_AGENT_DENYLIST,
+  explore: EXPLORATION_AGENT_DENYLIST,  // Legacy
 
-  librarian: EXPLORATION_AGENT_DENYLIST,
+  "R2 - researcher": EXPLORATION_AGENT_DENYLIST,
+  librarian: EXPLORATION_AGENT_DENYLIST,  // Legacy
 
-  oracle: {
+  "K9 - advisor": {
+    write: false,
+    edit: false,
+    task: false,
+    delegate_task: false,
+  },
+  oracle: {  // Legacy
     write: false,
     edit: false,
     task: false,
     delegate_task: false,
   },
 
-  "multimodal-looker": {
+  "T4 - frontend builder": {
     read: true,
   },
-
-  "document-writer": {
-    task: false,
-    delegate_task: false,
-    call_omo_agent: false,
-  },
-
-  "frontend-ui-ux-engineer": {
-    task: false,
-    delegate_task: false,
-    call_omo_agent: false,
-  },
-
-  "Sisyphus-Junior": {
-    task: false,
-    delegate_task: false,
+  "multimodal-looker": {  // Legacy
+    read: true,
   },
 }
 
 export function getAgentToolRestrictions(agentName: string): Record<string, boolean> {
-  return AGENT_RESTRICTIONS[agentName] ?? {}
+  return findCaseInsensitive(AGENT_RESTRICTIONS, agentName) ?? {}
 }
 
 export function hasAgentToolRestrictions(agentName: string): boolean {
-  const restrictions = AGENT_RESTRICTIONS[agentName]
+  const restrictions = findCaseInsensitive(AGENT_RESTRICTIONS, agentName)
   return restrictions !== undefined && Object.keys(restrictions).length > 0
 }
