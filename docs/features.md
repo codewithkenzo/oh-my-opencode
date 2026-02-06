@@ -130,15 +130,18 @@ When you load a skill with embedded MCP, its tools become available automaticall
 
 ### MCP Query for Custom MCP (MCPorter)
 
-Custom MCP servers loaded from `.mcp.json` can be discovered with the `mcp_query` tool:
+Custom MCP servers loaded from `.mcp.json` are the default `mcp_query` source, and you can optionally query other MCP sources:
 
 ```text
 mcp_query(query="sqlite", include_operations=true)
 mcp_query(server_name="my-custom-mcp", scope="project")
+mcp_query(source="builtin", include_operations=false)
+mcp_query(source="skill", query="playwright")
 ```
 
 - `skill_mcp` is for MCP servers embedded in loaded skills.
-- `mcp_query` is for custom MCP servers from Claude-compatible `.mcp.json` files.
+- `mcp_query` defaults to custom MCP servers from Claude-compatible `.mcp.json` files.
+- `mcp_query(source=...)` can also inspect `builtin` and `skill` MCP surfaces.
 - Both tools share the same internal MCP client manager for connection/retry lifecycle.
 
 **Built-in Skills:**
@@ -203,7 +206,7 @@ Example `settings.json`:
 - `./.mcp.json` (project)
 - `./.claude/.mcp.json` (local)
 - Supports environment variable expansion (`${VAR}` syntax)
-- `mcp_query` uses this loaded custom MCP surface for discovery/query.
+- `mcp_query` defaults to this custom MCP surface and can optionally inspect other MCP sources via `source`.
 
 ### Data Storage
 
