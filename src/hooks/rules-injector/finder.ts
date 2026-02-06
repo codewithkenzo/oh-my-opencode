@@ -37,6 +37,16 @@ function isValidRuleFile(fileName: string, dir: string): boolean {
 export function findProjectRoot(startPath: string): string | null {
   let current: string;
   const systemTempDir = tmpdir();
+  const resolvedSystemTempDir = realpathSync(systemTempDir);
+
+  const isSystemTempRoot = (pathValue: string): boolean => {
+    if (pathValue === systemTempDir) return true;
+    try {
+      return realpathSync(pathValue) === resolvedSystemTempDir;
+    } catch {
+      return false;
+    }
+  };
 
   try {
     const stat = statSync(startPath);
@@ -51,14 +61,12 @@ export function findProjectRoot(startPath: string): string | null {
       if (existsSync(markerPath)) {
         // Avoid treating shared system temp roots as project roots.
         // Projects under temp still resolve correctly before reaching this boundary.
-        if (current === systemTempDir) {
-          break;
-        }
+        if (isSystemTempRoot(current)) return null;
         return current;
       }
     }
 
-    if (current === systemTempDir) {
+    if (isSystemTempRoot(current)) {
       return null;
     }
 

@@ -1,4 +1,4 @@
-import { tool, type ToolDefinition } from "@opencode-ai/plugin"
+import { tool, type ToolDefinition } from "@opencode-ai/plugin/tool"
 import { loadRawMcpConfigs, type LoadedRawMcpServer } from "../../features/claude-code-mcp-loader"
 import type { McpClientManager, McpClientInfo, McpServerContext } from "../../features/skill-mcp-manager"
 import { MCP_QUERY_CONTEXT_NAME, MCP_QUERY_DESCRIPTION } from "./constants"
