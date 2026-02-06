@@ -64,6 +64,7 @@ import {
   createSkillTool,
   createFindSkillsTool,
   createSkillMcpTool,
+  createMcpQueryTool,
   createSlashcommandTool,
   discoverCommandsSync,
   sessionExists,
@@ -306,6 +307,10 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     getLoadedSkills: () => mergedSkills,
     getSessionID: getSessionIDForMcp,
   });
+  const mcpQueryTool = createMcpQueryTool({
+    manager: skillMcpManager,
+    getSessionID: getSessionIDForMcp,
+  });
 
   const commands = discoverCommandsSync();
   const slashcommandTool = createSlashcommandTool({
@@ -334,6 +339,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       skill: skillTool,
       find_skills: findSkillsTool,
       skill_mcp: skillMcpTool,
+      mcp_query: mcpQueryTool,
       slashcommand: slashcommandTool,
       interactive_bash,
     },
