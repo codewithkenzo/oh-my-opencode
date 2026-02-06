@@ -4,6 +4,7 @@ import {
   realpathSync,
   statSync,
 } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, relative } from "node:path";
 import {
   GITHUB_INSTRUCTIONS_PATTERN,
@@ -35,6 +36,7 @@ function isValidRuleFile(fileName: string, dir: string): boolean {
  */
 export function findProjectRoot(startPath: string): string | null {
   let current: string;
+  const systemTempDir = tmpdir();
 
   try {
     const stat = statSync(startPath);
@@ -47,8 +49,17 @@ export function findProjectRoot(startPath: string): string | null {
     for (const marker of PROJECT_MARKERS) {
       const markerPath = join(current, marker);
       if (existsSync(markerPath)) {
+        // Avoid treating shared system temp roots as project roots.
+        // Projects under temp still resolve correctly before reaching this boundary.
+        if (current === systemTempDir) {
+          break;
+        }
         return current;
       }
+    }
+
+    if (current === systemTempDir) {
+      return null;
     }
 
     const parent = dirname(current);
