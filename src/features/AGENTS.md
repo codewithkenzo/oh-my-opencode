@@ -12,7 +12,7 @@ features/
 │   ├── manager.ts              # Launch → poll → complete orchestration
 │   ├── concurrency.ts          # Per-provider/model limits
 │   └── types.ts                # BackgroundTask, LaunchInput
-├── skill-mcp-manager/          # MCP client lifecycle
+├── skill-mcp-manager/          # Shared MCP client lifecycle (skill_mcp + mcp_query)
 │   ├── manager.ts              # Lazy loading, idle cleanup
 │   └── types.ts                # SkillMcpConfig, transports
 ├── builtin-skills/             # Playwright, git-master, frontend-ui-ux
@@ -48,12 +48,13 @@ features/
 - **Notification**: Batched system reminders to parent session
 - **Cleanup**: 30m TTL, 3m stale timeout, signal handlers
 
-## SKILL MCP
+## SHARED MCP CLIENT MANAGER
 
 - **Lazy**: Clients created on first tool call
 - **Transports**: stdio (local process), http (SSE/Streamable)
 - **Environment**: `${VAR}` expansion in config
 - **Lifecycle**: 5m idle cleanup, session-scoped
+- **Used by**: `skill_mcp` (skill-embedded MCP) and `mcp_query` (custom `.mcp.json` MCP)
 
 ## CONFIG TOGGLES
 
