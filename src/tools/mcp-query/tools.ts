@@ -1,12 +1,13 @@
 import { tool, type ToolDefinition } from "@opencode-ai/plugin"
 import { loadRawMcpConfigs, type LoadedRawMcpServer } from "../../features/claude-code-mcp-loader"
-import type { SkillMcpManager, SkillMcpClientInfo, SkillMcpServerContext } from "../../features/skill-mcp-manager"
-import { MCP_QUERY_DESCRIPTION, MCP_QUERY_SKILL_NAME } from "./constants"
+import type { McpClientManager, McpClientInfo, McpServerContext } from "../../features/skill-mcp-manager"
+import { MCP_QUERY_CONTEXT_NAME, MCP_QUERY_DESCRIPTION } from "./constants"
 import type { McpQueryArgs } from "./types"
 
 interface McpQueryToolOptions {
-  manager: SkillMcpManager
+  manager: McpClientManager
   getSessionID: () => string
+  enabled?: boolean
   loadServers?: () => Promise<LoadedRawMcpServer[]>
 }
 
@@ -74,6 +75,7 @@ async function defaultLoadServers(): Promise<LoadedRawMcpServer[]> {
 
 export function createMcpQueryTool(options: McpQueryToolOptions): ToolDefinition {
   const loadServers = options.loadServers ?? defaultLoadServers
+  const isEnabled = options.enabled ?? true
 
   return tool({
     description: MCP_QUERY_DESCRIPTION,
@@ -85,6 +87,12 @@ export function createMcpQueryTool(options: McpQueryToolOptions): ToolDefinition
       limit: tool.schema.number().int().positive().optional().describe("Maximum servers returned (default 20, max 200)"),
     },
     async execute(args: McpQueryArgs) {
+      if (!isEnabled) {
+        throw new Error(
+          "Custom MCP loading is disabled by `claude_code.mcp=false`. Enable it to use `mcp_query`."
+        )
+      }
+
       const includeOperations = args.include_operations ?? true
       const query = args.query?.trim().toLowerCase()
       const limit = Math.min(Math.max(args.limit ?? 20, 1), 200)
@@ -123,15 +131,15 @@ export function createMcpQueryTool(options: McpQueryToolOptions): ToolDefinition
           continue
         }
 
-        const info: SkillMcpClientInfo = {
+        const info: McpClientInfo = {
           serverName: server.name,
-          skillName: MCP_QUERY_SKILL_NAME,
+          contextName: MCP_QUERY_CONTEXT_NAME,
           sessionID: options.getSessionID(),
         }
 
-        const context: SkillMcpServerContext = {
+        const context: McpServerContext = {
           config: server.config,
-          skillName: MCP_QUERY_SKILL_NAME,
+          contextName: MCP_QUERY_CONTEXT_NAME,
         }
 
         const [toolsResult, resourcesResult, promptsResult] = await Promise.allSettled([

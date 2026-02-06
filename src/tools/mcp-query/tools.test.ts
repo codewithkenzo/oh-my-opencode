@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test"
-import type { SkillMcpManager } from "../../features/skill-mcp-manager"
+import type { McpClientManager } from "../../features/skill-mcp-manager"
 import type { LoadedRawMcpServer } from "../../features/claude-code-mcp-loader"
 import { createMcpQueryTool } from "./tools"
 
@@ -37,7 +37,7 @@ describe("mcp_query tool", () => {
     listTools,
     listResources,
     listPrompts,
-  } as unknown as SkillMcpManager
+  } as unknown as McpClientManager
 
   beforeEach(() => {
     listTools.mockClear()
@@ -132,5 +132,18 @@ describe("mcp_query tool", () => {
     // #then
     expect(parsed.servers[0]?.errors).toBeDefined()
     expect(parsed.servers[0]?.errors?.some((entry) => entry.includes("prompt API unavailable"))).toBe(true)
+  })
+
+  it("rejects query usage when claude_code.mcp is disabled", async () => {
+    // #given
+    const tool = createMcpQueryTool({
+      manager,
+      getSessionID: () => "session-1",
+      enabled: false,
+      loadServers: async () => [createServer("sqlite", "project")],
+    })
+
+    // #when / #then
+    await expect(tool.execute({}, mockContext)).rejects.toThrow(/claude_code\.mcp=false/)
   })
 })
