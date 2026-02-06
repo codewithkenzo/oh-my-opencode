@@ -1,14 +1,19 @@
 import { tool, type ToolDefinition } from "@opencode-ai/plugin/tool"
-import { loadRawMcpConfigs, type LoadedRawMcpServer } from "../../features/claude-code-mcp-loader"
+import { loadRawMcpConfigs } from "../../features/claude-code-mcp-loader"
+import { createMcpRegistry, filterMcpRegistryServers, type McpRegistryResult, type McpRegistryServerDescriptor } from "../../features/mcp-registry"
+import type { LoadedSkill } from "../../features/opencode-skill-loader/types"
 import type { McpClientManager, McpClientInfo, McpServerContext } from "../../features/skill-mcp-manager"
+import { createBuiltinMcps } from "../../mcp"
 import { MCP_QUERY_CONTEXT_NAME, MCP_QUERY_DESCRIPTION } from "./constants"
 import type { McpQueryArgs } from "./types"
 
 interface McpQueryToolOptions {
   manager: McpClientManager
   getSessionID: () => string
-  enabled?: boolean
-  loadServers?: () => Promise<LoadedRawMcpServer[]>
+  includeCustomMcp?: boolean
+  disabledBuiltinMcps?: string[]
+  getLoadedSkills?: () => LoadedSkill[]
+  loadRegistry?: () => Promise<McpRegistryResult>
 }
 
 interface QueryOperation {
@@ -19,8 +24,11 @@ interface QueryOperation {
 
 interface QueryServerResult {
   server_name: string
-  scope: "user" | "project" | "local"
+  source: "builtin" | "custom" | "plugin" | "skill"
+  scope: string
+  precedence: number
   transport: "http" | "stdio"
+  context_name?: string
   query_match: "server" | "operation" | "both"
   operations: QueryOperation[]
   counts: {
@@ -35,19 +43,14 @@ function normalizeText(value: string | undefined): string {
   return (value ?? "").toLowerCase()
 }
 
-function inferTransport(server: LoadedRawMcpServer): "http" | "stdio" {
-  const type = server.config.type
-  if (type === "stdio") {
-    return "stdio"
-  }
-  if (type === "http" || type === "sse" || server.config.url) {
-    return "http"
-  }
-  return "stdio"
-}
-
-function buildServerSearchText(server: LoadedRawMcpServer): string {
-  const parts: string[] = [server.name, server.scope, inferTransport(server)]
+function buildServerSearchText(server: McpRegistryServerDescriptor): string {
+  const parts: string[] = [
+    server.name,
+    server.source,
+    server.scope,
+    server.transport,
+    server.contextName ?? "",
+  ]
   if (server.config.url) {
     parts.push(server.config.url)
   }
@@ -71,26 +74,36 @@ function getResourceName(resource: { uri?: string; name?: string }): string {
   return resource.name ?? "unknown-resource"
 }
 
-async function defaultLoadServers(): Promise<LoadedRawMcpServer[]> {
-  const result = await loadRawMcpConfigs()
-  return result.loadedServers
+async function defaultLoadRegistry(options: McpQueryToolOptions): Promise<McpRegistryResult> {
+  const customServers = options.includeCustomMcp === false
+    ? []
+    : (await loadRawMcpConfigs()).loadedServers
+
+  return createMcpRegistry({
+    builtinServers: createBuiltinMcps(options.disabledBuiltinMcps ?? []),
+    customServers,
+    skills: options.getLoadedSkills?.() ?? [],
+  })
 }
 
 export function createMcpQueryTool(options: McpQueryToolOptions): ToolDefinition {
-  const loadServers = options.loadServers ?? defaultLoadServers
-  const isEnabled = options.enabled ?? true
+  const loadRegistry = options.loadRegistry ?? (() => defaultLoadRegistry(options))
+  const includeCustomMcp = options.includeCustomMcp ?? true
 
   return tool({
     description: MCP_QUERY_DESCRIPTION,
     args: {
       query: tool.schema.string().optional().describe("Case-insensitive filter over server metadata and operation names/descriptions"),
       server_name: tool.schema.string().optional().describe("Exact server name filter"),
+      source: tool.schema.enum(["custom", "skill", "builtin", "plugin", "all"]).optional().describe("MCP source to query (default: custom)"),
       scope: tool.schema.enum(["user", "project", "local"]).optional().describe("Filter by MCP config scope"),
       include_operations: tool.schema.boolean().optional().describe("When true (default), connect and list tools/resources/prompts"),
       limit: tool.schema.number().int().positive().optional().describe("Maximum servers returned (default 20, max 200)"),
     },
     async execute(args: McpQueryArgs) {
-      if (!isEnabled) {
+      const source = args.source ?? "custom"
+
+      if (!includeCustomMcp && source === "custom") {
         throw new Error(
           "Custom MCP loading is disabled by `claude_code.mcp=false`. Enable it to use `mcp_query`."
         )
@@ -100,7 +113,8 @@ export function createMcpQueryTool(options: McpQueryToolOptions): ToolDefinition
       const query = args.query?.trim().toLowerCase()
       const limit = Math.min(Math.max(args.limit ?? 20, 1), 200)
 
-      let servers = await loadServers()
+      const registry = await loadRegistry()
+      let servers = filterMcpRegistryServers(registry, source)
 
       if (args.server_name) {
         servers = servers.filter((server) => server.name === args.server_name)
@@ -121,8 +135,11 @@ export function createMcpQueryTool(options: McpQueryToolOptions): ToolDefinition
 
           results.push({
             server_name: server.name,
+            source: server.source,
             scope: server.scope,
-            transport: inferTransport(server),
+            precedence: server.precedence,
+            transport: server.transport,
+            context_name: server.contextName,
             query_match: "server",
             operations: [],
             counts: {
@@ -136,13 +153,13 @@ export function createMcpQueryTool(options: McpQueryToolOptions): ToolDefinition
 
         const info: McpClientInfo = {
           serverName: server.name,
-          contextName: MCP_QUERY_CONTEXT_NAME,
+          contextName: server.contextName ?? MCP_QUERY_CONTEXT_NAME,
           sessionID: options.getSessionID(),
         }
 
         const context: McpServerContext = {
           config: server.config,
-          contextName: MCP_QUERY_CONTEXT_NAME,
+          contextName: server.contextName ?? MCP_QUERY_CONTEXT_NAME,
         }
 
         const [toolsResult, resourcesResult, promptsResult] = await Promise.allSettled([
@@ -209,8 +226,11 @@ export function createMcpQueryTool(options: McpQueryToolOptions): ToolDefinition
 
         const result: QueryServerResult = {
           server_name: server.name,
+          source: server.source,
           scope: server.scope,
-          transport: inferTransport(server),
+          precedence: server.precedence,
+          transport: server.transport,
+          context_name: server.contextName,
           query_match: queryMatch,
           operations: filteredOperations,
           counts: {
@@ -233,6 +253,20 @@ export function createMcpQueryTool(options: McpQueryToolOptions): ToolDefinition
         {
           total_servers: servers.length,
           returned_servers: limitedResults.length,
+          source,
+          collisions: registry.collisions.map((collision) => ({
+            name: collision.name,
+            winner: {
+              source: collision.winner.source,
+              scope: collision.winner.scope,
+              context_name: collision.winner.contextName,
+            },
+            overridden: collision.overridden.map((entry) => ({
+              source: entry.source,
+              scope: entry.scope,
+              context_name: entry.contextName,
+            })),
+          })),
           include_operations: includeOperations,
           query: args.query ?? null,
           servers: limitedResults,

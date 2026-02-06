@@ -310,7 +310,9 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
   const mcpQueryTool = createMcpQueryTool({
     manager: mcpClientManager,
     getSessionID: getSessionIDForMcp,
-    enabled: pluginConfig.claude_code?.mcp !== false,
+    includeCustomMcp: pluginConfig.claude_code?.mcp !== false,
+    disabledBuiltinMcps: pluginConfig.disabled_mcps,
+    getLoadedSkills: () => mergedSkills,
   });
 
   const commands = discoverCommandsSync();

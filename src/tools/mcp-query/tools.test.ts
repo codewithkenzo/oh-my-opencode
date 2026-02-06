@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test"
 import type { McpClientManager } from "../../features/skill-mcp-manager"
-import type { LoadedRawMcpServer } from "../../features/claude-code-mcp-loader"
+import { createMcpRegistry, type McpRegistryResult } from "../../features/mcp-registry"
 import { createMcpQueryTool } from "./tools"
 
 const mockContext = {
@@ -10,27 +10,34 @@ const mockContext = {
   abort: new AbortController().signal,
 }
 
-function createServer(name: string, scope: "user" | "project" | "local"): LoadedRawMcpServer {
-  return {
-    name,
-    scope,
-    config: {
-      command: "node",
-      args: ["server.js"],
+function createRegistry(): McpRegistryResult {
+  return createMcpRegistry({
+    customServers: [
+      {
+        name: "sqlite",
+        scope: "project",
+        config: {
+          command: "node",
+          args: ["sqlite-server.js"],
+        },
+      },
+      {
+        name: "memory",
+        scope: "local",
+        config: {
+          command: "node",
+          args: ["memory-server.js"],
+        },
+      },
+    ],
+    builtinServers: {
+      context7: {
+        type: "remote",
+        url: "https://mcp.context7.com/mcp",
+        enabled: true,
+      },
     },
-  }
-}
-
-function createServerWithConfig(
-  name: string,
-  scope: "user" | "project" | "local",
-  config: LoadedRawMcpServer["config"]
-): LoadedRawMcpServer {
-  return {
-    name,
-    scope,
-    config,
-  }
+  })
 }
 
 describe("mcp_query tool", () => {
@@ -57,24 +64,33 @@ describe("mcp_query tool", () => {
     listPrompts.mockClear()
   })
 
-  it("returns custom MCP servers with operations", async () => {
+  it("returns custom MCP servers with operations and source metadata", async () => {
     // #given
     const tool = createMcpQueryTool({
       manager,
       getSessionID: () => "session-1",
-      loadServers: async () => [createServer("sqlite", "project")],
+      loadRegistry: async () => createRegistry(),
     })
 
     // #when
     const output = await tool.execute({}, mockContext)
     const parsed = JSON.parse(output as string) as {
+      source: string
       returned_servers: number
-      servers: Array<{ server_name: string; counts: { tools: number; resources: number; prompts: number } }>
+      servers: Array<{
+        server_name: string
+        source: string
+        scope: string
+        precedence: number
+        counts: { tools: number; resources: number; prompts: number }
+      }>
     }
 
     // #then
-    expect(parsed.returned_servers).toBe(1)
-    expect(parsed.servers[0]?.server_name).toBe("sqlite")
+    expect(parsed.source).toBe("custom")
+    expect(parsed.returned_servers).toBe(2)
+    expect(parsed.servers[0]?.source).toBe("custom")
+    expect(parsed.servers[0]?.precedence).toBeGreaterThan(0)
     expect(parsed.servers[0]?.counts).toEqual({ tools: 2, resources: 1, prompts: 1 })
   })
 
@@ -83,18 +99,16 @@ describe("mcp_query tool", () => {
     const tool = createMcpQueryTool({
       manager,
       getSessionID: () => "session-1",
-      loadServers: async () => [createServer("sqlite", "project")],
+      loadRegistry: async () => createRegistry(),
     })
 
     // #when
     const output = await tool.execute({ query: "migrate" }, mockContext)
     const parsed = JSON.parse(output as string) as {
-      returned_servers: number
       servers: Array<{ operations: Array<{ name: string }> }>
     }
 
     // #then
-    expect(parsed.returned_servers).toBe(1)
     expect(parsed.servers[0]?.operations).toHaveLength(1)
     expect(parsed.servers[0]?.operations[0]?.name).toBe("migrate")
   })
@@ -104,18 +118,16 @@ describe("mcp_query tool", () => {
     const tool = createMcpQueryTool({
       manager,
       getSessionID: () => "session-1",
-      loadServers: async () => [createServer("memory", "local")],
+      loadRegistry: async () => createRegistry(),
     })
 
     // #when
     const output = await tool.execute({ include_operations: false }, mockContext)
     const parsed = JSON.parse(output as string) as {
-      returned_servers: number
       servers: Array<{ operations: unknown[]; counts: { tools: number; resources: number; prompts: number } }>
     }
 
     // #then
-    expect(parsed.returned_servers).toBe(1)
     expect(parsed.servers[0]?.operations).toEqual([])
     expect(parsed.servers[0]?.counts).toEqual({ tools: 0, resources: 0, prompts: 0 })
     expect(listTools).not.toHaveBeenCalled()
@@ -132,7 +144,7 @@ describe("mcp_query tool", () => {
     const tool = createMcpQueryTool({
       manager,
       getSessionID: () => "session-1",
-      loadServers: async () => [createServer("memory", "local")],
+      loadRegistry: async () => createRegistry(),
     })
 
     // #when
@@ -146,19 +158,50 @@ describe("mcp_query tool", () => {
     expect(parsed.servers[0]?.errors?.some((entry) => entry.includes("prompt API unavailable"))).toBe(true)
   })
 
-  it("honors explicit stdio type over url in transport labeling", async () => {
+  it("supports source filtering for built-in MCP servers", async () => {
     // #given
     const tool = createMcpQueryTool({
       manager,
       getSessionID: () => "session-1",
-      loadServers: async () => [
-        createServerWithConfig("hybrid", "project", {
-          type: "stdio",
-          command: "node",
-          args: ["server.js"],
-          url: "https://example.com/mcp",
-        }),
+      loadRegistry: async () => createRegistry(),
+    })
+
+    // #when
+    const output = await tool.execute({ source: "builtin", include_operations: false }, mockContext)
+    const parsed = JSON.parse(output as string) as {
+      source: string
+      returned_servers: number
+      servers: Array<{ source: string; server_name: string }>
+    }
+
+    // #then
+    expect(parsed.source).toBe("builtin")
+    expect(parsed.returned_servers).toBe(1)
+    expect(parsed.servers[0]?.source).toBe("builtin")
+    expect(parsed.servers[0]?.server_name).toBe("context7")
+  })
+
+  it("honors explicit stdio type over url in transport labeling", async () => {
+    // #given
+    const registry = createMcpRegistry({
+      customServers: [
+        {
+          name: "hybrid",
+          scope: "project",
+          config: {
+            type: "stdio",
+            command: "node",
+            args: ["server.js"],
+            url: "https://example.com/mcp",
+          },
+        },
       ],
+    })
+
+    const tool = createMcpQueryTool({
+      manager,
+      getSessionID: () => "session-1",
+      loadRegistry: async () => registry,
     })
 
     // #when
@@ -171,13 +214,13 @@ describe("mcp_query tool", () => {
     expect(parsed.servers[0]?.transport).toBe("stdio")
   })
 
-  it("rejects query usage when claude_code.mcp is disabled", async () => {
+  it("rejects default custom-source query when custom MCP is disabled", async () => {
     // #given
     const tool = createMcpQueryTool({
       manager,
       getSessionID: () => "session-1",
-      enabled: false,
-      loadServers: async () => [createServer("sqlite", "project")],
+      includeCustomMcp: false,
+      loadRegistry: async () => createRegistry(),
     })
 
     // #when / #then
