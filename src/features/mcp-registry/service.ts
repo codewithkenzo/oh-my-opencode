@@ -36,6 +36,10 @@ function pluginConfigToClaudeConfig(config: McpServerConfig): ClaudeCodeMcpServe
     }
   }
 
+  if (!config.command) {
+    throw new Error("Invalid plugin MCP local config: missing command")
+  }
+
   if (config.command.length === 0) {
     throw new Error("Invalid plugin MCP local config: empty command array")
   }
