@@ -105,12 +105,40 @@ describe("mcp_query tool", () => {
     // #when
     const output = await tool.execute({ query: "migrate" }, mockContext)
     const parsed = JSON.parse(output as string) as {
+      total_servers: number
+      candidate_servers: number
       servers: Array<{ operations: Array<{ name: string }> }>
     }
 
     // #then
+    expect(parsed.total_servers).toBe(2)
+    expect(parsed.candidate_servers).toBe(2)
     expect(parsed.servers[0]?.operations).toHaveLength(1)
     expect(parsed.servers[0]?.operations[0]?.name).toBe("migrate")
+  })
+
+  it("reports total_servers after query filtering and candidate_servers before query filtering", async () => {
+    // #given
+    const tool = createMcpQueryTool({
+      manager,
+      getSessionID: () => "session-1",
+      loadRegistry: async () => createRegistry(),
+    })
+
+    // #when
+    const output = await tool.execute({ query: "sqlite", include_operations: false }, mockContext)
+    const parsed = JSON.parse(output as string) as {
+      total_servers: number
+      candidate_servers: number
+      returned_servers: number
+      servers: Array<{ server_name: string }>
+    }
+
+    // #then
+    expect(parsed.candidate_servers).toBe(2)
+    expect(parsed.total_servers).toBe(1)
+    expect(parsed.returned_servers).toBe(1)
+    expect(parsed.servers[0]?.server_name).toBe("sqlite")
   })
 
   it("supports metadata-only mode without operation calls", async () => {

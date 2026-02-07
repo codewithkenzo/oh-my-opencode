@@ -7,6 +7,7 @@ import type {
   McpRegistryServerDescriptor,
   McpTransport,
 } from "./types"
+import type { McpServerConfig } from "../claude-code-mcp-loader/types"
 
 const SOURCE_PRECEDENCE = {
   builtin: 10,
@@ -21,7 +22,7 @@ function inferTransport(config: ClaudeCodeMcpServer): McpTransport {
   return "stdio"
 }
 
-function pluginConfigToClaudeConfig(config: { type: "local" | "remote"; command?: string[]; environment?: Record<string, string>; url?: string; headers?: Record<string, string> }): ClaudeCodeMcpServer {
+function pluginConfigToClaudeConfig(config: McpServerConfig): ClaudeCodeMcpServer {
   if (config.type === "remote") {
     return {
       type: "http",
@@ -32,8 +33,8 @@ function pluginConfigToClaudeConfig(config: { type: "local" | "remote"; command?
 
   return {
     type: "stdio",
-    command: config.command?.[0],
-    args: config.command?.slice(1),
+    command: config.command[0],
+    args: config.command.slice(1),
     env: config.environment,
   }
 }

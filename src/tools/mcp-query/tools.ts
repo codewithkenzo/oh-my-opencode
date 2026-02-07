@@ -124,6 +124,8 @@ export function createMcpQueryTool(options: McpQueryToolOptions): ToolDefinition
         servers = servers.filter((server) => server.scope === args.scope)
       }
 
+      const candidateServers = servers.length
+
       const results: QueryServerResult[] = []
 
       for (const server of servers) {
@@ -251,7 +253,8 @@ export function createMcpQueryTool(options: McpQueryToolOptions): ToolDefinition
 
       return JSON.stringify(
         {
-          total_servers: servers.length,
+          total_servers: results.length,
+          candidate_servers: candidateServers,
           returned_servers: limitedResults.length,
           source,
           collisions: registry.collisions.map((collision) => ({
