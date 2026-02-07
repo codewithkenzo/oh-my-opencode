@@ -220,9 +220,9 @@ export function createMcpQueryTool(options: McpQueryToolOptions): ToolDefinition
         const queryMatch: QueryServerResult["query_match"] =
           serverMatches && operationMatches ? "both" : serverMatches ? "server" : "operation"
 
-        const toolsCount = operations.filter((entry) => entry.type === "tool").length
-        const resourcesCount = operations.filter((entry) => entry.type === "resource").length
-        const promptsCount = operations.filter((entry) => entry.type === "prompt").length
+        const toolsCount = filteredOperations.filter((entry) => entry.type === "tool").length
+        const resourcesCount = filteredOperations.filter((entry) => entry.type === "resource").length
+        const promptsCount = filteredOperations.filter((entry) => entry.type === "prompt").length
 
         const result: QueryServerResult = {
           server_name: server.name,
