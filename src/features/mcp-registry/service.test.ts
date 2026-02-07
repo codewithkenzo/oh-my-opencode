@@ -87,6 +87,56 @@ describe("createMcpRegistry", () => {
     expect(server?.config.args).toEqual(["server.js"])
     expect(server?.config.env).toEqual({ NODE_ENV: "test" })
   })
+
+  test("infers stdio transport when explicit stdio type exists with url", () => {
+    // #given
+    const registry = createMcpRegistry({
+      customServers: [
+        {
+          name: "hybrid",
+          scope: "project",
+          config: {
+            type: "stdio",
+            command: "node",
+            args: ["server.js"],
+            url: "https://example.com/mcp",
+          },
+        },
+      ],
+    })
+
+    // #then
+    expect(registry.effectiveServersByName.hybrid?.transport).toBe("stdio")
+  })
+
+  test("throws for malformed plugin remote config missing url", () => {
+    // #given / #when / #then
+    expect(() =>
+      createMcpRegistry({
+        pluginServers: {
+          broken: {
+            type: "remote",
+            // Intentionally malformed to verify runtime guard.
+            url: "",
+          },
+        },
+      })
+    ).toThrow(/missing url/)
+  })
+
+  test("throws for malformed plugin local config with empty command", () => {
+    // #given / #when / #then
+    expect(() =>
+      createMcpRegistry({
+        pluginServers: {
+          broken: {
+            type: "local",
+            command: [],
+          },
+        },
+      })
+    ).toThrow(/empty command array/)
+  })
 })
 
 describe("filterMcpRegistryServers", () => {

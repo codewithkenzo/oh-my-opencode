@@ -24,11 +24,19 @@ function inferTransport(config: ClaudeCodeMcpServer): McpTransport {
 
 function pluginConfigToClaudeConfig(config: McpServerConfig): ClaudeCodeMcpServer {
   if (config.type === "remote") {
+    if (!config.url) {
+      throw new Error("Invalid plugin MCP remote config: missing url")
+    }
+
     return {
       type: "http",
       url: config.url,
       headers: config.headers,
     }
+  }
+
+  if (config.command.length === 0) {
+    throw new Error("Invalid plugin MCP local config: empty command array")
   }
 
   return {
@@ -59,10 +67,6 @@ function fromSkills(skills: LoadedSkill[]): McpRegistryServerDescriptor[] {
   }
 
   return descriptors
-}
-
-function sourcePriority(source: McpRegistryServerDescriptor["source"]): number {
-  return SOURCE_PRECEDENCE[source]
 }
 
 function sortDescriptors(servers: McpRegistryServerDescriptor[]): McpRegistryServerDescriptor[] {
@@ -134,7 +138,9 @@ export function createMcpRegistry(input: CreateMcpRegistryInput): McpRegistryRes
 
     const shouldOverride =
       server.precedence > current.precedence ||
-      (server.precedence === current.precedence && sourcePriority(server.source) >= sourcePriority(current.source))
+      // Same source and same precedence: allow later-loaded entry to override.
+      // Different-source ties are kept stable (first loaded wins).
+      (server.precedence === current.precedence && server.source === current.source)
 
     if (shouldOverride) {
       const overridden = overriddenByName.get(server.name) ?? []
