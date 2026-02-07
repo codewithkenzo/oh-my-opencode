@@ -20,8 +20,13 @@ import {
   loadUserAgents,
   loadProjectAgents,
 } from "../features/claude-code-agent-loader";
-import { loadMcpConfigs } from "../features/claude-code-mcp-loader";
+import { loadRawMcpConfigs } from "../features/claude-code-mcp-loader";
 import { loadAllPluginComponents } from "../features/claude-code-plugin-loader";
+import {
+  createMcpRegistry,
+  filterMcpRegistryServers,
+  toRuntimeMcpServerMap,
+} from "../features/mcp-registry";
 import { createBuiltinMcps } from "../mcp";
 import type { OhMyOpenCodeConfig } from "../config";
 import { log } from "../shared";
@@ -389,15 +394,30 @@ export function createConfigHandler(deps: ConfigHandlerDeps) {
       delegate_task: "deny",
     };
 
-    const mcpResult = (pluginConfig.claude_code?.mcp ?? true)
-      ? await loadMcpConfigs()
-      : { servers: {} };
+    const includeCustomMcp = pluginConfig.claude_code?.mcp ?? true;
+    const customRawServers = includeCustomMcp
+      ? (await loadRawMcpConfigs()).loadedServers
+      : [];
+
+    const mcpRegistry = createMcpRegistry({
+      builtinServers: createBuiltinMcps(pluginConfig.disabled_mcps),
+      customServers: customRawServers,
+      pluginServers: pluginComponents.mcpServers,
+    });
+
+    if (mcpRegistry.collisions.length > 0) {
+      log("MCP registry collisions detected", {
+        collisions: mcpRegistry.collisions.map((entry) => ({
+          name: entry.name,
+          winner: `${entry.winner.source}:${entry.winner.scope}`,
+          overridden: entry.overridden.map((server) => `${server.source}:${server.scope}`),
+        })),
+      });
+    }
 
     config.mcp = {
       ...(config.mcp as Record<string, unknown>),
-      ...createBuiltinMcps(pluginConfig.disabled_mcps),
-      ...mcpResult.servers,
-      ...pluginComponents.mcpServers,
+      ...toRuntimeMcpServerMap(filterMcpRegistryServers(mcpRegistry, "all")),
     };
 
     const builtinCommands = loadBuiltinCommands(pluginConfig.disabled_commands);
