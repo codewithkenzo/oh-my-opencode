@@ -82,6 +82,7 @@ import { log, detectExternalNotificationPlugin, getNotificationConflictWarning, 
 import { loadPluginConfig } from "./plugin-config";
 import { createModelCacheState, getModelLimit } from "./plugin-state";
 import { createConfigHandler } from "./plugin-handlers";
+import { loadAllPluginComponents } from "./features/claude-code-plugin-loader";
 
 const OhMyOpenCodePlugin: Plugin = async (ctx) => {
   // Start background tmux check immediately
@@ -313,6 +314,13 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     includeCustomMcp: pluginConfig.claude_code?.mcp !== false,
     disabledBuiltinMcps: pluginConfig.disabled_mcps,
     getLoadedSkills: () => mergedSkills,
+    loadPluginMcpServers: async () => {
+      if (pluginConfig.claude_code?.plugins === false) return {};
+      const components = await loadAllPluginComponents({
+        enabledPluginsOverride: pluginConfig.claude_code?.plugins_override,
+      });
+      return components.mcpServers;
+    },
   });
 
   const commands = discoverCommandsSync();

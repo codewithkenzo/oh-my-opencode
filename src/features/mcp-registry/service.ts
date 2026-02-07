@@ -8,6 +8,7 @@ import type {
   McpTransport,
 } from "./types"
 import type { McpServerConfig } from "../claude-code-mcp-loader/types"
+import { transformMcpServer } from "../claude-code-mcp-loader/transformer"
 
 const SOURCE_PRECEDENCE = {
   builtin: 10,
@@ -187,4 +188,16 @@ export function filterMcpRegistryServers(
 ): McpRegistryServerDescriptor[] {
   if (source === "all") return registry.effectiveServers
   return registry.effectiveServers.filter((server) => server.source === source)
+}
+
+export function toRuntimeMcpServerMap(
+  servers: McpRegistryServerDescriptor[]
+): Record<string, McpServerConfig> {
+  const map: Record<string, McpServerConfig> = {}
+
+  for (const server of servers) {
+    map[server.name] = transformMcpServer(server.name, server.config)
+  }
+
+  return map
 }
