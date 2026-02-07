@@ -116,17 +116,21 @@ export function createMcpRegistry(input: CreateMcpRegistryInput): McpRegistryRes
   }
 
   for (const [name, config] of Object.entries(input.pluginServers ?? {})) {
-    const claudeConfig = pluginConfigToClaudeConfig(config)
+    try {
+      const claudeConfig = pluginConfigToClaudeConfig(config)
 
-    allServers.push({
-      name,
-      source: "plugin",
-      scope: "plugin",
-      precedence: SOURCE_PRECEDENCE.plugin,
-      transport: inferTransport(claudeConfig),
-      config: claudeConfig,
-      contextName: "plugin",
-    })
+      allServers.push({
+        name,
+        source: "plugin",
+        scope: "plugin",
+        precedence: SOURCE_PRECEDENCE.plugin,
+        transport: inferTransport(claudeConfig),
+        config: claudeConfig,
+        contextName: "plugin",
+      })
+    } catch {
+      // Skip plugin servers with invalid config (missing command/url)
+    }
   }
 
   allServers.push(...fromSkills(input.skills ?? []))
