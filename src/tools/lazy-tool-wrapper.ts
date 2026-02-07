@@ -27,12 +27,15 @@ export function createLazyTool(opts: LazyToolOptions): ToolDefinition {
 
     loading = (async () => {
       const start = performance.now()
-      const tool = await opts.loader()
-      const elapsed = performance.now() - start
-      cached = tool
-      loading = null
-      opts.onFirstLoad?.(opts.name, elapsed)
-      return tool
+      try {
+        const tool = await opts.loader()
+        const elapsed = performance.now() - start
+        cached = tool
+        opts.onFirstLoad?.(opts.name, elapsed)
+        return tool
+      } finally {
+        loading = null
+      }
     })()
 
     return loading

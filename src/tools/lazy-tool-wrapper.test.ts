@@ -184,4 +184,45 @@ describe("createLazyTool", () => {
     expect(loader).toHaveBeenCalledTimes(1)
     expect(onFirstLoad).toHaveBeenCalledTimes(1)
   })
+
+  it("recovers from loader rejection and allows retry", async () => {
+    // #given
+    let callCount = 0
+    const mockTool: ToolDefinition = {
+      description: "mock tool",
+      args: mockToolArgs,
+      execute: async () => "recovered result",
+    } as ToolDefinition
+    const loader = mock(async () => {
+      callCount++
+      if (callCount === 1) {
+        throw new Error("transient failure")
+      }
+      return mockTool
+    })
+    const tool = createLazyTool({
+      name: "lazy_mock",
+      description: "lazy description",
+      args: mockToolArgs,
+      loader,
+    })
+
+    // #when: first call fails
+    let error: Error | undefined
+    try {
+      await tool.execute(mockArgs, mockContext)
+    } catch (err) {
+      error = err as Error
+    }
+
+    // #then: error surfaced
+    expect(error?.message).toBe("transient failure")
+
+    // #when: retry succeeds because loading was cleared
+    const result = await tool.execute(mockArgs, mockContext)
+
+    // #then
+    expect(result).toBe("recovered result")
+    expect(loader).toHaveBeenCalledTimes(2)
+  })
 })
