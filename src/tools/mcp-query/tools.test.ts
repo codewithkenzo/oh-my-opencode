@@ -254,4 +254,31 @@ describe("mcp_query tool", () => {
     // #when / #then
     await expect(tool.execute({}, mockContext)).rejects.toThrow(/claude_code\.mcp=false/)
   })
+
+  it("loads plugin MCP servers through loadPluginMcpServers callback", async () => {
+    // #given
+    const tool = createMcpQueryTool({
+      manager,
+      getSessionID: () => "session-1",
+      includeCustomMcp: false,
+      loadPluginMcpServers: async () => ({
+        "plugin:exa": {
+          type: "remote",
+          url: "https://mcp.exa.ai/mcp",
+        },
+      }),
+    })
+
+    // #when
+    const output = await tool.execute({ source: "plugin", include_operations: false }, mockContext)
+    const parsed = JSON.parse(output as string) as {
+      total_servers: number
+      servers: Array<{ server_name: string; source: string }>
+    }
+
+    // #then
+    expect(parsed.total_servers).toBe(1)
+    expect(parsed.servers[0]?.server_name).toBe("plugin:exa")
+    expect(parsed.servers[0]?.source).toBe("plugin")
+  })
 })
