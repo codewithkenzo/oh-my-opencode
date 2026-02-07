@@ -58,6 +58,7 @@ import {
 } from "./features/claude-code-session-state";
 import {
   builtinTools,
+  createBuiltinToolsWithLazyLoading,
   createCallOmoAgent,
   createBackgroundTools,
   createLookAt,
@@ -78,17 +79,20 @@ import { BackgroundManager } from "./features/background-agent";
 import { McpClientManager } from "./features/skill-mcp-manager";
 import { initTaskToastManager } from "./features/task-toast-manager";
 import { type HookName } from "./config";
-import { log, detectExternalNotificationPlugin, getNotificationConflictWarning, resetMessageCursor, includesCaseInsensitive } from "./shared";
+import { log, detectExternalNotificationPlugin, getNotificationConflictWarning, resetMessageCursor, includesCaseInsensitive, createStartupTimer, logToolRegistrySnapshot } from "./shared";
 import { loadPluginConfig } from "./plugin-config";
 import { createModelCacheState, getModelLimit } from "./plugin-state";
 import { createConfigHandler } from "./plugin-handlers";
 import { loadAllPluginComponents } from "./features/claude-code-plugin-loader";
 
 const OhMyOpenCodePlugin: Plugin = async (ctx) => {
+  const startupTimer = createStartupTimer();
+
   // Start background tmux check immediately
   startTmuxCheck();
 
   const pluginConfig = loadPluginConfig(ctx.directory, ctx);
+  startupTimer.mark("config-loaded");
   const disabledHooks = new Set(pluginConfig.disabled_hooks ?? []);
   const firstMessageVariantGate = createFirstMessageVariantGate();
   const isHookEnabled = (hookName: HookName) => !disabledHooks.has(hookName);
@@ -224,6 +228,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     : null;
 
   const taskResumeInfo = createTaskResumeInfoHook();
+  startupTimer.mark("hooks-initialized");
 
   initTaskToastManager(ctx.client);
 
@@ -291,6 +296,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     projectSkills,
     opencodeProjectSkills
   );
+  startupTimer.mark("skills-discovered");
   const mcpClientManager = new McpClientManager();
   const getSessionIDForMcp = () => getMainSessionID() || "";
   const skillTool = createSkillTool({
@@ -339,9 +345,26 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     modelCacheState,
   });
 
+  const lazyLoadingEnabled = pluginConfig.lazy_loading?.enabled === true;
+  const resolvedBuiltinTools = lazyLoadingEnabled
+    ? createBuiltinToolsWithLazyLoading({
+        onFirstLoad: pluginConfig.lazy_loading?.log_timing
+          ? (name, ms) =>
+              log("[lazy-tool] first load", {
+                tool: name,
+                loadTimeMs: Math.round(ms * 100) / 100,
+              })
+          : undefined,
+      })
+    : builtinTools;
+
+  startupTimer.mark("tools-assembled");
+  logToolRegistrySnapshot({ ...resolvedBuiltinTools, ...backgroundTools, delegate_task: delegateTask, supermemory, skill: skillTool, find_skills: findSkillsTool, skill_mcp: skillMcpTool, mcp_query: mcpQueryTool, slashcommand: slashcommandTool, interactive_bash }, "startup");
+  log("[startup-timing]", startupTimer.report());
+
   return {
     tool: {
-      ...builtinTools,
+      ...resolvedBuiltinTools,
       ...backgroundTools,
       call_omo_agent: callOmoAgent,
       ...(lookAt ? { look_at: lookAt } : {}),

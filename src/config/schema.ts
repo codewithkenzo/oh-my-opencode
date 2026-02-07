@@ -317,6 +317,15 @@ export const GitMasterConfigSchema = z.object({
   include_co_authored_by: z.boolean().default(true),
 })
 
+export const LazyLoadingConfigSchema = z.object({
+  /** Enable lazy loading for heavy tool modules (default: false) */
+  enabled: z.boolean().default(false),
+  /** Log timing information for lazy-loaded tools (default: false) */
+  log_timing: z.boolean().default(false),
+  /** Tool profiles to expose by default. Others loaded on demand. */
+  default_profiles: z.array(z.string()).optional(),
+})
+
 export const MemoryPersistenceConfigSchema = z.object({
   enabled: z.boolean().default(false),
   recall_on_start: z.boolean().default(true),
@@ -350,6 +359,7 @@ export const OhMyOpenCodeConfigSchema = z.object({
   background_task: BackgroundTaskConfigSchema.optional(),
   notification: NotificationConfigSchema.optional(),
   git_master: GitMasterConfigSchema.optional(),
+  lazy_loading: LazyLoadingConfigSchema.optional(),
   browser_automation_engine: BrowserAutomationConfigSchema.optional(),
   memory_persistence: MemoryPersistenceConfigSchema.optional(),
 })
@@ -374,6 +384,7 @@ export type CategoryConfig = z.infer<typeof CategoryConfigSchema>
 export type CategoriesConfig = z.infer<typeof CategoriesConfigSchema>
 export type BuiltinCategoryName = z.infer<typeof BuiltinCategoryNameSchema>
 export type GitMasterConfig = z.infer<typeof GitMasterConfigSchema>
+export type LazyLoadingConfig = z.infer<typeof LazyLoadingConfigSchema>
 export type BrowserAutomationProvider = z.infer<typeof BrowserAutomationProviderSchema>
 export type BrowserAutomationConfig = z.infer<typeof BrowserAutomationConfigSchema>
 export type MemoryPersistenceConfig = z.infer<typeof MemoryPersistenceConfigSchema>
