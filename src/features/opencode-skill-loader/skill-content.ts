@@ -1,5 +1,6 @@
 import { createBuiltinSkills } from "../builtin-skills/skills"
 import { discoverSkills } from "./loader"
+import { sortSkillsDeterministic } from "./skill-index"
 import type { LoadedSkill } from "./types"
 import { parseFrontmatter } from "../../shared/frontmatter"
 import { readFileSync } from "node:fs"
@@ -61,11 +62,12 @@ async function getAllSkills(options?: SkillResolutionOptions): Promise<LoadedSki
 
 	if (hasDisabledSkills) {
 		allSkills = allSkills.filter((s) => !options!.disabledSkills!.has(s.name))
-	} else {
-		cachedSkillsByProvider.set(cacheKey, allSkills)
+		return sortSkillsDeterministic(allSkills)
 	}
 
-	return allSkills
+	const sorted = sortSkillsDeterministic(allSkills)
+	cachedSkillsByProvider.set(cacheKey, sorted)
+	return sorted
 }
 
 async function extractSkillTemplate(skill: LoadedSkill): Promise<string> {
