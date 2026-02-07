@@ -86,10 +86,24 @@ export function createMcpRegistry(input: CreateMcpRegistryInput): McpRegistryRes
   const allServers: McpRegistryServerDescriptor[] = []
 
   for (const [name, config] of Object.entries(input.builtinServers ?? {})) {
-    const claudeConfig: ClaudeCodeMcpServer = {
-      type: "http",
-      url: config.url,
-      headers: config.headers,
+    let claudeConfig: ClaudeCodeMcpServer
+    let transport: McpTransport
+
+    if (config.type === "remote") {
+      claudeConfig = {
+        type: "http",
+        url: config.url,
+        headers: config.headers,
+      }
+      transport = "http"
+    } else {
+      claudeConfig = {
+        type: "stdio",
+        command: config.command,
+        args: config.args,
+        env: config.env,
+      }
+      transport = "stdio"
     }
 
     allServers.push({
@@ -97,7 +111,7 @@ export function createMcpRegistry(input: CreateMcpRegistryInput): McpRegistryRes
       source: "builtin",
       scope: "builtin",
       precedence: SOURCE_PRECEDENCE.builtin,
-      transport: "http",
+      transport,
       config: claudeConfig,
       contextName: "builtin",
     })

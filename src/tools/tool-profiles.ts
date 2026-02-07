@@ -60,6 +60,7 @@ export const TOOL_PROFILES: Record<ToolProfile, readonly string[]> = {
     "civitai_search",
     "civitai_get",
     "civitai_tags",
+    "unified_model_search",
     "ripple_collections",
     "ripple_search",
     "ripple_get",

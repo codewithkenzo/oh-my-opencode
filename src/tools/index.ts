@@ -111,6 +111,9 @@ import {
   civitai_tags,
 } from "./civitai"
 
+// Custom tools - unified model search
+import { unified_model_search } from "./unified-model-search"
+
 // Custom tools - zread
 import { zread_search, zread_file, zread_structure } from "./zread"
 
@@ -210,6 +213,7 @@ export const builtinTools: Record<string, ToolDefinition> = {
   civitai_search,
   civitai_get,
   civitai_tags,
+  unified_model_search,
   zread_search,
   zread_file,
   zread_structure,
