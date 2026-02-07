@@ -24,12 +24,34 @@ export async function getUserMcpInfo(): Promise<McpServerInfo[]> {
     customServers,
   })
 
-  return filterMcpRegistryServers(registry, "custom").map((server) => ({
-    id: server.name,
-    type: "user" as const,
-    enabled: true,
-    valid: true,
-  }))
+  return filterMcpRegistryServers(registry, "custom").map((server) => {
+    const config = server.config
+    let valid = true
+    let error: string | undefined
+
+    if (!config || typeof config !== "object") {
+      valid = false
+      error = "Invalid config: not an object"
+    } else if (config.type === "stdio" || (!config.type && !config.url)) {
+      if (!config.command) {
+        valid = false
+        error = "Missing required field: command"
+      }
+    } else if (config.type === "http" || config.type === "sse" || config.url) {
+      if (!config.url) {
+        valid = false
+        error = "Missing required field: url"
+      }
+    }
+
+    return {
+      id: server.name,
+      type: "user" as const,
+      enabled: true,
+      valid,
+      ...(error ? { error } : {}),
+    }
+  })
 }
 
 export async function checkBuiltinMcpServers(): Promise<CheckResult> {

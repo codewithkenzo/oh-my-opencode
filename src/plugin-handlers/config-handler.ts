@@ -25,6 +25,7 @@ import { loadAllPluginComponents } from "../features/claude-code-plugin-loader";
 import {
   createMcpRegistry,
   filterMcpRegistryServers,
+  type McpRegistryResult,
   toRuntimeMcpServerMap,
 } from "../features/mcp-registry";
 import { createBuiltinMcps } from "../mcp";
@@ -399,11 +400,22 @@ export function createConfigHandler(deps: ConfigHandlerDeps) {
       ? (await loadRawMcpConfigs()).loadedServers
       : [];
 
-    const mcpRegistry = createMcpRegistry({
-      builtinServers: createBuiltinMcps(pluginConfig.disabled_mcps),
-      customServers: customRawServers,
-      pluginServers: pluginComponents.mcpServers,
-    });
+    let mcpRegistry: McpRegistryResult;
+    try {
+      mcpRegistry = createMcpRegistry({
+        builtinServers: createBuiltinMcps(pluginConfig.disabled_mcps),
+        customServers: customRawServers,
+        pluginServers: pluginComponents.mcpServers,
+      });
+    } catch (err) {
+      log("MCP registry creation failed, falling back to builtin+custom only", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      mcpRegistry = createMcpRegistry({
+        builtinServers: createBuiltinMcps(pluginConfig.disabled_mcps),
+        customServers: customRawServers,
+      });
+    }
 
     if (mcpRegistry.collisions.length > 0) {
       log("MCP registry collisions detected", {
