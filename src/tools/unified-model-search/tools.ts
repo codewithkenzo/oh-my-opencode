@@ -147,7 +147,7 @@ export const unified_model_search: ToolDefinition = tool({
           limit,
         })
           .then((response) => {
-            allResults = allResults.concat(normalizeCivitaiResults(response.items))
+            allResults.push(...normalizeCivitaiResults(response.items))
           })
           .catch((err: unknown) => {
             const msg = err instanceof Error ? err.message : String(err)
@@ -165,7 +165,7 @@ export const unified_model_search: ToolDefinition = tool({
           limit,
         })
           .then((response) => {
-            allResults = allResults.concat(normalizeRunwareResults(response.results))
+            allResults.push(...normalizeRunwareResults(response.results))
           })
           .catch((err: unknown) => {
             const msg = err instanceof Error ? err.message : String(err)
