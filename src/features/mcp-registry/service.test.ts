@@ -109,33 +109,35 @@ describe("createMcpRegistry", () => {
     expect(registry.effectiveServersByName.hybrid?.transport).toBe("stdio")
   })
 
-  test("throws for malformed plugin remote config missing url", () => {
-    // #given / #when / #then
-    expect(() =>
-      createMcpRegistry({
-        pluginServers: {
-          broken: {
-            type: "remote",
-            // Intentionally malformed to verify runtime guard.
-            url: "",
-          },
+  test("skips malformed plugin remote config missing url", () => {
+    // #given / #when
+    const registry = createMcpRegistry({
+      pluginServers: {
+        broken: {
+          type: "remote",
+          // Intentionally malformed — should be silently skipped.
+          url: "",
         },
-      })
-    ).toThrow(/missing url/)
+      },
+    })
+
+    // #then
+    expect(registry.effectiveServers).toHaveLength(0)
   })
 
-  test("throws for malformed plugin local config with empty command", () => {
-    // #given / #when / #then
-    expect(() =>
-      createMcpRegistry({
-        pluginServers: {
-          broken: {
-            type: "local",
-            command: [],
-          },
+  test("skips malformed plugin local config with empty command", () => {
+    // #given / #when
+    const registry = createMcpRegistry({
+      pluginServers: {
+        broken: {
+          type: "local",
+          command: [],
         },
-      })
-    ).toThrow(/empty command array/)
+      },
+    })
+
+    // #then
+    expect(registry.effectiveServers).toHaveLength(0)
   })
 })
 

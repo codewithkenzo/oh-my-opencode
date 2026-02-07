@@ -8,6 +8,7 @@ import type {
   McpTransport,
 } from "./types"
 import type { McpServerConfig } from "../claude-code-mcp-loader/types"
+import { transformMcpServer } from "../claude-code-mcp-loader/transformer"
 
 const SOURCE_PRECEDENCE = {
   builtin: 10,
@@ -33,6 +34,10 @@ function pluginConfigToClaudeConfig(config: McpServerConfig): ClaudeCodeMcpServe
       url: config.url,
       headers: config.headers,
     }
+  }
+
+  if (!config.command) {
+    throw new Error("Invalid plugin MCP local config: missing command")
   }
 
   if (config.command.length === 0) {
@@ -111,17 +116,21 @@ export function createMcpRegistry(input: CreateMcpRegistryInput): McpRegistryRes
   }
 
   for (const [name, config] of Object.entries(input.pluginServers ?? {})) {
-    const claudeConfig = pluginConfigToClaudeConfig(config)
+    try {
+      const claudeConfig = pluginConfigToClaudeConfig(config)
 
-    allServers.push({
-      name,
-      source: "plugin",
-      scope: "plugin",
-      precedence: SOURCE_PRECEDENCE.plugin,
-      transport: inferTransport(claudeConfig),
-      config: claudeConfig,
-      contextName: "plugin",
-    })
+      allServers.push({
+        name,
+        source: "plugin",
+        scope: "plugin",
+        precedence: SOURCE_PRECEDENCE.plugin,
+        transport: inferTransport(claudeConfig),
+        config: claudeConfig,
+        contextName: "plugin",
+      })
+    } catch {
+      // Skip plugin servers with invalid config (missing command/url)
+    }
   }
 
   allServers.push(...fromSkills(input.skills ?? []))
@@ -187,4 +196,20 @@ export function filterMcpRegistryServers(
 ): McpRegistryServerDescriptor[] {
   if (source === "all") return registry.effectiveServers
   return registry.effectiveServers.filter((server) => server.source === source)
+}
+
+export function toRuntimeMcpServerMap(
+  servers: McpRegistryServerDescriptor[]
+): Record<string, McpServerConfig> {
+  const map: Record<string, McpServerConfig> = {}
+
+  for (const server of servers) {
+    try {
+      map[server.name] = transformMcpServer(server.name, server.config)
+    } catch {
+      // Skip servers with invalid configs during runtime map construction
+    }
+  }
+
+  return map
 }

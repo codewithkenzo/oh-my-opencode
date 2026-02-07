@@ -3,6 +3,7 @@ import { loadRawMcpConfigs } from "../../features/claude-code-mcp-loader"
 import { createMcpRegistry, filterMcpRegistryServers, type McpRegistryResult, type McpRegistryServerDescriptor } from "../../features/mcp-registry"
 import type { LoadedSkill } from "../../features/opencode-skill-loader/types"
 import type { McpClientManager, McpClientInfo, McpServerContext } from "../../features/skill-mcp-manager"
+import type { McpServerConfig } from "../../features/claude-code-mcp-loader/types"
 import { createBuiltinMcps } from "../../mcp"
 import { MCP_QUERY_CONTEXT_NAME, MCP_QUERY_DESCRIPTION } from "./constants"
 import type { McpQueryArgs } from "./types"
@@ -13,6 +14,7 @@ interface McpQueryToolOptions {
   includeCustomMcp?: boolean
   disabledBuiltinMcps?: string[]
   getLoadedSkills?: () => LoadedSkill[]
+  loadPluginMcpServers?: () => Promise<Record<string, McpServerConfig>>
   loadRegistry?: () => Promise<McpRegistryResult>
 }
 
@@ -79,9 +81,19 @@ async function defaultLoadRegistry(options: McpQueryToolOptions): Promise<McpReg
     ? []
     : (await loadRawMcpConfigs()).loadedServers
 
+  let pluginServers: Record<string, McpServerConfig> = {}
+  if (options.loadPluginMcpServers) {
+    try {
+      pluginServers = await options.loadPluginMcpServers()
+    } catch {
+      // Plugin MCP discovery failed; continue with other sources
+    }
+  }
+
   return createMcpRegistry({
     builtinServers: createBuiltinMcps(options.disabledBuiltinMcps ?? []),
     customServers,
+    pluginServers,
     skills: options.getLoadedSkills?.() ?? [],
   })
 }
@@ -121,10 +133,11 @@ export function createMcpQueryTool(options: McpQueryToolOptions): ToolDefinition
       }
 
       if (args.scope) {
-        servers = servers.filter((server) => server.scope === args.scope)
+        servers = servers.filter((server) => server.source === "custom" ? server.scope === args.scope : true)
       }
 
       const candidateServers = servers.length
+      servers = servers.slice(0, limit)
 
       const results: QueryServerResult[] = []
 
@@ -249,7 +262,7 @@ export function createMcpQueryTool(options: McpQueryToolOptions): ToolDefinition
         results.push(result)
       }
 
-      const limitedResults = results.slice(0, limit)
+      const limitedResults = results
 
       return JSON.stringify(
         {
