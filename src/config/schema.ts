@@ -346,10 +346,7 @@ export const MemoryPersistenceConfigSchema = z.object({
   min_session_length: z.number().min(1).default(5),
 })
 
-export const CategorySkillsConfigSchema = z.record(
-  z.string(),
-  z.array(z.string())
-)
+export const CategorySkillsConfigSchema = z.record(z.string(), z.array(z.string()))
 
 export const OhMyOpenCodeConfigSchema = z.object({
   $schema: z.string().optional(),
