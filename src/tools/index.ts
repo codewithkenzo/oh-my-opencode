@@ -43,7 +43,8 @@ import {
 import type { PluginInput, ToolDefinition } from "@opencode-ai/plugin"
 import type { BackgroundManager } from "../features/background-agent"
 import { createLazyTool } from "./lazy-tool-wrapper"
-import { TOOL_PROFILES } from "./tool-profiles"
+import { TOOL_PROFILES, getToolsForProfiles } from "./tool-profiles"
+import type { ToolProfile } from "./tool-profiles"
 
 // Custom tools - raindrop (ripple)
 import {
@@ -137,12 +138,14 @@ export { createSupermemoryTool }
 
 type OpencodeClient = PluginInput["client"]
 
+export { createHybridTool, DEFAULT_TOOL_ROUTES, getToolRouteConfig, getRoutePolicyForServer } from "./hybrid-router"
+export type { ToolRoutePolicy, ToolRouteConfig, ToolRoutingMap, HybridToolOptions, HybridToolResult } from "./hybrid-router"
 export { createCallOmoAgent } from "./call-omo-agent"
 export { createLookAt } from "./look-at"
 export { createDelegateTask, type DelegateTaskToolOptions, DEFAULT_CATEGORIES, CATEGORY_PROMPT_APPENDS } from "./delegate-task"
 export { createLazyTool } from "./lazy-tool-wrapper"
 export type { LazyToolOptions } from "./lazy-tool-wrapper"
-export { TOOL_PROFILES, TOOL_TO_PROFILE, getToolProfile, getToolsForProfile } from "./tool-profiles"
+export { TOOL_PROFILES, TOOL_TO_PROFILE, getToolProfile, getToolsForProfile, getToolsForProfiles } from "./tool-profiles"
 export type { ToolProfile } from "./tool-profiles"
 
 export function createBackgroundTools(manager: BackgroundManager, client: OpencodeClient): Record<string, ToolDefinition> {
@@ -230,12 +233,16 @@ export const builtinTools: Record<string, ToolDefinition> = {
 
 export function createBuiltinToolsWithLazyLoading(opts?: {
   onFirstLoad?: (name: string, loadTimeMs: number) => void
+  activeProfiles?: ToolProfile[]
 }): Record<string, ToolDefinition> {
-  const coreToolNames = new Set(TOOL_PROFILES.core)
+  const activeToolNames = opts?.activeProfiles
+    ? getToolsForProfiles(opts.activeProfiles)
+    : new Set(TOOL_PROFILES.core)
+
   const result: Record<string, ToolDefinition> = {}
 
   for (const [name, tool] of Object.entries(builtinTools)) {
-    if (coreToolNames.has(name)) {
+    if (activeToolNames.has(name)) {
       result[name] = tool
     } else {
       result[name] = createLazyTool({

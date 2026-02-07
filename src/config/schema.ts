@@ -317,6 +317,16 @@ export const GitMasterConfigSchema = z.object({
   include_co_authored_by: z.boolean().default(true),
 })
 
+export const ToolRoutePolicySchema = z.enum(["builtin-only", "mcp-first", "mcp-only"])
+
+export const ToolRouteOverrideSchema = z.object({
+  policy: ToolRoutePolicySchema,
+  mcp_server: z.string().optional(),
+  mcp_tool: z.string().optional(),
+})
+
+export const ToolRoutingConfigSchema = z.record(z.string(), ToolRouteOverrideSchema).optional()
+
 export const LazyLoadingConfigSchema = z.object({
   /** Enable lazy loading for heavy tool modules (default: false) */
   enabled: z.boolean().default(false),
@@ -324,6 +334,8 @@ export const LazyLoadingConfigSchema = z.object({
   log_timing: z.boolean().default(false),
   /** Tool profiles to expose by default. Others loaded on demand. */
   default_profiles: z.array(z.string()).optional(),
+  /** Per-tool route policy overrides for hybrid tools */
+  tool_routing: ToolRoutingConfigSchema,
 })
 
 export const MemoryPersistenceConfigSchema = z.object({
@@ -389,5 +401,7 @@ export type BrowserAutomationProvider = z.infer<typeof BrowserAutomationProvider
 export type BrowserAutomationConfig = z.infer<typeof BrowserAutomationConfigSchema>
 export type MemoryPersistenceConfig = z.infer<typeof MemoryPersistenceConfigSchema>
 export type CategorySkillsConfig = z.infer<typeof CategorySkillsConfigSchema>
+export type ToolRouteOverride = z.infer<typeof ToolRouteOverrideSchema>
+export type ToolRoutingConfig = z.infer<typeof ToolRoutingConfigSchema>
 
 export { AnyMcpNameSchema, type AnyMcpName, McpNameSchema, type McpName } from "../mcp/types"

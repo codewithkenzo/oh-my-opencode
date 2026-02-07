@@ -115,3 +115,16 @@ export function getToolProfile(toolName: string): ToolProfile | undefined {
 export function getToolsForProfile(profile: ToolProfile): string[] {
   return [...TOOL_PROFILES[profile]]
 }
+
+export function getToolsForProfiles(profiles: ToolProfile[]): Set<string> {
+  const tools = new Set<string>()
+  for (const profile of profiles) {
+    const profileTools = TOOL_PROFILES[profile]
+    if (profileTools) {
+      for (const toolName of profileTools) {
+        tools.add(toolName)
+      }
+    }
+  }
+  return tools
+}
