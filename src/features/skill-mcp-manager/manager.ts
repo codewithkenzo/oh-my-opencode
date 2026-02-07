@@ -5,7 +5,7 @@ import type { Tool, Resource, Prompt } from "@modelcontextprotocol/sdk/types.js"
 import type { ClaudeCodeMcpServer } from "../claude-code-mcp-loader/types"
 import { expandEnvVarsInObject } from "../claude-code-mcp-loader/env-expander"
 import { createCleanMcpEnvironment } from "./env-cleaner"
-import type { SkillMcpClientInfo, SkillMcpServerContext } from "./types"
+import type { McpClientInfo, McpServerContext } from "./types"
 
 /**
  * Connection type for a managed MCP client.
@@ -16,7 +16,7 @@ type ConnectionType = "stdio" | "http"
 
 interface ManagedClientBase {
   client: Client
-  skillName: string
+  contextName: string
   lastUsedAt: number
   connectionType: ConnectionType
 }
@@ -57,15 +57,24 @@ function getConnectionType(config: ClaudeCodeMcpServer): ConnectionType | null {
   return null
 }
 
-export class SkillMcpManager {
+function resolveContextName(info: McpClientInfo): string {
+  return info.contextName ?? info.skillName ?? "unknown-context"
+}
+
+/**
+ * Shared MCP client lifecycle manager used by multiple MCP surfaces:
+ * - skill_mcp (skill-embedded MCP servers)
+ * - mcp_query (custom MCP servers from .mcp.json / MCPorter)
+ */
+export class McpClientManager {
   private clients: Map<string, ManagedClient> = new Map()
   private pendingConnections: Map<string, Promise<Client>> = new Map()
   private cleanupRegistered = false
   private cleanupInterval: ReturnType<typeof setInterval> | null = null
   private readonly IDLE_TIMEOUT = 5 * 60 * 1000
 
-  private getClientKey(info: SkillMcpClientInfo): string {
-    return `${info.sessionID}:${info.skillName}:${info.serverName}`
+  private getClientKey(info: McpClientInfo): string {
+    return `${info.sessionID}:${resolveContextName(info)}:${info.serverName}`
   }
 
   private registerProcessCleanup(): void {
@@ -110,7 +119,7 @@ export class SkillMcpManager {
   }
 
   async getOrCreateClient(
-    info: SkillMcpClientInfo,
+    info: McpClientInfo,
     config: ClaudeCodeMcpServer
   ): Promise<Client> {
     const key = this.getClientKey(info)
@@ -140,15 +149,16 @@ export class SkillMcpManager {
   }
 
   private async createClient(
-    info: SkillMcpClientInfo,
+    info: McpClientInfo,
     config: ClaudeCodeMcpServer
   ): Promise<Client> {
     const connectionType = getConnectionType(config)
+    const contextName = resolveContextName(info)
 
     if (!connectionType) {
       throw new Error(
         `MCP server "${info.serverName}" has no valid connection configuration.\n\n` +
-        `The MCP configuration in skill "${info.skillName}" must specify either:\n` +
+        `The MCP configuration in context "${contextName}" must specify either:\n` +
         `  - A URL for HTTP connection (remote MCP server)\n` +
         `  - A command for stdio connection (local MCP process)\n\n` +
         `Examples:\n` +
@@ -178,10 +188,11 @@ export class SkillMcpManager {
    * Supports remote MCP servers with optional authentication headers.
    */
   private async createHttpClient(
-    info: SkillMcpClientInfo,
+    info: McpClientInfo,
     config: ClaudeCodeMcpServer
   ): Promise<Client> {
     const key = this.getClientKey(info)
+    const contextName = resolveContextName(info)
 
     if (!config.url) {
       throw new Error(
@@ -212,7 +223,7 @@ export class SkillMcpManager {
     })
 
     const client = new Client(
-      { name: `skill-mcp-${info.skillName}-${info.serverName}`, version: "1.0.0" },
+      { name: `mcp-${contextName}-${info.serverName}`, version: "1.0.0" },
       { capabilities: {} }
     )
 
@@ -239,7 +250,7 @@ export class SkillMcpManager {
     const managedClient: ManagedHttpClient = {
       client,
       transport,
-      skillName: info.skillName,
+      contextName,
       lastUsedAt: Date.now(),
       connectionType: "http",
     }
@@ -253,10 +264,11 @@ export class SkillMcpManager {
    * Spawns a local process and communicates via stdin/stdout.
    */
   private async createStdioClient(
-    info: SkillMcpClientInfo,
+    info: McpClientInfo,
     config: ClaudeCodeMcpServer
   ): Promise<Client> {
     const key = this.getClientKey(info)
+    const contextName = resolveContextName(info)
 
     if (!config.command) {
       throw new Error(
@@ -279,7 +291,7 @@ export class SkillMcpManager {
     })
 
     const client = new Client(
-      { name: `skill-mcp-${info.skillName}-${info.serverName}`, version: "1.0.0" },
+      { name: `mcp-${contextName}-${info.serverName}`, version: "1.0.0" },
       { capabilities: {} }
     )
 
@@ -307,7 +319,7 @@ export class SkillMcpManager {
     const managedClient: ManagedStdioClient = {
       client,
       transport,
-      skillName: info.skillName,
+      contextName,
       lastUsedAt: Date.now(),
       connectionType: "stdio",
     }
@@ -383,8 +395,8 @@ export class SkillMcpManager {
   }
 
   async listTools(
-    info: SkillMcpClientInfo,
-    context: SkillMcpServerContext
+    info: McpClientInfo,
+    context: McpServerContext
   ): Promise<Tool[]> {
     const client = await this.getOrCreateClientWithRetry(info, context.config)
     const result = await client.listTools()
@@ -392,8 +404,8 @@ export class SkillMcpManager {
   }
 
   async listResources(
-    info: SkillMcpClientInfo,
-    context: SkillMcpServerContext
+    info: McpClientInfo,
+    context: McpServerContext
   ): Promise<Resource[]> {
     const client = await this.getOrCreateClientWithRetry(info, context.config)
     const result = await client.listResources()
@@ -401,8 +413,8 @@ export class SkillMcpManager {
   }
 
   async listPrompts(
-    info: SkillMcpClientInfo,
-    context: SkillMcpServerContext
+    info: McpClientInfo,
+    context: McpServerContext
   ): Promise<Prompt[]> {
     const client = await this.getOrCreateClientWithRetry(info, context.config)
     const result = await client.listPrompts()
@@ -410,8 +422,8 @@ export class SkillMcpManager {
   }
 
   async callTool(
-    info: SkillMcpClientInfo,
-    context: SkillMcpServerContext,
+    info: McpClientInfo,
+    context: McpServerContext,
     name: string,
     args: Record<string, unknown>
   ): Promise<unknown> {
@@ -422,8 +434,8 @@ export class SkillMcpManager {
   }
 
   async readResource(
-    info: SkillMcpClientInfo,
-    context: SkillMcpServerContext,
+    info: McpClientInfo,
+    context: McpServerContext,
     uri: string
   ): Promise<unknown> {
     return this.withOperationRetry(info, context.config, async (client) => {
@@ -433,8 +445,8 @@ export class SkillMcpManager {
   }
 
   async getPrompt(
-    info: SkillMcpClientInfo,
-    context: SkillMcpServerContext,
+    info: McpClientInfo,
+    context: McpServerContext,
     name: string,
     args: Record<string, string>
   ): Promise<unknown> {
@@ -445,7 +457,7 @@ export class SkillMcpManager {
   }
 
   private async withOperationRetry<T>(
-    info: SkillMcpClientInfo,
+    info: McpClientInfo,
     config: ClaudeCodeMcpServer,
     operation: (client: Client) => Promise<T>
   ): Promise<T> {
@@ -488,7 +500,7 @@ export class SkillMcpManager {
   }
 
   private async getOrCreateClientWithRetry(
-    info: SkillMcpClientInfo,
+    info: McpClientInfo,
     config: ClaudeCodeMcpServer
   ): Promise<Client> {
     try {
@@ -514,7 +526,9 @@ export class SkillMcpManager {
     return Array.from(this.clients.keys())
   }
 
-  isConnected(info: SkillMcpClientInfo): boolean {
+  isConnected(info: McpClientInfo): boolean {
     return this.clients.has(this.getClientKey(info))
   }
 }
+
+export { McpClientManager as SkillMcpManager }

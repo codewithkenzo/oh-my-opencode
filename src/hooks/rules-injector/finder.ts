@@ -4,7 +4,8 @@ import {
   realpathSync,
   statSync,
 } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { tmpdir } from "node:os";
+import { dirname, join, relative, sep } from "node:path";
 import {
   GITHUB_INSTRUCTIONS_PATTERN,
   PROJECT_MARKERS,
@@ -35,6 +36,23 @@ function isValidRuleFile(fileName: string, dir: string): boolean {
  */
 export function findProjectRoot(startPath: string): string | null {
   let current: string;
+  const systemTempDir = tmpdir();
+  const resolvedSystemTempDir = realpathSync(systemTempDir);
+  const normalizedTempDir = resolvedSystemTempDir.endsWith(sep)
+    ? resolvedSystemTempDir.slice(0, -1)
+    : resolvedSystemTempDir;
+
+  const isAtOrUnderSystemTempDir = (pathValue: string): boolean => {
+    try {
+      const resolvedPath = realpathSync(pathValue);
+      return (
+        resolvedPath === normalizedTempDir ||
+        resolvedPath.startsWith(`${normalizedTempDir}${sep}`)
+      );
+    } catch {
+      return false;
+    }
+  };
 
   try {
     const stat = statSync(startPath);
@@ -47,8 +65,14 @@ export function findProjectRoot(startPath: string): string | null {
     for (const marker of PROJECT_MARKERS) {
       const markerPath = join(current, marker);
       if (existsSync(markerPath)) {
+        // Avoid treating shared or nested system-temp paths as project roots.
+        if (isAtOrUnderSystemTempDir(current)) return null;
         return current;
       }
+    }
+
+    if (isAtOrUnderSystemTempDir(current)) {
+      return null;
     }
 
     const parent = dirname(current);

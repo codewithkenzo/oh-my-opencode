@@ -33,6 +33,7 @@ export { interactive_bash, startBackgroundCheck as startTmuxCheck } from "./inte
 export { createSkillTool, createFindSkillsTool } from "./skill"
 export { getTmuxPath } from "./interactive-bash/utils"
 export { createSkillMcpTool } from "./skill-mcp"
+export { createMcpQueryTool } from "./mcp-query"
 
 import {
   createBackgroundOutput,

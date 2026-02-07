@@ -325,7 +325,7 @@ describe("findRuleFiles", () => {
 });
 
 describe("findProjectRoot", () => {
-  const TEST_DIR = join(tmpdir(), `project-root-test-${Date.now()}`);
+  const TEST_DIR = join(process.cwd(), `.tmp-project-root-test-${Date.now()}`);
 
   beforeEach(() => {
     mkdirSync(TEST_DIR, { recursive: true });
@@ -366,16 +366,39 @@ describe("findProjectRoot", () => {
   });
 
   it("should return null when no project markers found", () => {
-    // #given directory without any project markers
-    const isolatedDir = join(TEST_DIR, "isolated");
+    // #given an isolated temp directory without project markers
+    const isolatedDir = join(tmpdir(), `project-root-isolated-${Date.now()}`);
     mkdirSync(isolatedDir, { recursive: true });
     const file = join(isolatedDir, "file.txt");
     writeFileSync(file, "content");
 
-    // #when finding project root
-    const root = findProjectRoot(file);
+    try {
+      // #when finding project root
+      const root = findProjectRoot(file);
 
-    // #then should return null
-    expect(root).toBeNull();
+      // #then should return null
+      expect(root).toBeNull();
+    } finally {
+      rmSync(isolatedDir, { recursive: true, force: true });
+    }
+  });
+
+  it("should return null for temp-directory roots even with project markers", () => {
+    // #given a path under system temp with markers
+    const tempProject = join(tmpdir(), `project-root-temp-${Date.now()}`);
+    mkdirSync(tempProject, { recursive: true });
+    writeFileSync(join(tempProject, "package.json"), "{}");
+    const file = join(tempProject, "file.ts");
+    writeFileSync(file, "content");
+
+    try {
+      // #when finding project root
+      const root = findProjectRoot(file);
+
+      // #then should avoid temp-contained project roots
+      expect(root).toBeNull();
+    } finally {
+      rmSync(tempProject, { recursive: true, force: true });
+    }
   });
 });

@@ -64,6 +64,7 @@ import {
   createSkillTool,
   createFindSkillsTool,
   createSkillMcpTool,
+  createMcpQueryTool,
   createSlashcommandTool,
   discoverCommandsSync,
   sessionExists,
@@ -74,7 +75,7 @@ import {
   lspManager,
 } from "./tools";
 import { BackgroundManager } from "./features/background-agent";
-import { SkillMcpManager } from "./features/skill-mcp-manager";
+import { McpClientManager } from "./features/skill-mcp-manager";
 import { initTaskToastManager } from "./features/task-toast-manager";
 import { type HookName } from "./config";
 import { log, detectExternalNotificationPlugin, getNotificationConflictWarning, resetMessageCursor, includesCaseInsensitive } from "./shared";
@@ -289,11 +290,11 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     projectSkills,
     opencodeProjectSkills
   );
-  const skillMcpManager = new SkillMcpManager();
+  const mcpClientManager = new McpClientManager();
   const getSessionIDForMcp = () => getMainSessionID() || "";
   const skillTool = createSkillTool({
     skills: mergedSkills,
-    mcpManager: skillMcpManager,
+    mcpManager: mcpClientManager,
     getSessionID: getSessionIDForMcp,
     gitMasterConfig: pluginConfig.git_master,
     client: ctx.client,
@@ -302,9 +303,16 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     skills: mergedSkills,
   });
   const skillMcpTool = createSkillMcpTool({
-    manager: skillMcpManager,
+    manager: mcpClientManager,
     getLoadedSkills: () => mergedSkills,
     getSessionID: getSessionIDForMcp,
+  });
+  const mcpQueryTool = createMcpQueryTool({
+    manager: mcpClientManager,
+    getSessionID: getSessionIDForMcp,
+    includeCustomMcp: pluginConfig.claude_code?.mcp !== false,
+    disabledBuiltinMcps: pluginConfig.disabled_mcps,
+    getLoadedSkills: () => mergedSkills,
   });
 
   const commands = discoverCommandsSync();
@@ -334,6 +342,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       skill: skillTool,
       find_skills: findSkillsTool,
       skill_mcp: skillMcpTool,
+      mcp_query: mcpQueryTool,
       slashcommand: slashcommandTool,
       interactive_bash,
     },
@@ -468,7 +477,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
           clearSessionAgent(sessionInfo.id);
           resetMessageCursor(sessionInfo.id);
           firstMessageVariantGate.clear(sessionInfo.id);
-          await skillMcpManager.disconnectSession(sessionInfo.id);
+          await mcpClientManager.disconnectSession(sessionInfo.id);
           await lspManager.cleanupTempDirectoryClients();
         }
       }

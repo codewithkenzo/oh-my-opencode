@@ -23,6 +23,7 @@ tools/
 ├── look-at/          # Multimodal PDF/image analysis
 ├── skill/            # Skill execution
 ├── skill-mcp/        # Skill MCP operations
+├── mcp-query/        # Custom MCP (.mcp.json) discovery/query tool
 ├── slashcommand/     # Slash command dispatch
 ├── call-omo-agent/   # Direct agent invocation
 └── background-task/  # background_output, background_cancel
@@ -37,7 +38,7 @@ tools/
 | **Session** | session_list, session_read, session_search, session_info | History navigation |
 | **Agent** | delegate_task, call_omo_agent, background_output, background_cancel | Task orchestration |
 | **System** | interactive_bash, look_at | CLI, multimodal |
-| **Skill** | skill, skill_mcp, slashcommand | Skill execution |
+| **MCP/Skill** | skill, skill_mcp, mcp_query, slashcommand | Skill execution + custom MCP discovery |
 
 ## HOW TO ADD
 

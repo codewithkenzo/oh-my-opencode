@@ -40,3 +40,14 @@ export interface McpLoadResult {
   servers: Record<string, McpServerConfig>
   loadedServers: LoadedMcpServer[]
 }
+
+export interface LoadedRawMcpServer {
+  name: string
+  scope: McpScope
+  config: ClaudeCodeMcpServer
+}
+
+export interface RawMcpLoadResult {
+  servers: Record<string, LoadedRawMcpServer>
+  loadedServers: LoadedRawMcpServer[]
+}

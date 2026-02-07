@@ -2,13 +2,19 @@ import type { ClaudeCodeMcpServer } from "../claude-code-mcp-loader/types"
 
 export type SkillMcpConfig = Record<string, ClaudeCodeMcpServer>
 
-export interface SkillMcpClientInfo {
+export interface McpClientInfo {
   serverName: string
-  skillName: string
   sessionID: string
+  contextName?: string
+  skillName?: string
 }
 
-export interface SkillMcpServerContext {
+export interface McpServerContext {
   config: ClaudeCodeMcpServer
-  skillName: string
+  contextName?: string
+  skillName?: string
 }
+
+// Backward-compatible aliases for existing skill MCP callsites.
+export type SkillMcpClientInfo = McpClientInfo
+export type SkillMcpServerContext = McpServerContext
