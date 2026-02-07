@@ -3,25 +3,26 @@ import * as mcp from "./mcp"
 
 describe("mcp check", () => {
   describe("getBuiltinMcpInfo", () => {
-    it("returns builtin servers", () => {
+    it("returns builtin servers", async () => {
       // #given
       // #when getting builtin info
-      const servers = mcp.getBuiltinMcpInfo()
+      const servers = await mcp.getBuiltinMcpInfo()
 
       // #then should include expected servers
-      expect(servers.length).toBe(2)
+      expect(servers.length).toBe(3)
       expect(servers.every((s) => s.type === "builtin")).toBe(true)
       expect(servers.every((s) => s.enabled === true)).toBe(true)
+      expect(servers.map((s) => s.id)).toContain("websearch")
       expect(servers.map((s) => s.id)).toContain("context7")
       expect(servers.map((s) => s.id)).toContain("grep_app")
     })
   })
 
   describe("getUserMcpInfo", () => {
-    it("returns empty array when no user config", () => {
+    it("returns empty array when no user config", async () => {
       // #given no user config exists
       // #when getting user info
-      const servers = mcp.getUserMcpInfo()
+      const servers = await mcp.getUserMcpInfo()
 
       // #then should return array (may be empty)
       expect(Array.isArray(servers)).toBe(true)
@@ -36,7 +37,7 @@ describe("mcp check", () => {
 
       // #then should pass
       expect(result.status).toBe("pass")
-      expect(result.message).toContain("2")
+      expect(result.message).toContain("3")
       expect(result.message).toContain("enabled")
     })
 
@@ -46,6 +47,7 @@ describe("mcp check", () => {
       const result = await mcp.checkBuiltinMcpServers()
 
       // #then should list servers
+      expect(result.details?.some((d) => d.includes("websearch"))).toBe(true)
       expect(result.details?.some((d) => d.includes("context7"))).toBe(true)
       expect(result.details?.some((d) => d.includes("grep_app"))).toBe(true)
     })
@@ -60,7 +62,7 @@ describe("mcp check", () => {
 
     it("returns skip when no user config", async () => {
       // #given no user servers
-      getUserSpy = spyOn(mcp, "getUserMcpInfo").mockReturnValue([])
+      getUserSpy = spyOn(mcp, "getUserMcpInfo").mockResolvedValue([])
 
       // #when checking
       const result = await mcp.checkUserMcpServers()
@@ -72,7 +74,7 @@ describe("mcp check", () => {
 
     it("returns pass when valid user servers", async () => {
       // #given valid user servers
-      getUserSpy = spyOn(mcp, "getUserMcpInfo").mockReturnValue([
+      getUserSpy = spyOn(mcp, "getUserMcpInfo").mockResolvedValue([
         { id: "custom-mcp", type: "user", enabled: true, valid: true },
       ])
 
@@ -86,7 +88,7 @@ describe("mcp check", () => {
 
     it("returns warn when servers have issues", async () => {
       // #given invalid server config
-      getUserSpy = spyOn(mcp, "getUserMcpInfo").mockReturnValue([
+      getUserSpy = spyOn(mcp, "getUserMcpInfo").mockResolvedValue([
         { id: "bad-mcp", type: "user", enabled: true, valid: false, error: "Missing command" },
       ])
 
