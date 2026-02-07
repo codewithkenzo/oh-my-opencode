@@ -33,7 +33,7 @@ export async function getUserMcpInfo(): Promise<McpServerInfo[]> {
       valid = false
       error = "Invalid config: not an object"
     } else if (config.type === "stdio" || (!config.type && !config.url)) {
-      if (!config.command) {
+      if (!config.command || (Array.isArray(config.command) && config.command.length === 0) || config.command === "") {
         valid = false
         error = "Missing required field: command"
       }
