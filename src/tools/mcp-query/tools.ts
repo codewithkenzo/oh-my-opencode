@@ -81,9 +81,14 @@ async function defaultLoadRegistry(options: McpQueryToolOptions): Promise<McpReg
     ? []
     : (await loadRawMcpConfigs()).loadedServers
 
-  const pluginServers = options.loadPluginMcpServers
-    ? await options.loadPluginMcpServers()
-    : {}
+  let pluginServers: Record<string, McpServerConfig> = {}
+  if (options.loadPluginMcpServers) {
+    try {
+      pluginServers = await options.loadPluginMcpServers()
+    } catch {
+      // Plugin MCP discovery failed; continue with other sources
+    }
+  }
 
   return createMcpRegistry({
     builtinServers: createBuiltinMcps(options.disabledBuiltinMcps ?? []),
@@ -128,10 +133,11 @@ export function createMcpQueryTool(options: McpQueryToolOptions): ToolDefinition
       }
 
       if (args.scope) {
-        servers = servers.filter((server) => server.scope === args.scope)
+        servers = servers.filter((server) => server.source === "custom" ? server.scope === args.scope : true)
       }
 
       const candidateServers = servers.length
+      servers = servers.slice(0, limit)
 
       const results: QueryServerResult[] = []
 
@@ -256,7 +262,7 @@ export function createMcpQueryTool(options: McpQueryToolOptions): ToolDefinition
         results.push(result)
       }
 
-      const limitedResults = results.slice(0, limit)
+      const limitedResults = results
 
       return JSON.stringify(
         {

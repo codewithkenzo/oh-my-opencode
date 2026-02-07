@@ -200,7 +200,11 @@ export function toRuntimeMcpServerMap(
   const map: Record<string, McpServerConfig> = {}
 
   for (const server of servers) {
-    map[server.name] = transformMcpServer(server.name, server.config)
+    try {
+      map[server.name] = transformMcpServer(server.name, server.config)
+    } catch {
+      // Skip servers with invalid configs during runtime map construction
+    }
   }
 
   return map
