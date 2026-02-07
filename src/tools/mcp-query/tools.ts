@@ -16,6 +16,7 @@ interface McpQueryToolOptions {
   getLoadedSkills?: () => LoadedSkill[]
   loadPluginMcpServers?: () => Promise<Record<string, McpServerConfig>>
   loadRegistry?: () => Promise<McpRegistryResult>
+  getToolRoutePolicy?: (serverName: string) => "builtin-only" | "mcp-first" | "mcp-only" | undefined
 }
 
 interface QueryOperation {
@@ -39,6 +40,7 @@ interface QueryServerResult {
     prompts: number
   }
   errors?: string[]
+  route_policy?: "builtin-only" | "mcp-first" | "mcp-only"
 }
 
 function normalizeText(value: string | undefined): string {
@@ -162,6 +164,7 @@ export function createMcpQueryTool(options: McpQueryToolOptions): ToolDefinition
               resources: 0,
               prompts: 0,
             },
+            route_policy: options.getToolRoutePolicy?.(server.name),
           })
           continue
         }
@@ -253,6 +256,7 @@ export function createMcpQueryTool(options: McpQueryToolOptions): ToolDefinition
             resources: resourcesCount,
             prompts: promptsCount,
           },
+          route_policy: options.getToolRoutePolicy?.(server.name),
         }
 
         if (errors.length > 0) {

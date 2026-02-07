@@ -13,7 +13,9 @@ describe("createBuiltinMcps", () => {
     expect(result).toHaveProperty("websearch")
     expect(result).toHaveProperty("context7")
     expect(result).toHaveProperty("grep_app")
-    expect(Object.keys(result)).toHaveLength(3)
+    expect(result).toHaveProperty("runware")
+    expect(result).toHaveProperty("civitai")
+    expect(Object.keys(result)).toHaveLength(5)
   })
 
   test("should filter out disabled built-in MCPs", () => {
@@ -27,12 +29,14 @@ describe("createBuiltinMcps", () => {
     expect(result).toHaveProperty("websearch")
     expect(result).not.toHaveProperty("context7")
     expect(result).toHaveProperty("grep_app")
-    expect(Object.keys(result)).toHaveLength(2)
+    expect(result).toHaveProperty("runware")
+    expect(result).toHaveProperty("civitai")
+    expect(Object.keys(result)).toHaveLength(4)
   })
 
   test("should filter out all built-in MCPs when all disabled", () => {
     //#given
-    const disabledMcps = ["websearch", "context7", "grep_app"]
+    const disabledMcps = ["websearch", "context7", "grep_app", "runware", "civitai"]
 
     //#when
     const result = createBuiltinMcps(disabledMcps)
@@ -41,6 +45,8 @@ describe("createBuiltinMcps", () => {
     expect(result).not.toHaveProperty("websearch")
     expect(result).not.toHaveProperty("context7")
     expect(result).not.toHaveProperty("grep_app")
+    expect(result).not.toHaveProperty("runware")
+    expect(result).not.toHaveProperty("civitai")
     expect(Object.keys(result)).toHaveLength(0)
   })
 
@@ -55,7 +61,9 @@ describe("createBuiltinMcps", () => {
     expect(result).toHaveProperty("websearch")
     expect(result).not.toHaveProperty("context7")
     expect(result).toHaveProperty("grep_app")
-    expect(Object.keys(result)).toHaveLength(2)
+    expect(result).toHaveProperty("runware")
+    expect(result).toHaveProperty("civitai")
+    expect(Object.keys(result)).toHaveLength(4)
   })
 
   test("should handle empty disabled_mcps by default", () => {
@@ -67,7 +75,9 @@ describe("createBuiltinMcps", () => {
     expect(result).toHaveProperty("websearch")
     expect(result).toHaveProperty("context7")
     expect(result).toHaveProperty("grep_app")
-    expect(Object.keys(result)).toHaveLength(3)
+    expect(result).toHaveProperty("runware")
+    expect(result).toHaveProperty("civitai")
+    expect(Object.keys(result)).toHaveLength(5)
   })
 
   test("should only filter built-in MCPs, ignoring unknown names", () => {
@@ -81,6 +91,47 @@ describe("createBuiltinMcps", () => {
     expect(result).toHaveProperty("websearch")
     expect(result).toHaveProperty("context7")
     expect(result).toHaveProperty("grep_app")
-    expect(Object.keys(result)).toHaveLength(3)
+    expect(result).toHaveProperty("runware")
+    expect(result).toHaveProperty("civitai")
+    expect(Object.keys(result)).toHaveLength(5)
+  })
+
+  test("should return local MCP configs with correct type discriminator", () => {
+    //#given
+    //#when
+    const result = createBuiltinMcps()
+
+    //#then
+    const runware = result["runware"]
+    expect(runware).toBeDefined()
+    expect(runware.type).toBe("local")
+    expect(runware.enabled).toBe(true)
+    if (runware.type === "local") {
+      expect(runware.command).toBe("bunx")
+      expect(runware.args).toEqual(["oh-my-opencode-mcp-runware"])
+    }
+
+    const civitai = result["civitai"]
+    expect(civitai).toBeDefined()
+    expect(civitai.type).toBe("local")
+    expect(civitai.enabled).toBe(true)
+    if (civitai.type === "local") {
+      expect(civitai.command).toBe("bunx")
+      expect(civitai.args).toEqual(["oh-my-opencode-mcp-civitai"])
+    }
+  })
+
+  test("should return remote MCP configs with correct type discriminator", () => {
+    //#given
+    //#when
+    const result = createBuiltinMcps()
+
+    //#then
+    const websearch = result["websearch"]
+    expect(websearch).toBeDefined()
+    expect(websearch.type).toBe("remote")
+    if (websearch.type === "remote") {
+      expect(websearch.url).toContain("mcp.exa.ai")
+    }
   })
 })

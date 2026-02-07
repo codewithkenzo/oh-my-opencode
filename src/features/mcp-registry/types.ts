@@ -1,6 +1,7 @@
 import type { SkillScope, LoadedSkill } from "../opencode-skill-loader/types"
 import type { McpScope, ClaudeCodeMcpServer } from "../claude-code-mcp-loader"
 import type { McpServerConfig } from "../claude-code-mcp-loader/types"
+import type { BuiltinMcpConfig } from "../../mcp"
 
 export type McpRegistrySource = "builtin" | "custom" | "plugin" | "skill"
 
@@ -32,15 +33,7 @@ export interface McpRegistryResult {
 }
 
 export interface CreateMcpRegistryInput {
-  builtinServers?: Record<
-    string,
-    {
-      type: "remote"
-      url: string
-      enabled: boolean
-      headers?: Record<string, string>
-    }
-  >
+  builtinServers?: Record<string, BuiltinMcpConfig>
   customServers?: Array<{ name: string; scope: McpScope; config: ClaudeCodeMcpServer }>
   pluginServers?: Record<string, McpServerConfig>
   skills?: LoadedSkill[]

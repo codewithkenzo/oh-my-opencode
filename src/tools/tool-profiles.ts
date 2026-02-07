@@ -60,6 +60,7 @@ export const TOOL_PROFILES: Record<ToolProfile, readonly string[]> = {
     "civitai_search",
     "civitai_get",
     "civitai_tags",
+    "unified_model_search",
     "ripple_collections",
     "ripple_search",
     "ripple_get",
@@ -113,4 +114,17 @@ export function getToolProfile(toolName: string): ToolProfile | undefined {
 
 export function getToolsForProfile(profile: ToolProfile): string[] {
   return [...TOOL_PROFILES[profile]]
+}
+
+export function getToolsForProfiles(profiles: ToolProfile[]): Set<string> {
+  const tools = new Set<string>()
+  for (const profile of profiles) {
+    const profileTools = TOOL_PROFILES[profile]
+    if (profileTools) {
+      for (const toolName of profileTools) {
+        tools.add(toolName)
+      }
+    }
+  }
+  return tools
 }
