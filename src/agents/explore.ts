@@ -5,7 +5,7 @@ import { createAgentToolRestrictions } from "../shared/permission-compat"
 export const EXPLORE_PROMPT_METADATA: AgentPromptMetadata = {
   category: "exploration",
   cost: "FREE",
-  promptAlias: "Explore",
+  promptAlias: "X1",
   keyTrigger: "2+ modules involved → fire `X1 - explorer` background",
   triggers: [
     { domain: "Explore", trigger: "Find existing codebase structure, patterns and styles" },

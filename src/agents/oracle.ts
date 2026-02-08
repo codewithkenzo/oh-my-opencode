@@ -6,7 +6,7 @@ import { createAgentToolRestrictions } from "../shared/permission-compat"
 export const ORACLE_PROMPT_METADATA: AgentPromptMetadata = {
   category: "advisor",
   cost: "EXPENSIVE",
-  promptAlias: "Oracle",
+  promptAlias: "K9",
   triggers: [
     { domain: "Architecture decisions", trigger: "Multi-system tradeoffs, unfamiliar patterns" },
     { domain: "Self-review", trigger: "After completing significant implementation" },

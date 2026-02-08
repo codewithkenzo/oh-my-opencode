@@ -167,13 +167,13 @@ ${avoidWhen.map((w) => `| ${w} |  |`).join("\n")}
 ${useWhen.map((w) => `|  | ${w} |`).join("\n")}`
 }
 
-export function buildLibrarianSection(agents: AvailableAgent[]): string {
+export function buildResearcherSection(agents: AvailableAgent[]): string {
   const librarianAgent = agents.find((a) => a.name === "R2 - researcher")
   if (!librarianAgent) return ""
 
   const useWhen = librarianAgent.metadata.useWhen || []
 
-  return `### Librarian Agent = Reference Grep
+  return `### Research Agent = Reference Grep
 
 Search **external references** (docs, OSS, web). Fire proactively when unfamiliar libraries are involved.
 
@@ -262,7 +262,7 @@ If change has BOTH logic AND visual:
 3. **Never** combine them into one edit`
 }
 
-export function buildOracleSection(agents: AvailableAgent[]): string {
+export function buildAdvisorSection(agents: AvailableAgent[]): string {
   const oracleAgent = agents.find((a) => a.name === "K9 - advisor")
   if (!oracleAgent) return ""
 
@@ -270,22 +270,22 @@ export function buildOracleSection(agents: AvailableAgent[]): string {
   const avoidWhen = oracleAgent.metadata.avoidWhen || []
 
   return `<Oracle_Usage>
-## Oracle — Read-Only High-IQ Consultant
+## K9 Advisor — Read-Only High-IQ Consultant
 
-Oracle is a read-only, expensive, high-quality reasoning model for debugging and architecture. Consultation only.
+K9 advisor is a read-only, expensive, high-quality reasoning model for debugging and architecture. Consultation only.
 
 ### WHEN to Consult:
 
 | Trigger | Action |
 |---------|--------|
-${useWhen.map((w) => `| ${w} | Oracle FIRST, then implement |`).join("\n")}
+${useWhen.map((w) => `| ${w} | K9 advisor FIRST, then implement |`).join("\n")}
 
 ### WHEN NOT to Consult:
 
 ${avoidWhen.map((w) => `- ${w}`).join("\n")}
 
 ### Usage Pattern:
-Briefly announce "Consulting Oracle for [reason]" before invocation.
+Briefly announce "Consulting K9 advisor for [reason]" before invocation.
 
 **Exception**: This is the ONLY case where you announce before acting. For all other work, start immediately without status updates.
 </Oracle_Usage>`

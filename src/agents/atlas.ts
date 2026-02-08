@@ -546,7 +546,7 @@ export function createAtlasAgent(ctx: OrchestratorContext): AgentConfig {
 export const atlasPromptMetadata: AgentPromptMetadata = {
   category: "advisor",
   cost: "EXPENSIVE",
-  promptAlias: "Atlas",
+  promptAlias: "Boulder",
   triggers: [
     {
       domain: "Todo list orchestration",

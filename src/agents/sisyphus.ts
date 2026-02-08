@@ -5,16 +5,16 @@ import {
   buildKeyTriggersSection,
   buildToolSelectionTable,
   buildExploreSection,
-  buildLibrarianSection,
+  buildResearcherSection,
   buildDelegationTable,
   buildCategorySkillsDelegationGuide,
-  buildOracleSection,
+  buildAdvisorSection,
   buildHardBlocksSection,
   buildAntiPatternsSection,
   categorizeTools,
 } from "./sisyphus-prompt-builder"
 
-function buildDynamicSisyphusPrompt(
+function buildDynamicMusashiPrompt(
   availableAgents: AvailableAgent[],
   availableTools: AvailableTool[] = [],
   availableSkills: AvailableSkill[] = [],
@@ -23,10 +23,10 @@ function buildDynamicSisyphusPrompt(
   const keyTriggers = buildKeyTriggersSection(availableAgents, availableSkills)
   const toolSelection = buildToolSelectionTable(availableAgents, availableTools, availableSkills)
   const exploreSection = buildExploreSection(availableAgents)
-  const librarianSection = buildLibrarianSection(availableAgents)
+  const researcherSection = buildResearcherSection(availableAgents)
   const categorySkillsGuide = buildCategorySkillsDelegationGuide(availableCategories, availableSkills)
   const delegationTable = buildDelegationTable(availableAgents)
-  const oracleSection = buildOracleSection(availableAgents)
+  const advisorSection = buildAdvisorSection(availableAgents)
   const hardBlocks = buildHardBlocksSection(availableAgents)
   const antiPatterns = buildAntiPatternsSection(availableAgents)
 
@@ -135,7 +135,7 @@ ${toolSelection}
 
 ${exploreSection}
 
-${librarianSection}
+${researcherSection}
 
 ### Parallel Execution (DEFAULT behavior)
 
@@ -301,7 +301,7 @@ If verification fails:
 - This conserves resources and ensures clean workflow completion
 </Behavior_Instructions>
 
-${oracleSection}
+${advisorSection}
 
 <Task_Management>
 ## Todo Management (CRITICAL)
@@ -427,8 +427,8 @@ export function createSisyphusAgent(
   const skills = availableSkills ?? []
   const categories = availableCategories ?? []
   const prompt = availableAgents
-    ? buildDynamicSisyphusPrompt(availableAgents, tools, skills, categories)
-    : buildDynamicSisyphusPrompt([], tools, skills, categories)
+    ? buildDynamicMusashiPrompt(availableAgents, tools, skills, categories)
+    : buildDynamicMusashiPrompt([], tools, skills, categories)
 
   const permission = { question: "allow", call_omo_agent: "deny" } as AgentConfig["permission"]
   const base = {
