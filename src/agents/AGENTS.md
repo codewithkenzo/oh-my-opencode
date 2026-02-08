@@ -2,179 +2,171 @@
 
 ## OVERVIEW
 
-23 AI agents for multi-model orchestration using Musashi-style naming convention.
+8 AI agents for multi-model orchestration using Musashi-style naming.
+
+This module was compressed from 23 -> 8 built-ins (Sprint 1). Sprint 4.2 adds category/skill routing in `delegate_task` so orchestration can select agent + skills by domain.
 
 ## AGENT ROSTER
 
-| ID | Name | Purpose |
-|----|------|---------|
-| **Orchestration** | | |
-| | `Musashi` | Primary agent |
-| | `Musashi - boulder` | Execution mode (orchestrator) |
-| | `Musashi - plan` | Planning mode (Prometheus) |
-| **Validation** | | |
-| | `M1 - analyst` | Pre-planning analysis (Metis) |
-| | `M2 - reviewer` | Plan validation (Momus) |
-| **Execution** | | |
-| | `J1 - junior` | Delegated task executor |
-| | `K9 - advisor` | Strategic advisor (Kenja) |
-| **Explorers** | | |
-| | `X1 - explorer` | Codebase exploration (fast contextual grep) |
-| | `R2 - researcher` | External docs/OSS research (librarian) |
-| | `V1 - viewer` | Multimodal/PDF analysis |
-| **Builders** | | |
-| | `T4 - frontend builder` | UI/UX (Takumi) - Oracle alias, configured via overrides |
-| | `D5 - backend builder` | APIs/databases (Daiku) - Oracle alias, configured via overrides |
-| | `H3 - bulk builder` | Bulk operations (Hayai) |
-| | `F1 - fast builder` | Fast scaffolding |
-| | `S6 - designer` | Design work (Shokunin) |
-| **Specialists** | | |
-| | `G5 - debugger` | Visual + backend debugging |
-| | `W7 - writer` | Documentation |
-| | `M10 - critic` | Visual critique (Miru) |
-| | `B3 - security` | Security scanning |
-| | `O9 - specialist` | Domain specialist (Opus) |
-| **Growth** | | |
-| | `Senshi - distributor` | Distribution |
-| | `Seichou - growth` | Growth hacking |
-| | `Tsunagi - networker` | Networking |
+| Role | Agent | Purpose |
+|------|-------|---------|
+| Orchestration | `Musashi` | Primary orchestrator for direct user interaction |
+| Orchestration | `Musashi - boulder` | Master orchestrator (Atlas) that executes plans via `delegate_task()` |
+| Orchestration | `Musashi - plan` | Planning mode using `createMetisAgent` (Prometheus pre-planning flow) |
+| Advisors | `K9 - advisor` | Read-only strategic consultant for architecture/debugging |
+| Explorers | `X1 - explorer` | Internal codebase exploration and contextual search |
+| Explorers | `R2 - researcher` | External docs/OSS research and multi-repo analysis |
+| Builders | `T4 - frontend builder` | Frontend-oriented Oracle alias; behavior/model comes from overrides/category |
+| Builders | `D5 - backend builder` | Backend-oriented Oracle alias; behavior/model comes from overrides/category |
 
-## WORKFLOW PHASES
+## CATEGORY ROUTING
 
-For complex tasks, follow this phase-based approach:
+Default category -> agent routing is defined in `src/tools/delegate-task/constants.ts` (`CATEGORY_AGENTS`):
 
-### Phase 1: SPEC (Context Gathering)
-- `X1 - explorer` for codebase patterns (background)
-- `R2 - researcher` for external docs/OSS (background)
+| Category | Routed Agent | Notes |
+|----------|--------------|-------|
+| `visual-engineering` | `T4 - frontend builder` | UI/UX and visual execution |
+| `ultrabrain` | `D5 - backend builder` | High-complexity architecture/business logic |
+| `artistry` | `T4 - frontend builder` | Creative visual tasks |
+| `quick` | `D5 - backend builder` | Fast/low-overhead implementation |
+| `most-capable` | `D5 - backend builder` | High-capability execution path |
+| `writing` | `W7 - writer` | Legacy alias, normalized to `D5 - backend builder` |
+| `general` | `D5 - backend builder` | Default general-purpose route |
 
-### Phase 2: ANALYZE (Requirements)
-- `M1 - analyst` for gap analysis
+User category config can override routing per category via `categories.<name>.agent` (see `resolveCategoryConfig()` in `src/tools/delegate-task/tools.ts`).
 
-### Phase 3: DESIGN (Architecture/Visual)
-- **Frontend**: `S6 - designer` → `M10 - critic` for review
-- **Backend**: `D5 - backend builder` with architecture skills
+## CATEGORY SKILLS
 
-### Phase 4: REVIEW (Validation)
-- `M2 - reviewer` validates plan/design
+Category auto-injected skills are defined in `src/tools/delegate-task/constants.ts` (`CATEGORY_SKILLS`).
+If `delegate_task` is called with both category and explicit `skills`, the final set is merged and deduplicated.
 
-### Phase 5: BUILD (Execution)
-- `T4 - frontend builder` for UI
-- `D5 - backend builder` for APIs/DB
-- `J1 - junior` for delegated subtasks
+| Category | Auto Skills |
+|----------|-------------|
+| `visual-engineering` | `frontend-ui-ux`, `frontend-stack`, `component-stack`, `kenzo-tailwind`, `motion-system`, `visual-assets` |
+| `ultrabrain` | `blueprint-architect`, `effect-ts-expert`, `remeda-utils`, `zod-patterns` |
+| `artistry` | `frontend-ui-ux`, `kenzo-design-tokens`, `motion-system`, `visual-assets`, `kenzo-portfolio-craft`, `ui-designer` |
+| `quick` | `git-master`, `git-workflow` |
+| `most-capable` | `blueprint-architect`, `effect-ts-expert`, `testing-stack`, `research-tools`, `backend-debugging` |
+| `writing` | `kenzo-agents-md`, `kenzo-seo-geo`, `research-tools` |
+| `general` | `linearis`, `git-workflow`, `research-tools`, `zod-patterns` |
 
-### Phase 6: DEBUG (if needed)
-- `G5 - debugger` with visual-debug + debugging skills
-- `K9 - advisor` after 2+ failed fix attempts
+## FILE STRUCTURE
 
-## STRUCTURE
+Current `src/agents/*.ts` files:
 
 ```
 agents/
-├── orchestrator-sisyphus.ts    # Orchestrator (1531 lines) - 6-phase delegation
-├── sisyphus.ts                 # Main prompt (640 lines)
-├── sisyphus-junior.ts          # Delegated task executor (J1)
-├── sisyphus-prompt-builder.ts  # Dynamic prompt generation
-├── kenja-advisor.ts            # Strategic advisor (K9)
-├── librarian.ts                # Research agent (R2)
-├── explore.ts                  # Fast grep (X1)
-├── takumi-builder.ts           # Frontend builder (T4)
-├── builder.ts                  # Backend builder (D5)
-├── shokunin-designer.ts        # Designer (S6)
-├── g5-debugger.ts              # Debugger (G5)
-├── w7-writer.ts                # Technical writer (W7)
-├── m10-critic.ts               # Visual critic (M10)
-├── b3-security.ts              # Security specialist (B3)
-├── o9-specialist.ts            # Domain specialist (O9)
-├── multimodal-looker.ts        # Media analyzer (V1)
-├── prometheus-prompt.ts        # Planning (1196 lines) - interview mode
-├── metis.ts                    # Plan consultant (M1)
-├── momus.ts                    # Plan reviewer (M2)
-├── hayai-builder.ts            # Bulk builder (H3)
-├── f1-fast-builder.ts          # Fast builder (F1)
-├── senshi-distributor.ts       # Distribution (Senshi)
-├── seichou-growth.ts           # Growth (Seichou)
-├── tsunagi-networker.ts        # Networking (Tsunagi)
-├── types.ts                    # AgentModelConfig interface
-├── utils.ts                    # createBuiltinAgents(), normalizeAgentName()
-└── index.ts                    # builtinAgents export
+├── atlas.ts
+├── explore.ts
+├── index.ts
+├── librarian.ts
+├── metis.ts
+├── momus.test.ts
+├── momus.ts
+├── oracle.ts
+├── prometheus-prompt.test.ts
+├── prometheus-prompt.ts
+├── sisyphus-prompt-builder.ts
+├── sisyphus.ts
+├── types.ts
+├── utils.test.ts
+└── utils.ts
 ```
+
+`BuiltinAgentName` is defined in `src/agents/types.ts` and contains 8 entries only.
 
 ## AGENT MODELS
 
-Models are configurable via `~/.config/opencode/oh-my-opencode.json` under `agents.<name>.model`.
+Model resolution is runtime-based (`resolveModelWithFallback`) and configurable by `agents.<name>.model` in `~/.config/opencode/oh-my-opencode.json`.
 
-| Agent | Default Model | Temperature | Purpose |
-|-------|---------------|-------------|---------|
-| Musashi | system default | 0.1 | Primary orchestrator |
-| Musashi - boulder | system default | 0.1 | Execution orchestrator |
-| Musashi - plan | system default | 0.1 | Strategic planning |
-| M1 - analyst | system default | 0.1 | Pre-planning analysis |
-| M2 - reviewer | system default | 0.1 | Plan validation |
-| K9 - advisor | system default | 0.1 | Read-only consultation |
-| X1 - explorer | system default | 0.1 | Fast contextual grep |
-| R2 - researcher | system default | 0.1 | Docs, GitHub search |
-| V1 - viewer | system default | 0.1 | PDF/image analysis |
-| T4 - frontend builder | system default | 0.7 | UI generation |
-| D5 - backend builder | zai-coding-plan/glm-4.7 | 0.1 | Backend logic |
-| H3 - bulk builder | opencode/grok-code | 0.1 | Bulk operations |
-| F1 - fast builder | system default | 0.3 | Fast scaffolding |
-| S6 - designer | system default | 0.7 | Design systems |
-| G5 - debugger | system default | 0.1 | Debugging |
-| W7 - writer | system default | 0.3 | Documentation |
-| M10 - critic | system default | 0.5 | Visual critique |
-| B3 - security | system default | 0.1 | Security assessment |
-| O9 - specialist | anthropic/claude-opus-4-5 | 0.1 | Complex problems |
+| Agent | Default Fallback Chain (first preferred) | Temperature |
+|-------|------------------------------------------|-------------|
+| `Musashi` | `claude-opus-4-5` -> `glm-4.7` -> `gpt-5.2-codex` -> `gemini-3-pro` | not fixed in factory |
+| `Musashi - boulder` | `claude-sonnet-4-5` -> `gpt-5.2` -> `gemini-3-pro` | `0.1` |
+| `Musashi - plan` | `claude-opus-4-5` -> `gpt-5.2` -> `gemini-3-pro` | `0.3` |
+| `K9 - advisor` | `gpt-5.2` -> `claude-opus-4-5` -> `gemini-3-pro` | `0.1` |
+| `X1 - explorer` | `claude-haiku-4-5` -> `gpt-5-nano` | `0.1` |
+| `R2 - researcher` | `glm-4.7` -> `big-pickle` -> `claude-sonnet-4-5` | `0.1` |
+| `T4 - frontend builder` | system default unless overridden (Oracle alias) | `0.1` |
+| `D5 - backend builder` | system default unless overridden (Oracle alias) | `0.1` |
 
-Example config override:
-```json
-{
-  "agents": {
-    "X1 - explorer": { "model": "google/antigravity-gemini-3-flash" },
-    "R2 - researcher": { "model": "google/antigravity-gemini-3-flash" }
-  }
-}
-```
+Notes:
+- `T4 - frontend builder` and `D5 - backend builder` intentionally use `createOracleAgent` in `agentSources`.
+- They are differentiated by category routing and user overrides (model, prompt append, variant), not by separate factory code.
 
 ## LEGACY NAME MAPPING
 
-Backward compatibility for older configurations:
+Backward compatibility map from `LEGACY_TO_MUSASHI_NAME` in `src/agents/utils.ts`:
 
-| Legacy Name | Musashi Name |
-|-------------|--------------|
-| `explore` | `X1 - explorer` |
-| `librarian` | `R2 - researcher` |
+| Legacy Name | Current Builtin |
+|-------------|-----------------|
+| `sisyphus` | `Musashi` |
+| `Sisyphus` | `Musashi` |
 | `oracle` | `K9 - advisor` |
-| `frontend-ui-ux-engineer` | `T4 - frontend builder` |
-| `document-writer` | `W7 - writer` |
-| `multimodal-looker` | `V1 - viewer` |
+| `Oracle` | `K9 - advisor` |
+| `librarian` | `R2 - researcher` |
+| `Librarian` | `R2 - researcher` |
+| `explore` | `X1 - explorer` |
+| `Explore` | `X1 - explorer` |
+| `atlas` | `Musashi - boulder` |
+| `Atlas` | `Musashi - boulder` |
+| `metis` | `Musashi - plan` |
+| `momus` | `Musashi - plan` |
+| `multimodal-looker` | `T4 - frontend builder` |
+| `Sisyphus-Junior` | `D5 - backend builder` |
+| `J1 - junior` | `D5 - backend builder` |
+| `M1 - analyst` | `Musashi - plan` |
+| `M2 - reviewer` | `Musashi - plan` |
+| `V1 - viewer` | `T4 - frontend builder` |
+| `H3 - bulk builder` | `D5 - backend builder` |
+| `F1 - fast builder` | `D5 - backend builder` |
+| `S6 - designer` | `T4 - frontend builder` |
+| `G5 - debugger` | `K9 - advisor` |
+| `W7 - writer` | `D5 - backend builder` |
+| `M10 - critic` | `T4 - frontend builder` |
+| `B3 - security` | `K9 - advisor` |
+| `O9 - specialist` | `K9 - advisor` |
+| `Senshi - distributor` | `Musashi` |
+| `Seichou - growth` | `Musashi` |
+| `Tsunagi - networker` | `Musashi` |
 
 ## HOW TO ADD
 
-1. Create `src/agents/my-agent.ts` exporting `AgentConfig`
-2. Add to `agentSources` in `src/agents/utils.ts`
-3. Add metadata to `agentMetadata` in `src/agents/utils.ts`
-4. Update `BuiltinAgentName` type in `src/agents/types.ts`
-5. Register in `src/agents/index.ts`
+1. Create agent factory file in `src/agents/` returning `AgentConfig`.
+2. Add entry to `agentSources` in `src/agents/utils.ts`.
+3. Add/adjust metadata in `agentMetadata` in `src/agents/utils.ts` when it should appear in dynamic prompt sections.
+4. Update `BuiltinAgentName` in `src/agents/types.ts`.
+5. Export from `src/agents/index.ts` if public surface should include it.
+6. Add model fallback entry in `src/shared/model-requirements.ts` when the agent should not use plain system default.
+7. If category-routable, wire default in `CATEGORY_AGENTS` and optional skills in `CATEGORY_SKILLS` (`src/tools/delegate-task/constants.ts`).
 
 ## TOOL RESTRICTIONS
 
-| Agent | Denied Tools |
-|-------|-------------|
-| K9 - advisor | write, edit, task, delegate_task |
-| R2 - researcher | write, edit, task, delegate_task, call_omo_agent |
-| X1 - explorer | write, edit, task, delegate_task, call_omo_agent |
-| V1 - viewer | Allowlist: read, glob, grep |
+Derived from each agent factory permission config:
+
+| Agent | Restricted Tools |
+|-------|------------------|
+| `Musashi` | `call_omo_agent` denied (question tool explicitly allowed) |
+| `Musashi - boulder` | `task`, `call_omo_agent` denied |
+| `Musashi - plan` | `write`, `edit`, `task`, `delegate_task` denied |
+| `K9 - advisor` | `write`, `edit`, `task`, `delegate_task` denied |
+| `X1 - explorer` | `write`, `edit`, `task`, `delegate_task`, `call_omo_agent` denied |
+| `R2 - researcher` | `write`, `edit`, `task`, `delegate_task`, `call_omo_agent` denied |
+| `T4 - frontend builder` | same restrictions as `K9 - advisor` (Oracle alias) |
+| `D5 - backend builder` | same restrictions as `K9 - advisor` (Oracle alias) |
 
 ## KEY PATTERNS
 
-- **Factory**: `createXXXAgent(model?: string): AgentConfig`
-- **Metadata**: `XXX_PROMPT_METADATA: AgentPromptMetadata`
-- **Tool restrictions**: `permission: { edit: "deny", bash: "ask" }`
-- **Thinking**: 32k budget tokens for Musashi, K9 - advisor, Prometheus
-- **Skills auto-load**: Define in `agentMetadata.skills[]`
+- **Factory pattern**: `createXXXAgent(modelOrContext): AgentConfig`.
+- **Source registry**: `agentSources` is the single built-in agent map.
+- **Prompt metadata**: `AgentPromptMetadata` powers dynamic Sisyphus/Atlas prompt sections.
+- **Model routing**: `resolveModelWithFallback` + `AGENT_MODEL_REQUIREMENTS`.
+- **Alias strategy**: T4/D5 reuse Oracle factory intentionally; behavior split is config/category-driven.
+- **Category composition**: `CATEGORY_AGENTS` picks executor, `CATEGORY_SKILLS` injects domain guidance.
 
 ## ANTI-PATTERNS
 
-- **Trust reports**: NEVER trust subagent "I'm done" - verify outputs
-- **High temp**: Don't use >0.3 for code agents
-- **Sequential calls**: Use `delegate_task` with `run_in_background`
+- **Trusting subagent completion blindly**: always verify outputs independently.
+- **High temperature for code-heavy tasks**: keep coding agents low-temp unless category explicitly requires creativity.
+- **Sequential exploration**: launch exploration/research in parallel whenever independent.
+- **Hardcoding legacy names in new logic**: always normalize via mapping/config migration paths.

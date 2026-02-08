@@ -2,15 +2,15 @@
 
 ## OVERVIEW
 
-31 lifecycle hooks intercepting/modifying agent behavior. Events: PreToolUse, PostToolUse, UserPromptSubmit, Stop, onSummarize.
+31 lifecycle hooks intercepting/modifying agent behavior (30 configurable in `HookNameSchema` + 1 internal hook). Events: PreToolUse, PostToolUse, UserPromptSubmit, Stop, onSummarize.
 
 ## STRUCTURE
 
 ```
 hooks/
-├── sisyphus-orchestrator/      # Main orchestration & delegation (771 lines)
+├── atlas/                      # Main orchestration & delegation (773 lines)
 ├── anthropic-context-window-limit-recovery/  # Auto-summarize at token limit
-├── todo-continuation-enforcer.ts # Force TODO completion
+├── todo-continuation-enforcer/   # Force TODO completion
 ├── ralph-loop/                 # Self-referential dev loop until done
 ├── claude-code-hooks/          # settings.json hook compat layer (13 files)
 ├── comment-checker/            # Prevents AI slop/excessive comments
@@ -20,12 +20,12 @@ hooks/
 ├── directory-readme-injector/  # Auto-injects README.md files
 ├── edit-error-recovery/        # Recovers from tool failures
 ├── thinking-block-validator/   # Ensures valid <thinking> format
-├── context-window-monitor.ts   # Reminds agents of remaining headroom
+├── context-window-monitor/     # Reminds agents of remaining headroom
 ├── session-recovery/           # Auto-recovers from crashes
 ├── think-mode/                 # Dynamic thinking budget
 ├── keyword-detector/           # ultrawork/search/analyze modes
 ├── background-notification/    # OS notification on task completion
-└── tool-output-truncator.ts    # Prevents context bloat
+└── tool-output-truncator/      # Prevents context bloat
 ```
 
 ## HOOK EVENTS
