@@ -171,6 +171,7 @@ Configuration files support **JSONC (JSON with Comments)** format. You can use c
     "disabled": false,
     "planner_enabled": true,
   },
+  // `sisyphus_agent` key controls Musashi orchestration for backward compatibility
   
   /* Category customization */
   "categories": {

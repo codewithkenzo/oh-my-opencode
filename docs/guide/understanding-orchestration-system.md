@@ -1,19 +1,19 @@
 # Understanding the Orchestration System
 
-Oh My OpenCode's orchestration system transforms a simple AI agent into a coordinated development team. This document explains how the Prometheus → Orchestrator → Junior workflow creates high-quality, reliable code output.
+Oh My OpenCode's orchestration system turns a single agent loop into a coordinated multi-agent workflow. This guide explains how **Musashi - plan -> Musashi - boulder -> specialist agents** produces high-quality, verifiable output at scale.
 
 ---
 
 ## The Core Philosophy
 
-Traditional AI coding tools follow a simple pattern: user asks → AI responds. This works for small tasks but fails for complex work because:
+Traditional "user asks -> agent responds" loops degrade on large tasks because of:
 
-1. **Context overload**: Large tasks exceed context windows
-2. **Cognitive drift**: AI loses track of requirements mid-task
-3. **Verification gaps**: No systematic way to ensure completeness
-4. **Human = Bottleneck**: Requires constant user intervention
+1. **Context overload**: large tasks exceed practical working context
+2. **Goal drift**: execution diverges from intent
+3. **Verification gaps**: completion claims are not always validated
+4. **Human bottlenecks**: too much manual steering
 
-The orchestration system solves these problems through **specialization and delegation**.
+The orchestration system solves this with **role separation + explicit delegation + independent verification**.
 
 ---
 
@@ -21,425 +21,245 @@ The orchestration system solves these problems through **specialization and dele
 
 ```mermaid
 flowchart TB
-    subgraph Planning["Planning Layer (Human + Prometheus)"]
-        User[("👤 User")]
-        Prometheus["🔥 Prometheus<br/>(Planner)<br/>Claude Opus 4.5"]
-        Metis["🦉 Metis<br/>(Consultant)<br/>Claude Opus 4.5"]
-        Momus["👁️ Momus<br/>(Reviewer)<br/>GPT-5.2"]
+    subgraph Planning["Planning Layer (Human + Musashi - plan)"]
+        User[("User")]
+        Plan["Musashi - plan<br/>Planner"]
+        Consultant["Musashi - plan<br/>Consultant mode"]
+        Reviewer["Musashi - plan<br/>Review mode"]
     end
-    
-    subgraph Execution["Execution Layer (Orchestrator)"]
-        Orchestrator["⚡ Orchestrator-Sisyphus<br/>(Conductor)<br/>Claude Opus 4.5"]
+
+    subgraph Execution["Execution Layer"]
+        Boulder["Musashi - boulder<br/>Conductor"]
     end
-    
-    subgraph Workers["Worker Layer (Specialized Agents)"]
-        Junior["🪨 Sisyphus-Junior<br/>(Task Executor)<br/>Claude Sonnet 4.5"]
-        Oracle["🧠 Oracle<br/>(Architecture)<br/>GPT-5.2"]
-        Explore["🔍 Explore<br/>(Codebase Grep)<br/>Grok Code"]
-        Librarian["📚 Librarian<br/>(Docs/OSS)<br/>GLM-4.7"]
-        Frontend["🎨 Frontend<br/>(UI/UX)<br/>Gemini 3 Pro"]
+
+    subgraph Workers["Specialist Layer (8-Agent Architecture)"]
+        Musashi["Musashi<br/>Primary orchestrator"]
+        K9["K9 - advisor<br/>Strategic consultant"]
+        X1["X1 - explorer<br/>Fast exploration"]
+        R2["R2 - researcher<br/>Docs + OSS research"]
+        T4["T4 - frontend builder<br/>Category-routed"]
+        D5["D5 - backend builder<br/>Category-routed"]
     end
-    
-    User -->|"Describe work"| Prometheus
-    Prometheus -->|"Consult"| Metis
-    Prometheus -->|"Interview"| User
-    Prometheus -->|"Generate plan"| Plan[".sisyphus/plans/*.md"]
-    Plan -->|"High accuracy?"| Momus
-    Momus -->|"OKAY / REJECT"| Prometheus
-    
-    User -->|"/start-work"| Orchestrator
-    Plan -->|"Read"| Orchestrator
-    
-    Orchestrator -->|"delegate_task(category)"| Junior
-    Orchestrator -->|"delegate_task(agent)"| Oracle
-    Orchestrator -->|"delegate_task(agent)"| Explore
-    Orchestrator -->|"delegate_task(agent)"| Librarian
-    Orchestrator -->|"delegate_task(agent)"| Frontend
-    
-    Junior -->|"Results + Learnings"| Orchestrator
-    Oracle -->|"Advice"| Orchestrator
-    Explore -->|"Code patterns"| Orchestrator
-    Librarian -->|"Documentation"| Orchestrator
-    Frontend -->|"UI code"| Orchestrator
+
+    User -->|"Describe work"| Plan
+    Plan -->|"Consult"| Consultant
+    Consultant --> Plan
+    Plan -->|"High-accuracy review"| Reviewer
+    Reviewer --> Plan
+    Plan -->|"Generate plan"| PlanFile[".sisyphus/plans/*.md"]
+
+    User -->|"/start-work"| Boulder
+    PlanFile -->|"Read"| Boulder
+
+    Boulder -->|"delegate_task(agent/category)"| Musashi
+    Boulder -->|"delegate_task(agent)"| K9
+    Boulder -->|"delegate_task(agent)"| X1
+    Boulder -->|"delegate_task(agent)"| R2
+    Boulder -->|"delegate_task(category)"| T4
+    Boulder -->|"delegate_task(category)"| D5
+
+    Musashi -->|"Results"| Boulder
+    K9 -->|"Advice"| Boulder
+    X1 -->|"Code patterns"| Boulder
+    R2 -->|"Documentation"| Boulder
+    T4 -->|"UI output"| Boulder
+    D5 -->|"Backend/general output"| Boulder
 ```
 
 ---
 
-## Layer 1: Planning (Prometheus + Metis + Momus)
+## Layer 1: Planning (Musashi - plan)
 
-### Prometheus: Your Strategic Consultant
+### Musashi - plan: Strategic Planner
 
-Prometheus is **not just a planner** - it's an intelligent interviewer that helps you think through what you actually need.
+Musashi - plan is an interviewer-first planner. It does not rush into implementation.
 
-**The Interview Process:**
+**Interview loop:**
 
 ```mermaid
 stateDiagram-v2
     [*] --> Interview: User describes work
-    Interview --> Research: Launch explore/librarian agents
-    Research --> Interview: Gather codebase context
+    Interview --> Research: Launch X1 / R2 for context
+    Research --> Interview: Gather evidence
     Interview --> ClearanceCheck: After each response
-    
+
     ClearanceCheck --> Interview: Requirements unclear
-    ClearanceCheck --> PlanGeneration: All requirements clear
-    
-    state ClearanceCheck {
-        [*] --> Check
-        Check: ✓ Core objective defined?
-        Check: ✓ Scope boundaries established?
-        Check: ✓ No critical ambiguities?
-        Check: ✓ Technical approach decided?
-        Check: ✓ Test strategy confirmed?
-    }
-    
-    PlanGeneration --> MetisConsult: Mandatory gap analysis
-    MetisConsult --> WritePlan: Incorporate findings
-    WritePlan --> HighAccuracyChoice: Present to user
-    
-    HighAccuracyChoice --> MomusLoop: User wants high accuracy
-    HighAccuracyChoice --> Done: User accepts plan
-    
-    MomusLoop --> WritePlan: REJECTED - fix issues
-    MomusLoop --> Done: OKAY - plan approved
-    
-    Done --> [*]: Guide to /start-work
+    ClearanceCheck --> PlanGeneration: Requirements clear
+
+    PlanGeneration --> ConsultantPass: Gap detection
+    ConsultantPass --> WritePlan: Integrate findings
+    WritePlan --> ReviewChoice: High-accuracy requested?
+
+    ReviewChoice --> ReviewPass: Yes
+    ReviewChoice --> Done: No
+
+    ReviewPass --> WritePlan: REJECT - revise
+    ReviewPass --> Done: OKAY - approved
+
+    Done --> [*]: Hand off to /start-work
 ```
 
-**Intent-Specific Strategies:**
+**Intent-specific behavior:**
 
-Prometheus adapts its interview style based on what you're doing:
+| Intent | Planner Focus | Typical Questions |
+|--------|---------------|------------------|
+| Refactoring | Behavior safety | "What tests prove current behavior?" |
+| New feature | Scope boundaries | "What is explicitly out of scope?" |
+| Architecture | Long-term fit | "What scale/lifespan assumptions matter?" |
+| Mid-sized change | Guardrails | "What must not be modified?" |
 
-| Intent | Prometheus Focus | Example Questions |
-|--------|------------------|-------------------|
-| **Refactoring** | Safety - behavior preservation | "What tests verify current behavior?" "Rollback strategy?" |
-| **Build from Scratch** | Discovery - patterns first | "Found pattern X in codebase. Follow it or deviate?" |
-| **Mid-sized Task** | Guardrails - exact boundaries | "What must NOT be included? Hard constraints?" |
-| **Architecture** | Strategic - long-term impact | "Expected lifespan? Scale requirements?" |
+### Consultant and Review Modes
 
-### Metis: The Gap Analyzer
+Consultant mode and review mode are now internal Musashi - plan passes:
 
-Before Prometheus writes the plan, **Metis catches what Prometheus missed**:
-
-- Hidden intentions in user's request
-- Ambiguities that could derail implementation
-- AI-slop patterns (over-engineering, scope creep)
-- Missing acceptance criteria
-- Edge cases not addressed
-
-**Why Metis Exists:**
-
-The plan author (Prometheus) has "ADHD working memory" - it makes connections that never make it onto the page. Metis forces externalization of implicit knowledge.
-
-### Momus: The Ruthless Reviewer
-
-For high-accuracy mode, Momus validates plans against **four core criteria**:
-
-1. **Clarity**: Does each task specify WHERE to find implementation details?
-2. **Verification**: Are acceptance criteria concrete and measurable?
-3. **Context**: Is there sufficient context to proceed without >10% guesswork?
-4. **Big Picture**: Is the purpose, background, and workflow clear?
-
-**The Momus Loop:**
-
-Momus only says "OKAY" when:
-- 100% of file references verified
-- ≥80% of tasks have clear reference sources
-- ≥90% of tasks have concrete acceptance criteria
-- Zero tasks require assumptions about business logic
-- Zero critical red flags
-
-If REJECTED, Prometheus fixes issues and resubmits. **No maximum retry limit.**
+- **Consultant mode**: catches ambiguity, hidden requirements, over-engineering risk
+- **Review mode**: validates clarity, acceptance criteria, references, and rollout safety
+- **Outcome**: a plan file in `.sisyphus/plans/` that can be executed without guesswork
 
 ---
 
-## Layer 2: Execution (Orchestrator-Sisyphus)
+## Layer 2: Execution (Musashi - boulder)
 
 ### The Conductor Mindset
 
-The Orchestrator is like an orchestra conductor: **it doesn't play instruments, it ensures perfect harmony**.
+Musashi - boulder coordinates execution, does independent verification, and keeps state across sessions.
 
 ```mermaid
 flowchart LR
-    subgraph Orchestrator["Orchestrator-Sisyphus"]
-        Read["1. Read Plan"]
-        Analyze["2. Analyze Tasks"]
-        Wisdom["3. Accumulate Wisdom"]
-        Delegate["4. Delegate Tasks"]
-        Verify["5. Verify Results"]
-        Report["6. Final Report"]
+    subgraph Boulder["Musashi - boulder"]
+        Read["1. Read plan"]
+        Analyze["2. Analyze tasks"]
+        Delegate["3. Delegate"]
+        Verify["4. Verify"]
+        Report["5. Report"]
     end
-    
+
     Read --> Analyze
-    Analyze --> Wisdom
-    Wisdom --> Delegate
+    Analyze --> Delegate
     Delegate --> Verify
-    Verify -->|"More tasks"| Delegate
-    Verify -->|"All done"| Report
-    
-    Delegate -->|"background=false"| Workers["Workers"]
-    Workers -->|"Results + Learnings"| Verify
+    Verify -->|"more tasks"| Delegate
+    Verify -->|"done"| Report
 ```
 
-**What Orchestrator CAN do:**
-- ✅ Read files to understand context
-- ✅ Run commands to verify results
-- ✅ Use lsp_diagnostics to check for errors
-- ✅ Search patterns with grep/glob/ast-grep
+**What Musashi - boulder does directly:**
+- Reads plan and repository context
+- Runs diagnostics/tests for independent verification
+- Tracks execution state in `boulder.json`
 
-**What Orchestrator MUST delegate:**
-- ❌ Writing/editing code files
-- ❌ Fixing bugs
-- ❌ Creating tests
-- ❌ Git commits
+**What Musashi - boulder delegates:**
+- Feature implementation and edits
+- Large refactors and test authoring
+- Domain-specific tasks (frontend, writing, architecture deep dives)
 
 ### Wisdom Accumulation
 
-The power of orchestration is **cumulative learning**. After each task:
+Every delegation cycle appends operational memory:
 
-1. Extract learnings from subagent's response
-2. Categorize into: Conventions, Successes, Failures, Gotchas, Commands
-3. Pass forward to ALL subsequent subagents
-
-This prevents repeating mistakes and ensures consistent patterns.
-
-**Notepad System:**
-
-```
+```text
 .sisyphus/notepads/{plan-name}/
-├── learnings.md      # Patterns, conventions, successful approaches
-├── decisions.md      # Architectural choices and rationales
-├── issues.md         # Problems, blockers, gotchas encountered
-├── verification.md   # Test results, validation outcomes
-└── problems.md       # Unresolved issues, technical debt
+├── learnings.md
+├── decisions.md
+├── issues.md
+├── verification.md
+└── problems.md
 ```
 
-### Parallel Execution
-
-Independent tasks run in parallel:
-
-```typescript
-// Orchestrator identifies parallelizable groups from plan
-// Group A: Tasks 2, 3, 4 (no file conflicts)
-delegate_task(category="ultrabrain", prompt="Task 2...")
-delegate_task(category="visual-engineering", prompt="Task 3...")
-delegate_task(category="general", prompt="Task 4...")
-// All run simultaneously
-```
+This prevents repeated mistakes and stabilizes long-running work.
 
 ---
 
-## Layer 3: Workers (Specialized Agents)
+## Layer 3: Specialist Execution (Category-Routed + Named Agents)
 
-### Sisyphus-Junior: The Task Executor
+### Category Routing (replaces fixed "junior" worker)
 
-Junior is the **workhorse** that actually writes code. Key characteristics:
+There is no standalone junior executor agent in the current architecture. Execution is routed by category:
 
-- **Focused**: Cannot delegate (blocked from task/delegate_task tools)
-- **Disciplined**: Obsessive todo tracking
-- **Verified**: Must pass lsp_diagnostics before completion
-- **Constrained**: Cannot modify plan files (READ-ONLY)
+| Category | Routed Agent | Auto Skills |
+|----------|--------------|-------------|
+| `visual-engineering` | `T4 - frontend builder` | `frontend-ui-ux`, `frontend-stack`, `component-stack` |
+| `ultrabrain` | `D5 - backend builder` | `blueprint-architect`, `effect-ts-expert` |
+| `artistry` | `T4 - frontend builder` | creative/design skills |
+| `quick` | `D5 - backend builder` | `git-master`, `git-workflow` |
+| `most-capable` | `D5 - backend builder` | `blueprint-architect`, `testing-stack` |
+| `writing` | `D5 - backend builder` | `kenzo-agents-md`, `research-tools` |
+| `general` | `D5 - backend builder` | `linearis`, `git-workflow`, `research-tools` |
 
-**Why Sonnet is Sufficient:**
+### Named Agent Delegation
 
-Junior doesn't need to be the smartest - it needs to be reliable. With:
-1. Detailed prompts from Orchestrator (50-200 lines)
-2. Accumulated wisdom passed forward
-3. Clear MUST DO / MUST NOT DO constraints
-4. Verification requirements
+Use direct agent targeting when category routing is not enough:
 
-Even a mid-tier model executes precisely. The intelligence is in the **system**, not individual agents.
-
-### System Reminder Mechanism
-
-The hook system ensures Junior never stops halfway:
-
-```
-[SYSTEM REMINDER - TODO CONTINUATION]
-
-You have incomplete todos! Complete ALL before responding:
-- [ ] Implement user service ← IN PROGRESS
-- [ ] Add validation
-- [ ] Write tests
-
-DO NOT respond until all todos are marked completed.
-```
-
-This "boulder pushing" mechanism is why the system is named after Sisyphus.
+- `K9 - advisor` for read-only strategic analysis
+- `X1 - explorer` for fast local exploration
+- `R2 - researcher` for external docs and OSS patterns
+- `Musashi` for high-capability orchestration tasks
 
 ---
 
-## The delegate_task Tool: Category + Skill System
-
-### Why Categories are Revolutionary
-
-**The Problem with Model Names:**
-
-```typescript
-// OLD: Model name creates distributional bias
-delegate_task(agent="gpt-5.2", prompt="...")  // Model knows its limitations
-delegate_task(agent="claude-opus-4.5", prompt="...")  // Different self-perception
-```
-
-**The Solution: Semantic Categories:**
-
-```typescript
-// NEW: Category describes INTENT, not implementation
-delegate_task(category="ultrabrain", prompt="...")     // "Think strategically"
-delegate_task(category="visual-engineering", prompt="...")  // "Design beautifully"
-delegate_task(category="quick", prompt="...")          // "Just get it done fast"
-```
-
-### Built-in Categories
-
-| Category | Model | Temp | When to Use |
-|----------|-------|------|-------------|
-| `visual-engineering` | Gemini 3 Pro | 0.7 | Frontend, UI/UX, design, animations |
-| `ultrabrain` | GPT-5.2 | 0.1 | Complex architecture, business logic |
-| `artistry` | Gemini 3 Pro | 0.9 | Creative tasks, novel ideas |
-| `quick` | Claude Haiku 4.5 | 0.3 | Small tasks, budget-friendly |
-| `most-capable` | Claude Opus 4.5 | 0.1 | Maximum reasoning power |
-| `writing` | Gemini 3 Flash | 0.5 | Documentation, prose |
-| `general` | Claude Sonnet 4.5 | 0.3 | Default, general purpose |
-
-### Custom Categories
-
-You can define your own categories:
-
-```json
-// .opencode/oh-my-opencode.json
-{
-  "categories": {
-    "unity-game-dev": {
-      "model": "openai/gpt-5.2",
-      "temperature": 0.3,
-      "prompt_append": "You are a Unity game development expert..."
-    }
-  }
-}
-```
-
-### Skills: Domain-Specific Instructions
-
-Skills prepend specialized instructions to subagent prompts:
-
-```typescript
-// Category + Skill combination
-delegate_task(
-  category="visual-engineering", 
-  skills=["frontend-ui-ux"],  // Adds UI/UX expertise
-  prompt="..."
-)
-
-delegate_task(
-  category="general",
-  skills=["playwright"],  // Adds browser automation expertise
-  prompt="..."
-)
-```
-
-**Example Evolution:**
-
-| Before | After |
-|--------|-------|
-| Hardcoded: `frontend-ui-ux-engineer` (Gemini 3 Pro) | `category="visual-engineering" + skills=["frontend-ui-ux"]` |
-| One-size-fits-all | `category="visual-engineering" + skills=["unity-master"]` |
-| Model bias | Category-based: model abstraction eliminates bias |
-
----
-
-## The Orchestrator → Junior Workflow
+## The Orchestration Workflow
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant Orchestrator as Orchestrator-Sisyphus
-    participant Junior as Sisyphus-Junior
+    participant Plan as Musashi - plan
+    participant Boulder as Musashi - boulder
+    participant Worker as Routed Agent (T4/D5 or Named)
     participant Notepad as .sisyphus/notepads/
-    
-    User->>Orchestrator: /start-work
-    Orchestrator->>Orchestrator: Read plan, build parallelization map
-    
-    loop For each task (parallel when possible)
-        Orchestrator->>Notepad: Read accumulated wisdom
-        Orchestrator->>Orchestrator: Build 7-section prompt
-        
-        Note over Orchestrator: Prompt Structure:<br/>1. TASK (exact checkbox)<br/>2. EXPECTED OUTCOME<br/>3. REQUIRED SKILLS<br/>4. REQUIRED TOOLS<br/>5. MUST DO<br/>6. MUST NOT DO<br/>7. CONTEXT + Wisdom
-        
-        Orchestrator->>Junior: delegate_task(category, skills, prompt)
-        
-        Junior->>Junior: Create todos, execute
-        Junior->>Junior: Verify (lsp_diagnostics, tests)
-        Junior->>Notepad: Append learnings
-        Junior->>Orchestrator: Results + completion status
-        
-        Orchestrator->>Orchestrator: Verify independently
-        Note over Orchestrator: NEVER trust subagent claims<br/>Run lsp_diagnostics at PROJECT level<br/>Run full test suite<br/>Read actual changed files
-        
-        alt Verification fails
-            Orchestrator->>Junior: Re-delegate with failure context
-        else Verification passes
-            Orchestrator->>Orchestrator: Mark task complete, continue
-        end
+
+    User->>Plan: planning request
+    Plan->>Plan: interview + consultant/review passes
+    Plan->>User: plan ready in .sisyphus/plans/*.md
+
+    User->>Boulder: /start-work
+    Boulder->>Boulder: read plan + build execution map
+
+    loop each task (parallel where possible)
+        Boulder->>Notepad: read accumulated wisdom
+        Boulder->>Worker: delegate_task(category/agent, prompt)
+        Worker->>Worker: execute + verify locally
+        Worker->>Notepad: append learnings/decisions
+        Worker->>Boulder: results
+        Boulder->>Boulder: verify independently
     end
-    
-    Orchestrator->>User: Final report with all results
+
+    Boulder->>User: final report
 ```
 
 ---
 
 ## Why This Architecture Works
 
-### 1. Separation of Concerns
+1. **Separation of concerns**
+   - Planning: Musashi - plan
+   - Execution control: Musashi - boulder
+   - Implementation: routed specialists
 
-- **Planning** (Prometheus): High reasoning, interview, strategic thinking
-- **Orchestration** (Sisyphus): Coordination, verification, wisdom accumulation
-- **Execution** (Junior): Focused implementation, no distractions
+2. **Category abstraction over hardcoded workers**
+   - Routing is intent-based, not tied to one fixed executor identity
 
-### 2. Explicit Over Implicit
+3. **Verification-first completion**
+   - Orchestrator validates outputs rather than trusting completion claims
 
-Every Junior prompt includes:
-- Exact task from plan
-- Clear success criteria
-- Forbidden actions
-- All accumulated wisdom
-- Reference files with line numbers
-
-No assumptions. No guessing.
-
-### 3. Trust But Verify
-
-The Orchestrator **never trusts subagent claims**:
-- Runs `lsp_diagnostics` at project level
-- Executes full test suite
-- Reads actual file changes
-- Cross-references requirements
-
-### 4. Model Optimization
-
-Expensive models (Opus, GPT-5.2) used only where needed:
-- Planning decisions (once per project)
-- Debugging consultation (rare)
-- Complex architecture (rare)
-
-Bulk work goes to cost-effective models (Sonnet, Haiku, Flash).
+4. **Cost/performance balance**
+   - Expensive models used where strategic depth matters
+   - High-throughput models used for execution and exploration
 
 ---
 
 ## Getting Started
 
-1. **Enter Prometheus Mode**: Press **Tab** at the prompt
-2. **Describe Your Work**: "I want to add user authentication to my app"
-3. **Answer Interview Questions**: Prometheus will ask about patterns, preferences, constraints
-4. **Review the Plan**: Check `.sisyphus/plans/` for generated work plan
-5. **Run `/start-work`**: Orchestrator takes over
-6. **Observe**: Watch tasks complete with verification
-7. **Done**: All todos complete, code verified, ready to ship
+1. **Enter planning mode**: Press **Tab** for Musashi - plan
+2. **Describe the work**: include goals, scope, constraints
+3. **Answer interview prompts**: clarify requirements and trade-offs
+4. **Review plan**: check `.sisyphus/plans/*.md`
+5. **Run `/start-work`**: let Musashi - boulder orchestrate
+6. **Track progress**: inspect `.sisyphus/notepads/*` artifacts
+7. **Ship**: after verification passes
 
 ---
 
 ## Further Reading
 
-- [Overview](./overview.md) - Quick start guide
-- [Ultrawork Manifesto](../ultrawork-manifesto.md) - Philosophy behind the system
-- [Installation Guide](./installation.md) - Detailed installation instructions
-- [Configuration](../configurations.md) - Customize the orchestration
+- [Overview](./overview.md) - Quick start
+- [Ultrawork Manifesto](../ultrawork-manifesto.md) - Philosophy
+- [Installation Guide](./installation.md) - Installation workflow
+- [Configuration](../configurations.md) - Agent/category tuning

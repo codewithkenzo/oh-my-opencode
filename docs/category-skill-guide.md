@@ -19,14 +19,15 @@ A Category is an agent configuration preset optimized for specific domains.
 
 ### Available Built-in Categories
 
-| Category | Optimal Model | Characteristics | Use Cases |
+| Category | Routed Agent | Auto Skills | Use Cases |
 |----------|---------------|-----------------|-----------|
-| `visual-engineering` | `gemini-3-pro` | High creativity (Temp 0.7) | Frontend, UI/UX, animations, styling |
-| `ultrabrain` | `gpt-5.2` | Maximum logical reasoning (Temp 0.1) | Architecture design, complex business logic, debugging |
-| `artistry` | `gemini-3-pro` | Artistic (Temp 0.9) | Creative ideation, design concepts, storytelling |
-| `quick` | `claude-haiku` | Fast (Temp 0.3) | Simple tasks, refactoring, script writing |
-| `writing` | `gemini-3-flash` | Natural flow (Temp 0.5) | Documentation, technical blogs, README writing |
-| `most-capable` | `claude-opus` | High performance (Temp 0.1) | Extremely difficult complex tasks |
+| `visual-engineering` | `T4 - frontend builder` | `frontend-ui-ux`, `frontend-stack`, `component-stack` | Frontend, UI/UX, animations, styling |
+| `ultrabrain` | `D5 - backend builder` | `blueprint-architect`, `effect-ts-expert` | Architecture design, complex business logic, debugging |
+| `artistry` | `T4 - frontend builder` | creative skill stack | Creative ideation, design concepts, storytelling |
+| `quick` | `D5 - backend builder` | `git-master`, `git-workflow` | Simple tasks, refactoring, script writing |
+| `writing` | `D5 - backend builder` | `kenzo-agents-md`, `research-tools` | Documentation, technical blogs, README writing |
+| `most-capable` | `D5 - backend builder` | `blueprint-architect`, `testing-stack` | Extremely difficult complex tasks |
+| `general` | `D5 - backend builder` | `linearis`, `git-workflow`, `research-tools` | Default general-purpose execution |
 
 ### Usage
 
@@ -39,11 +40,11 @@ delegate_task(
 )
 ```
 
-### Sisyphus-Junior (Delegated Executor)
+### Category-Routed Execution (T4 / D5)
 
-When you use a Category, a special agent called **Sisyphus-Junior** performs the work.
-- **Characteristic**: Cannot **re-delegate** tasks to other agents.
-- **Purpose**: Prevents infinite delegation loops and ensures focus on the assigned task.
+When you use a Category, work is routed to either **T4 - frontend builder** or **D5 - backend builder**.
+- **Characteristic**: Category routing keeps execution focused and avoids recursive delegation loops.
+- **Purpose**: Select the right execution lane (frontend vs backend/general) and auto-inject matching skills.
 
 ---
 

@@ -53,7 +53,7 @@ Ask the user these 3 questions to determine CLI options:
    - If **yes** → `--copilot=yes`
    - If **no** → `--copilot=no`
 
-MUST STRONGLY WARNING, WHEN USER SAID THEY DON'T HAVE CLAUDE SUBSCRIPTION, SISYPHUS AGENT MIGHT NOT WORK IDEALY.
+MUST STRONGLY WARNING, WHEN USER SAYS THEY DO NOT HAVE CLAUDE SUBSCRIPTION, MUSASHI ORCHESTRATION MAY NOT WORK IDEALLY.
 
 ### Step 1: Install OpenCode (if not installed)
 
@@ -136,9 +136,9 @@ The `opencode-antigravity-auth` plugin uses different model names than the built
 ```json
 {
   "agents": {
-    "frontend-ui-ux-engineer": { "model": "google/antigravity-gemini-3-pro-high" },
-    "document-writer": { "model": "google/antigravity-gemini-3-flash" },
-    "multimodal-looker": { "model": "google/antigravity-gemini-3-flash" }
+    "T4 - frontend builder": { "model": "google/antigravity-gemini-3-pro-high" },
+    "D5 - backend builder": { "model": "google/antigravity-claude-sonnet-4-5" },
+    "X1 - explorer": { "model": "google/antigravity-gemini-3-flash" }
   }
 }
 ```
@@ -170,10 +170,10 @@ When GitHub Copilot is enabled, oh-my-opencode uses these model assignments:
 
 | Agent         | Model                            |
 | ------------- | -------------------------------- |
-| **Sisyphus**  | `github-copilot/claude-opus-4.5` |
-| **Oracle**    | `github-copilot/gpt-5.2`         |
-| **Explore**   | `grok code` (default)            |
-| **Librarian** | `glm 4.7 free` (default)         |
+| **Musashi** | `github-copilot/claude-opus-4.5` |
+| **K9 - advisor** | `github-copilot/gpt-5.2` |
+| **X1 - explorer** | `anthropic/claude-haiku-4-5` (default) |
+| **R2 - researcher** | `glm-4.7` (default) |
 
 GitHub Copilot acts as a proxy provider, routing requests to underlying models based on your subscription.
 
@@ -240,11 +240,11 @@ gh repo star codewithkenzo/oh-my-opencode
 
 Tell the user of following:
 
-1. **Sisyphus agent strongly recommends Opus 4.5 model. Using other models may result in significantly degraded experience.**
+1. **Musashi strongly recommends Opus 4.5 model. Using other models may result in significantly degraded experience.**
 
 2. **Feeling lazy?** Just include `ultrawork` (or `ulw`) in your prompt. That's it. The agent figures out the rest.
 
-3. **Need precision?** Press **Tab** to enter Prometheus (Planner) mode, create a work plan through an interview process, then run `/start-work` to execute it with full orchestration.
+3. **Need precision?** Press **Tab** to enter Musashi - plan mode, create a work plan through an interview process, then run `/start-work` for Musashi - boulder execution.
 
 4. You wanna know more? Checkout: [Overview Guide](./overview.md)
 

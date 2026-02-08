@@ -6,7 +6,7 @@
 |------------|----------|-------------|
 | **Simple** | Just prompt | Simple tasks, quick fixes, single-file changes |
 | **Complex + Lazy** | Just type `ulw` or `ultrawork` | Complex tasks where explaining context is tedious. Agent figures it out. |
-| **Complex + Precise** | `@plan` → `/start-work` | Precise, multi-step work requiring true orchestration. Prometheus plans, Sisyphus executes. |
+| **Complex + Precise** | `@plan` → `/start-work` | Precise, multi-step work requiring true orchestration. Musashi - plan creates the plan, Musashi - boulder executes it. |
 
 **Decision Flow:**
 ```
@@ -15,7 +15,7 @@ Is it a quick fix or simple task?
   └─ NO  → Is explaining the full context tedious?
              └─ YES → Type "ulw" and let the agent figure it out
              └─ NO  → Do you need precise, verifiable execution?
-                        └─ YES → Use @plan for Prometheus planning, then /start-work
+                        └─ YES → Use @plan for Musashi - plan planning, then /start-work
                         └─ NO  → Just use "ulw"
 ```
 
@@ -29,8 +29,8 @@ Traditional AI agents often mix planning and execution, leading to context pollu
 
 Oh-My-OpenCode solves this by clearly separating two roles:
 
-1. **Prometheus (Planner)**: A pure strategist who never writes code. Establishes perfect plans through interviews and analysis.
-2. **Sisyphus (Executor)**: An orchestrator who executes plans. Delegates work to specialized agents and never stops until completion.
+1. **Musashi - plan**: Planning mode for interviews, scope definition, and executable plans.
+2. **Musashi - boulder**: Execution orchestrator that runs the plan through delegation, verification, and stateful continuation.
 
 ---
 
@@ -38,24 +38,27 @@ Oh-My-OpenCode solves this by clearly separating two roles:
 
 ```mermaid
 flowchart TD
-    User[User Request] --> Prometheus
-    
+    User[User Request] --> PlanMode
+
     subgraph Planning Phase
-        Prometheus[Prometheus<br>Planner] --> Metis[Metis<br>Consultant]
-        Metis --> Prometheus
-        Prometheus --> Momus[Momus<br>Reviewer]
-        Momus --> Prometheus
-        Prometheus --> PlanFile["/.sisyphus/plans/{name}.md"]
+        PlanMode[Musashi - plan] --> Consultant[Musashi - plan<br>consultant mode]
+        Consultant --> PlanMode
+        PlanMode --> Review[Musashi - plan<br>review mode]
+        Review --> PlanMode
+        PlanMode --> PlanFile["/.sisyphus/plans/{name}.md"]
     end
-    
+
     PlanFile --> StartWork[//start-work/]
     StartWork --> BoulderState[boulder.json]
-    
+
     subgraph Execution Phase
-        BoulderState --> Sisyphus[Sisyphus<br>Orchestrator]
-        Sisyphus --> Oracle[Oracle]
-        Sisyphus --> Frontend[Frontend<br>Engineer]
-        Sisyphus --> Explore[Explore]
+        BoulderState --> Boulder[Musashi - boulder]
+        Boulder --> Musashi[Musashi]
+        Boulder --> K9[K9 - advisor]
+        Boulder --> X1[X1 - explorer]
+        Boulder --> R2[R2 - researcher]
+        Boulder --> T4[T4 - frontend builder]
+        Boulder --> D5[D5 - backend builder]
     end
 ```
 
@@ -63,42 +66,40 @@ flowchart TD
 
 ## 3. Key Components
 
-### 🔮 Prometheus (The Planner)
+### 📐 Musashi - plan (Planning Layer)
 - **Model**: `anthropic/claude-opus-4-5`
-- **Role**: Strategic planning, requirements interviews, work plan creation
-- **Constraint**: **READ-ONLY**. Can only create/modify markdown files within `.sisyphus/` directory.
-- **Characteristic**: Never writes code directly, focuses solely on "how to do it".
+- **Role**: Strategic planning, requirements interviews, and work plan creation
+- **Modes**: Consultant mode (gap discovery) and review mode (high-accuracy validation)
+- **Constraint**: Planning-focused. Writes plans under `.sisyphus/` for execution handoff.
 
-### 🦉 Metis (The Consultant)
-- **Role**: Pre-analysis and gap detection
-- **Function**: Identifies hidden user intent, prevents AI over-engineering, eliminates ambiguity.
-- **Workflow**: Metis consultation is mandatory before plan creation.
+### 🪨 Musashi - boulder (Execution Layer)
+- **Model**: `anthropic/claude-sonnet-4-5`
+- **Role**: Orchestrates execution from plan files and state (`boulder.json`)
+- **Characteristic**: Delegates aggressively, verifies independently, and preserves continuity across sessions
 
-### ⚖️ Momus (The Reviewer)
-- **Role**: High-precision plan validation (High Accuracy Mode)
-- **Function**: Rejects and demands revisions until the plan is perfect.
-- **Trigger**: Activated when user requests "high accuracy".
-
-### 🪨 Sisyphus (The Orchestrator)
-- **Model**: `anthropic/claude-opus-4-5` (Extended Thinking 32k)
-- **Role**: Execution and delegation
-- **Characteristic**: Doesn't do everything directly, actively delegates to specialized agents (Frontend, Librarian, etc.).
+### 🧩 Specialist Layer (8-Agent Architecture)
+- **Musashi** (`anthropic/claude-opus-4-5`): Primary orchestrator for high-complexity coordination
+- **K9 - advisor** (`openai/gpt-5.2`): Read-only strategic consultant
+- **X1 - explorer** (`anthropic/claude-haiku-4-5`): Fast codebase exploration
+- **R2 - researcher** (`glm-4.7`): Multi-repo/docs/GitHub research
+- **T4 - frontend builder** (user-configured model): Visual engineering via category routing
+- **D5 - backend builder** (user-configured model): Backend/general/writing via category routing
 
 ---
 
 ## 4. Workflow
 
 ### Phase 1: Interview and Planning (Interview Mode)
-Prometheus starts in **interview mode** by default. Instead of immediately creating a plan, it collects sufficient context.
+Musashi - plan starts in **interview mode** by default. Instead of immediately creating a plan, it collects sufficient context.
 
 1. **Intent Identification**: Classifies whether the user's request is Refactoring or New Feature.
-2. **Context Collection**: Investigates codebase and external documentation through `explore` and `librarian` agents.
+2. **Context Collection**: Investigates codebase and external documentation through `X1 - explorer` and `R2 - researcher` agents.
 3. **Draft Creation**: Continuously records discussion content in `.sisyphus/drafts/`.
 
 ### Phase 2: Plan Generation
 When the user requests "Make it a plan", plan generation begins.
 
-1. **Metis Consultation**: Confirms any missed requirements or risk factors.
+1. **Consultant Pass (Musashi - plan)**: Confirms missed requirements and risk factors.
 2. **Plan Creation**: Writes a single plan in `.sisyphus/plans/{name}.md` file.
 3. **Handoff**: Once plan creation is complete, guides user to use `/start-work` command.
 
@@ -106,8 +107,8 @@ When the user requests "Make it a plan", plan generation begins.
 When the user enters `/start-work`, the execution phase begins.
 
 1. **State Management**: Creates `boulder.json` file to track current plan and session ID.
-2. **Task Execution**: Sisyphus reads the plan and processes TODOs one by one.
-3. **Delegation**: UI work is delegated to Frontend agent, complex logic to Oracle.
+2. **Task Execution**: Musashi - boulder reads the plan and processes TODOs one by one.
+3. **Delegation**: UI work routes to `T4 - frontend builder`; complex logic routes to `D5 - backend builder` or `K9 - advisor` when strategic review is required.
 4. **Continuity**: Even if the session is interrupted, work continues in the next session through `boulder.json`.
 
 ---
@@ -115,7 +116,7 @@ When the user enters `/start-work`, the execution phase begins.
 ## 5. Commands and Usage
 
 ### `@plan [request]`
-Invokes Prometheus to start a planning session.
+Invokes Musashi - plan to start a planning session.
 - Example: `@plan "I want to refactor the authentication system to NextAuth"`
 
 ### `/start-work`
@@ -132,21 +133,21 @@ You can control related features in `oh-my-opencode.json`.
 ```jsonc
 {
   "sisyphus_agent": {
-    "disabled": false,           // Enable Sisyphus orchestration (default: false)
-    "planner_enabled": true,     // Enable Prometheus (default: true)
-    "replace_plan": true         // Replace default plan agent with Prometheus (default: true)
+    "disabled": false,           // Enable Musashi orchestration
+    "planner_enabled": true,     // Enable Musashi - plan
+    "replace_plan": true         // Route planning through Musashi - plan
   },
   
   // Hook settings (add to disable)
   "disabled_hooks": [
     // "start-work",             // Disable execution trigger
-    // "prometheus-md-only"      // Remove Prometheus write restrictions (not recommended)
+    // "prometheus-md-only"      // Remove Musashi - plan markdown restrictions (not recommended)
   ]
 }
 ```
 
 ## 7. Best Practices
 
-1. **Don't Rush**: Invest sufficient time in the interview with Prometheus. The more perfect the plan, the faster the execution.
+1. **Don't Rush**: Invest sufficient time in the interview with Musashi - plan. The stronger the plan, the faster execution becomes.
 2. **Single Plan Principle**: No matter how large the task, contain all TODOs in one plan file (`.md`). This prevents context fragmentation.
 3. **Active Delegation**: During execution, delegate to specialized agents via `delegate_task` rather than modifying code directly.
