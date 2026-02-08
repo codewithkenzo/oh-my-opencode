@@ -71,7 +71,7 @@ $ARGUMENTS
     argumentHint: "[plan-name]",
   },
   "security-scan": {
-    description: "(builtin) Trigger B3 security specialist review",
+    description: "(builtin) Trigger K9 advisor security review",
     agent: "K9 - advisor",
     template: `<command-instruction>
 Perform a comprehensive security assessment of the specified target.
