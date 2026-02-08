@@ -1,9 +1,9 @@
 import type { Plugin } from "@opencode-ai/plugin";
 import {
-  createTodoContinuationEnforcer,
+  createTodoContinuationEnforcerHook,
   createContextWindowMonitorHook,
   createSessionRecoveryHook,
-  createSessionNotification,
+  createSessionNotificationHook,
   createCommentCheckerHooks,
   createToolOutputTruncatorHook,
   createDirectoryAgentsInjectorHook,
@@ -131,7 +131,7 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
         allPlugins: externalNotifier.allPlugins,
       });
     } else {
-      sessionNotification = createSessionNotification(ctx);
+      sessionNotification = createSessionNotificationHook(ctx);
     }
   }
 
@@ -244,7 +244,7 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
   initTaskToastManager(ctx.client);
 
   const todoContinuationEnforcer = isHookEnabled("todo-continuation-enforcer")
-    ? createTodoContinuationEnforcer(ctx, { backgroundManager })
+    ? createTodoContinuationEnforcerHook(ctx, { backgroundManager })
     : null;
 
   if (sessionRecovery && todoContinuationEnforcer) {
