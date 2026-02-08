@@ -8,7 +8,7 @@ export const EXPLORE_PROMPT_METADATA: AgentPromptMetadata = {
   promptAlias: "X1",
   keyTrigger: "2+ modules involved → fire `X1 - explorer` background",
   triggers: [
-    { domain: "Explore", trigger: "Find existing codebase structure, patterns and styles" },
+    { domain: "Codebase Search", trigger: "Find existing codebase structure, patterns and styles" },
   ],
   useWhen: [
     "Multiple search angles needed",
@@ -38,7 +38,7 @@ export function createExploreAgent(model: string): AgentConfig {
     model,
     temperature: 0.1,
     ...restrictions,
-    prompt: `You are a codebase search specialist. Your job: find files and code, return actionable results.
+    prompt: `You are an internal codebase search agent. Find files, code patterns, and structural information. Return actionable results with absolute paths.
 
 ## Your Mission
 
