@@ -1,25 +1,22 @@
 import { tool } from "@opencode-ai/plugin/tool"
 import type { ToolDefinition } from "@opencode-ai/plugin/tool"
 import * as api from "./client"
+import {
+  ticket_blockedDef,
+  ticket_closeDef,
+  ticket_createDef,
+  ticket_depDef,
+  ticket_listDef,
+  ticket_readyDef,
+  ticket_showDef,
+  ticket_startDef,
+  ticket_undepDef,
+} from "./def"
 import * as format from "./formatters"
 import type { OutputFormat } from "./types"
 
-const formatArg = {
-  format: tool.schema
-    .enum(["markdown" as const, "json" as const, "compact" as const])
-    .optional()
-    .describe("Output format: markdown (default), json, or compact"),
-}
-
 export const ticket_ready: ToolDefinition = tool({
-  description: "List tickets with no blockers. Filter by status, priority, type, or search.",
-  args: {
-    status: tool.schema.string().optional().describe("Filter by status"),
-    priority: tool.schema.number().optional().describe("Filter by priority (0-4)"),
-    type: tool.schema.string().optional().describe("Filter by type"),
-    search: tool.schema.string().optional().describe("Search in title"),
-    ...formatArg,
-  },
+  ...ticket_readyDef,
   async execute({ status, priority, type, search, format: fmt = "markdown" }) {
     try {
       const tickets = await api.getReadyTickets()
@@ -38,14 +35,7 @@ export const ticket_ready: ToolDefinition = tool({
 })
 
 export const ticket_list: ToolDefinition = tool({
-  description: "List all tickets with optional filtering by status, priority, type, and search.",
-  args: {
-    status: tool.schema.string().optional().describe("Filter by status"),
-    priority: tool.schema.number().optional().describe("Filter by priority (0-4)"),
-    type: tool.schema.string().optional().describe("Filter by type"),
-    search: tool.schema.string().optional().describe("Search in title"),
-    ...formatArg,
-  },
+  ...ticket_listDef,
   async execute({ status, priority, type, search, format: fmt = "markdown" }) {
     try {
       const tickets = await api.listTickets({ status, priority, type, search })
@@ -57,14 +47,7 @@ export const ticket_list: ToolDefinition = tool({
 })
 
 export const ticket_show: ToolDefinition = tool({
-  description: "Show detailed information about a single ticket by ID.",
-  args: {
-    id: tool.schema.string().describe("Ticket ID (required)"),
-    format: tool.schema
-      .enum(["markdown" as const, "json" as const, "compact" as const])
-      .optional()
-      .describe("Output format: markdown (default), json, or compact"),
-  },
+  ...ticket_showDef,
   async execute({ id, format: fmt = "markdown" }) {
     try {
       const ticket = await api.showTicket(id)
@@ -76,20 +59,7 @@ export const ticket_show: ToolDefinition = tool({
 })
 
 export const ticket_create: ToolDefinition = tool({
-  description:
-    "Create a new ticket. Priority: 0=critical, 1=high, 2=medium (default), 3=low, 4=nice-to-have.",
-  args: {
-    title: tool.schema.string().describe("Ticket title (required)"),
-    type: tool.schema.string().optional().describe("Ticket type"),
-    priority: tool.schema
-      .number()
-      .min(0)
-      .max(4)
-      .optional()
-      .describe("Priority (0-4)"),
-    description: tool.schema.string().optional().describe("Ticket description"),
-    status: tool.schema.string().optional().describe("Initial status"),
-  },
+  ...ticket_createDef,
   async execute({ title, type, priority, description, status }) {
     try {
       const ticket = await api.createTicket(title, { type, priority, description, status })
@@ -102,10 +72,7 @@ export const ticket_create: ToolDefinition = tool({
 })
 
 export const ticket_start: ToolDefinition = tool({
-  description: "Start working on a ticket by ID.",
-  args: {
-    id: tool.schema.string().describe("Ticket ID (required)"),
-  },
+  ...ticket_startDef,
   async execute({ id }) {
     try {
       const output = await api.startTicket(id)
@@ -117,14 +84,7 @@ export const ticket_start: ToolDefinition = tool({
 })
 
 export const ticket_close: ToolDefinition = tool({
-  description: "Close a ticket with a completion reason (default: completed).",
-  args: {
-    id: tool.schema.string().describe("Ticket ID (required)"),
-    reason: tool.schema
-      .string()
-      .optional()
-      .describe("Completion reason (default: completed)"),
-  },
+  ...ticket_closeDef,
   async execute({ id, reason = "completed" }) {
     try {
       const output = await api.closeTicket(id, reason)
@@ -136,11 +96,7 @@ export const ticket_close: ToolDefinition = tool({
 })
 
 export const ticket_dep: ToolDefinition = tool({
-  description: "Add a dependency between two tickets. Makes 'from' depend on 'to'.",
-  args: {
-    from: tool.schema.string().describe("Dependent ticket ID (required)"),
-    to: tool.schema.string().describe("Dependency ticket ID (required)"),
-  },
+  ...ticket_depDef,
   async execute({ from, to }) {
     try {
       const output = await api.addDependency(from, to)
@@ -152,11 +108,7 @@ export const ticket_dep: ToolDefinition = tool({
 })
 
 export const ticket_undep: ToolDefinition = tool({
-  description: "Remove a dependency between two tickets.",
-  args: {
-    from: tool.schema.string().describe("Dependent ticket ID (required)"),
-    to: tool.schema.string().describe("Dependency ticket ID (required)"),
-  },
+  ...ticket_undepDef,
   async execute({ from, to }) {
     try {
       const output = await api.removeDependency(from, to)
@@ -168,14 +120,7 @@ export const ticket_undep: ToolDefinition = tool({
 })
 
 export const ticket_blocked: ToolDefinition = tool({
-  description: "List tickets that are blocked by unresolved dependencies.",
-  args: {
-    status: tool.schema.string().optional().describe("Filter by status"),
-    priority: tool.schema.number().optional().describe("Filter by priority (0-4)"),
-    type: tool.schema.string().optional().describe("Filter by type"),
-    search: tool.schema.string().optional().describe("Search in title"),
-    ...formatArg,
-  },
+  ...ticket_blockedDef,
   async execute({ status, priority, type, search, format: fmt = "markdown" }) {
     try {
       const tickets = await api.getBlockedTickets()

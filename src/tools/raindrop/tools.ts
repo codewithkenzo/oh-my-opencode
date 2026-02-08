@@ -1,23 +1,26 @@
 import { tool } from "@opencode-ai/plugin/tool";
 import type { ToolDefinition } from "@opencode-ai/plugin/tool";
 import * as api from "./client";
+import {
+  ripple_bulk_createDef,
+  ripple_bulk_deleteDef,
+  ripple_bulk_updateDef,
+  ripple_collectionsDef,
+  ripple_createDef,
+  ripple_deleteDef,
+  ripple_getDef,
+  ripple_searchDef,
+  ripple_suggestDef,
+  ripple_tag_addDef,
+  ripple_tag_removeDef,
+  ripple_tagsDef,
+} from "./def";
 import * as format from "./formatters";
 import { OutputFormat, RaindropAPIError, SearchParamsSchema } from "./types";
 
-const formatArg = {
-  format: tool.schema
-    .enum(["markdown", "json", "compact"])
-    .optional()
-    .describe("Output format: markdown (default), json, or compact"),
-};
-
 // === ripple_collections ===
 export const ripple_collections: ToolDefinition = tool({
-  description:
-    "List all Raindrop.io bookmark collections. Returns collection names, IDs, and bookmark counts.",
-  args: {
-    ...formatArg,
-  },
+  ...ripple_collectionsDef,
   async execute({ format: fmt = "markdown" }) {
     try {
       const collections = await api.getCollections();
@@ -33,29 +36,7 @@ export const ripple_collections: ToolDefinition = tool({
 
 // === ripple_search ===
 export const ripple_search: ToolDefinition = tool({
-  description: `Search and filter Raindrop.io bookmarks. 
-Supports search operators: tag:name, type:link/article/image/video/document, domain:example.com, -notag, match:"phrase".
-Collection IDs: 0=all, -1=unsorted, -99=trash.`,
-  args: {
-    collection: tool.schema
-      .number()
-      .optional()
-      .describe("Collection ID (0=all, -1=unsorted, -99=trash). Default: 0"),
-    search: tool.schema
-      .string()
-      .optional()
-      .describe("Search query with optional operators like tag:api, domain:github.com"),
-    sort: tool.schema
-      .enum(["-created", "created", "title", "-title", "score", "-sort", "domain"])
-      .optional()
-      .describe("Sort order. Default: -created (newest first)"),
-    limit: tool.schema
-      .number()
-      .optional()
-      .describe("Max results (1-50). Default: 25"),
-    page: tool.schema.number().optional().describe("Page number (0-based). Default: 0"),
-    ...formatArg,
-  },
+  ...ripple_searchDef,
   async execute({ collection = 0, search, sort, limit = 25, page = 0, format: fmt = "markdown" }) {
     try {
       const params = SearchParamsSchema.parse({
@@ -82,11 +63,7 @@ Collection IDs: 0=all, -1=unsorted, -99=trash.`,
 
 // === ripple_get ===
 export const ripple_get: ToolDefinition = tool({
-  description: "Get detailed information about a single Raindrop bookmark by ID.",
-  args: {
-    id: tool.schema.number().describe("Raindrop bookmark ID"),
-    ...formatArg,
-  },
+  ...ripple_getDef,
   async execute({ id, format: fmt = "markdown" }) {
     try {
       const raindrop = await api.getRaindrop(id);
@@ -102,23 +79,7 @@ export const ripple_get: ToolDefinition = tool({
 
 // === ripple_create ===
 export const ripple_create: ToolDefinition = tool({
-  description:
-    "Create a new Raindrop bookmark. The server will automatically parse the URL for title, excerpt, and cover if not provided.",
-  args: {
-    url: tool.schema.string().describe("URL to bookmark (required)"),
-    title: tool.schema.string().optional().describe("Custom title (auto-parsed if omitted)"),
-    note: tool.schema.string().optional().describe("Personal notes"),
-    tags: tool.schema
-      .array(tool.schema.string())
-      .optional()
-      .describe("Tags to apply"),
-    collection: tool.schema
-      .number()
-      .optional()
-      .describe("Collection ID to save to. Default: unsorted (-1)"),
-    important: tool.schema.boolean().optional().describe("Mark as important/favorite"),
-    ...formatArg,
-  },
+  ...ripple_createDef,
   async execute({
     url,
     title,
@@ -151,14 +112,7 @@ export const ripple_create: ToolDefinition = tool({
 
 // === ripple_tags ===
 export const ripple_tags: ToolDefinition = tool({
-  description: "List all tags or tags within a specific collection.",
-  args: {
-    collection: tool.schema
-      .number()
-      .optional()
-      .describe("Collection ID to get tags from. Omit for all tags."),
-    ...formatArg,
-  },
+  ...ripple_tagsDef,
   async execute({ collection, format: fmt = "markdown" }) {
     try {
       const tags = await api.getTags(collection);
@@ -174,12 +128,7 @@ export const ripple_tags: ToolDefinition = tool({
 
 // === ripple_tag_add ===
 export const ripple_tag_add: ToolDefinition = tool({
-  description: "Add tags to an existing bookmark. Merges with existing tags.",
-  args: {
-    id: tool.schema.number().describe("Raindrop bookmark ID"),
-    tags: tool.schema.array(tool.schema.string()).describe("Tags to add"),
-    ...formatArg,
-  },
+  ...ripple_tag_addDef,
   async execute({ id, tags, format: fmt = "markdown" }) {
     try {
       // Get current tags first
@@ -199,12 +148,7 @@ export const ripple_tag_add: ToolDefinition = tool({
 
 // === ripple_tag_remove ===
 export const ripple_tag_remove: ToolDefinition = tool({
-  description: "Remove tags from an existing bookmark.",
-  args: {
-    id: tool.schema.number().describe("Raindrop bookmark ID"),
-    tags: tool.schema.array(tool.schema.string()).describe("Tags to remove"),
-    ...formatArg,
-  },
+  ...ripple_tag_removeDef,
   async execute({ id, tags, format: fmt = "markdown" }) {
     try {
       const current = await api.getRaindrop(id);
@@ -223,13 +167,7 @@ export const ripple_tag_remove: ToolDefinition = tool({
 
 // === ripple_bulk_create ===
 export const ripple_bulk_create: ToolDefinition = tool({
-  description: "Create multiple bookmarks at once (up to 100). URLs are auto-parsed for metadata.",
-  args: {
-    urls: tool.schema.array(tool.schema.string()).describe("Array of URLs to bookmark"),
-    tags: tool.schema.array(tool.schema.string()).optional().describe("Tags to apply to all bookmarks"),
-    collection: tool.schema.number().optional().describe("Collection ID for all bookmarks"),
-    ...formatArg,
-  },
+  ...ripple_bulk_createDef,
   async execute({ urls, tags, collection, format: fmt = "markdown" }) {
     try {
       const items = urls.map(url => ({
@@ -250,16 +188,7 @@ export const ripple_bulk_create: ToolDefinition = tool({
 
 // === ripple_bulk_update ===
 export const ripple_bulk_update: ToolDefinition = tool({
-  description: "Update multiple bookmarks at once. Filter by collection, search query, or specific IDs.",
-  args: {
-    collection: tool.schema.number().describe("Collection ID to update from"),
-    ids: tool.schema.array(tool.schema.number()).optional().describe("Specific bookmark IDs to update"),
-    search: tool.schema.string().optional().describe("Search filter for bookmarks to update"),
-    nested: tool.schema.boolean().optional().describe("Include nested collections"),
-    tags: tool.schema.array(tool.schema.string()).optional().describe("Tags to append (empty array removes all)"),
-    important: tool.schema.boolean().optional().describe("Set favorite status"),
-    move_to: tool.schema.number().optional().describe("Move to this collection ID"),
-  },
+  ...ripple_bulk_updateDef,
   async execute({ collection, ids, search, nested, tags, important, move_to }) {
     try {
       const modified = await api.updateManyRaindrops({
@@ -281,10 +210,7 @@ export const ripple_bulk_update: ToolDefinition = tool({
 
 // === ripple_delete ===
 export const ripple_delete: ToolDefinition = tool({
-  description: "Delete a single bookmark (moves to Trash, or permanently if already in Trash).",
-  args: {
-    id: tool.schema.number().describe("Bookmark ID to delete"),
-  },
+  ...ripple_deleteDef,
   async execute({ id }) {
     try {
       await api.deleteRaindrop(id);
@@ -298,13 +224,7 @@ export const ripple_delete: ToolDefinition = tool({
 
 // === ripple_bulk_delete ===
 export const ripple_bulk_delete: ToolDefinition = tool({
-  description: "Delete multiple bookmarks. Filter by IDs or search. Use collection -99 to permanently delete from Trash.",
-  args: {
-    collection: tool.schema.number().describe("Collection ID (-99 for permanent delete from Trash)"),
-    ids: tool.schema.array(tool.schema.number()).optional().describe("Specific bookmark IDs"),
-    search: tool.schema.string().optional().describe("Search filter"),
-    nested: tool.schema.boolean().optional().describe("Include nested collections"),
-  },
+  ...ripple_bulk_deleteDef,
   async execute({ collection, ids, search, nested }) {
     try {
       const deleted = await api.deleteManyRaindrops(collection, { ids, search, nested });
@@ -319,12 +239,7 @@ export const ripple_bulk_delete: ToolDefinition = tool({
 
 // === ripple_suggest ===
 export const ripple_suggest: ToolDefinition = tool({
-  description: "Get AI-suggested collections and tags for a URL or existing bookmark.",
-  args: {
-    url: tool.schema.string().optional().describe("URL to get suggestions for"),
-    id: tool.schema.number().optional().describe("Existing bookmark ID to get suggestions for"),
-    ...formatArg,
-  },
+  ...ripple_suggestDef,
   async execute({ url, id, format: fmt = "markdown" }) {
     try {
       if (!url && !id) return "Error: Provide either url or id";

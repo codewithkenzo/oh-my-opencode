@@ -13,25 +13,25 @@ import {
   formatRef,
 } from "./adapters"
 import {
-  BROWSER_OPEN_DESCRIPTION,
-  BROWSER_SNAPSHOT_DESCRIPTION,
-  BROWSER_SCREENSHOT_DESCRIPTION,
-  BROWSER_CLICK_DESCRIPTION,
-  BROWSER_FILL_DESCRIPTION,
-  BROWSER_CLOSE_DESCRIPTION,
-  BROWSER_BACK_DESCRIPTION,
-  BROWSER_FORWARD_DESCRIPTION,
-  BROWSER_RELOAD_DESCRIPTION,
-  BROWSER_GET_URL_DESCRIPTION,
-  BROWSER_GET_TITLE_DESCRIPTION,
-  BROWSER_TYPE_DESCRIPTION,
-  BROWSER_PRESS_DESCRIPTION,
-  BROWSER_HOVER_DESCRIPTION,
-  BROWSER_SCROLL_DESCRIPTION,
-  BROWSER_SELECT_DESCRIPTION,
-  BROWSER_EVAL_DESCRIPTION,
-  BROWSER_WAIT_DESCRIPTION,
-} from "./constants"
+  browserOpenDef,
+  browserSnapshotDef,
+  browserScreenshotDef,
+  browserClickDef,
+  browserFillDef,
+  browserCloseDef,
+  browserBackDef,
+  browserForwardDef,
+  browserReloadDef,
+  browserGetUrlDef,
+  browserGetTitleDef,
+  browserTypeDef,
+  browserPressDef,
+  browserHoverDef,
+  browserScrollDef,
+  browserSelectDef,
+  browserEvalDef,
+  browserWaitDef,
+} from "./def"
 
 function getBrowserConfig(): { backend: BrowserBackend; cdpPort?: number; wslAutoLaunch: boolean } {
   const defaultConfig = { backend: "agent-browser" as BrowserBackend, wslAutoLaunch: true }
@@ -85,11 +85,7 @@ function getTarget(ref?: number, selector?: string): string | null {
 }
 
 export const browser_open: ToolDefinition = tool({
-  description: BROWSER_OPEN_DESCRIPTION,
-  args: {
-    url: tool.schema.string().describe("URL to navigate to"),
-    cdp_port: tool.schema.number().optional().describe("CDP port for connecting to existing Chrome (e.g., 9222). On WSL, auto-launches Windows Chrome if not specified."),
-  },
+  ...browserOpenDef,
   execute: async ({ url, cdp_port }) => {
     try {
       const { adapter, mode } = await getAdapter(cdp_port)
@@ -102,11 +98,7 @@ export const browser_open: ToolDefinition = tool({
 })
 
 export const browser_snapshot: ToolDefinition = tool({
-  description: BROWSER_SNAPSHOT_DESCRIPTION,
-  args: {
-    interactive: tool.schema.boolean().optional().describe("Include ref IDs for click/fill interactions"),
-    cdp_port: tool.schema.number().optional().describe("CDP port for connecting to existing Chrome (e.g., 9222)"),
-  },
+  ...browserSnapshotDef,
   execute: async ({ interactive, cdp_port }) => {
     try {
       const { adapter } = await getAdapter(cdp_port)
@@ -118,11 +110,7 @@ export const browser_snapshot: ToolDefinition = tool({
 })
 
 export const browser_screenshot: ToolDefinition = tool({
-  description: BROWSER_SCREENSHOT_DESCRIPTION,
-  args: {
-    output_path: tool.schema.string().optional().describe("Path to save screenshot (default: tmp/screenshot.png)"),
-    cdp_port: tool.schema.number().optional().describe("CDP port for connecting to existing Chrome (e.g., 9222)"),
-  },
+  ...browserScreenshotDef,
   execute: async ({ output_path = "tmp/screenshot.png", cdp_port }) => {
     try {
       const { adapter } = await getAdapter(cdp_port)
@@ -135,12 +123,7 @@ export const browser_screenshot: ToolDefinition = tool({
 })
 
 export const browser_click: ToolDefinition = tool({
-  description: BROWSER_CLICK_DESCRIPTION,
-  args: {
-    ref: tool.schema.number().optional().describe("Element ref ID from snapshot"),
-    selector: tool.schema.string().optional().describe("CSS selector to click"),
-    cdp_port: tool.schema.number().optional().describe("CDP port for connecting to existing Chrome (e.g., 9222)"),
-  },
+  ...browserClickDef,
   execute: async ({ ref, selector, cdp_port }) => {
     try {
       const target = getTarget(ref, selector)
@@ -154,13 +137,7 @@ export const browser_click: ToolDefinition = tool({
 })
 
 export const browser_fill: ToolDefinition = tool({
-  description: BROWSER_FILL_DESCRIPTION,
-  args: {
-    ref: tool.schema.number().optional().describe("Element ref ID from snapshot"),
-    selector: tool.schema.string().optional().describe("CSS selector for input"),
-    text: tool.schema.string().describe("Text to fill into the input"),
-    cdp_port: tool.schema.number().optional().describe("CDP port for connecting to existing Chrome (e.g., 9222)"),
-  },
+  ...browserFillDef,
   execute: async ({ ref, selector, text, cdp_port }) => {
     try {
       const target = getTarget(ref, selector)
@@ -174,10 +151,7 @@ export const browser_fill: ToolDefinition = tool({
 })
 
 export const browser_close: ToolDefinition = tool({
-  description: BROWSER_CLOSE_DESCRIPTION,
-  args: {
-    cdp_port: tool.schema.number().optional().describe("CDP port (ignored for CDP connections)"),
-  },
+  ...browserCloseDef,
   execute: async ({ cdp_port }) => {
     try {
       const { adapter } = await getAdapter(cdp_port)
@@ -191,10 +165,7 @@ export const browser_close: ToolDefinition = tool({
 })
 
 export const browser_back: ToolDefinition = tool({
-  description: BROWSER_BACK_DESCRIPTION,
-  args: {
-    cdp_port: tool.schema.number().optional().describe("CDP port"),
-  },
+  ...browserBackDef,
   execute: async ({ cdp_port }) => {
     try {
       const { adapter } = await getAdapter(cdp_port)
@@ -206,10 +177,7 @@ export const browser_back: ToolDefinition = tool({
 })
 
 export const browser_forward: ToolDefinition = tool({
-  description: BROWSER_FORWARD_DESCRIPTION,
-  args: {
-    cdp_port: tool.schema.number().optional().describe("CDP port"),
-  },
+  ...browserForwardDef,
   execute: async ({ cdp_port }) => {
     try {
       const { adapter } = await getAdapter(cdp_port)
@@ -221,10 +189,7 @@ export const browser_forward: ToolDefinition = tool({
 })
 
 export const browser_reload: ToolDefinition = tool({
-  description: BROWSER_RELOAD_DESCRIPTION,
-  args: {
-    cdp_port: tool.schema.number().optional().describe("CDP port"),
-  },
+  ...browserReloadDef,
   execute: async ({ cdp_port }) => {
     try {
       const { adapter } = await getAdapter(cdp_port)
@@ -236,10 +201,7 @@ export const browser_reload: ToolDefinition = tool({
 })
 
 export const browser_get_url: ToolDefinition = tool({
-  description: BROWSER_GET_URL_DESCRIPTION,
-  args: {
-    cdp_port: tool.schema.number().optional().describe("CDP port"),
-  },
+  ...browserGetUrlDef,
   execute: async ({ cdp_port }) => {
     try {
       const { adapter } = await getAdapter(cdp_port)
@@ -251,10 +213,7 @@ export const browser_get_url: ToolDefinition = tool({
 })
 
 export const browser_get_title: ToolDefinition = tool({
-  description: BROWSER_GET_TITLE_DESCRIPTION,
-  args: {
-    cdp_port: tool.schema.number().optional().describe("CDP port"),
-  },
+  ...browserGetTitleDef,
   execute: async ({ cdp_port }) => {
     try {
       const { adapter } = await getAdapter(cdp_port)
@@ -266,14 +225,7 @@ export const browser_get_title: ToolDefinition = tool({
 })
 
 export const browser_type: ToolDefinition = tool({
-  description: BROWSER_TYPE_DESCRIPTION,
-  args: {
-    ref: tool.schema.number().optional().describe("Element ref ID from snapshot"),
-    selector: tool.schema.string().optional().describe("CSS selector"),
-    text: tool.schema.string().describe("Text to type"),
-    delay: tool.schema.number().optional().describe("Delay between keystrokes in ms"),
-    cdp_port: tool.schema.number().optional().describe("CDP port"),
-  },
+  ...browserTypeDef,
   execute: async ({ ref, selector, text, delay, cdp_port }) => {
     try {
       const target = getTarget(ref, selector)
@@ -287,11 +239,7 @@ export const browser_type: ToolDefinition = tool({
 })
 
 export const browser_press: ToolDefinition = tool({
-  description: BROWSER_PRESS_DESCRIPTION,
-  args: {
-    key: tool.schema.string().describe("Key to press (e.g., Enter, Tab, Control+a)"),
-    cdp_port: tool.schema.number().optional().describe("CDP port"),
-  },
+  ...browserPressDef,
   execute: async ({ key, cdp_port }) => {
     try {
       const { adapter } = await getAdapter(cdp_port)
@@ -303,12 +251,7 @@ export const browser_press: ToolDefinition = tool({
 })
 
 export const browser_hover: ToolDefinition = tool({
-  description: BROWSER_HOVER_DESCRIPTION,
-  args: {
-    ref: tool.schema.number().optional().describe("Element ref ID from snapshot"),
-    selector: tool.schema.string().optional().describe("CSS selector"),
-    cdp_port: tool.schema.number().optional().describe("CDP port"),
-  },
+  ...browserHoverDef,
   execute: async ({ ref, selector, cdp_port }) => {
     try {
       const target = getTarget(ref, selector)
@@ -322,12 +265,7 @@ export const browser_hover: ToolDefinition = tool({
 })
 
 export const browser_scroll: ToolDefinition = tool({
-  description: BROWSER_SCROLL_DESCRIPTION,
-  args: {
-    direction: tool.schema.string().describe("Direction: up, down, left, right"),
-    amount: tool.schema.number().optional().describe("Pixels to scroll (default: 300)"),
-    cdp_port: tool.schema.number().optional().describe("CDP port"),
-  },
+  ...browserScrollDef,
   execute: async ({ direction, amount, cdp_port }) => {
     try {
       const { adapter } = await getAdapter(cdp_port)
@@ -339,13 +277,7 @@ export const browser_scroll: ToolDefinition = tool({
 })
 
 export const browser_select: ToolDefinition = tool({
-  description: BROWSER_SELECT_DESCRIPTION,
-  args: {
-    ref: tool.schema.number().optional().describe("Element ref ID from snapshot"),
-    selector: tool.schema.string().optional().describe("CSS selector"),
-    value: tool.schema.string().describe("Option value to select"),
-    cdp_port: tool.schema.number().optional().describe("CDP port"),
-  },
+  ...browserSelectDef,
   execute: async ({ ref, selector, value, cdp_port }) => {
     try {
       const target = getTarget(ref, selector)
@@ -359,11 +291,7 @@ export const browser_select: ToolDefinition = tool({
 })
 
 export const browser_eval: ToolDefinition = tool({
-  description: BROWSER_EVAL_DESCRIPTION,
-  args: {
-    script: tool.schema.string().describe("JavaScript code to execute"),
-    cdp_port: tool.schema.number().optional().describe("CDP port"),
-  },
+  ...browserEvalDef,
   execute: async ({ script, cdp_port }) => {
     try {
       const { adapter } = await getAdapter(cdp_port)
@@ -375,12 +303,7 @@ export const browser_eval: ToolDefinition = tool({
 })
 
 export const browser_wait: ToolDefinition = tool({
-  description: BROWSER_WAIT_DESCRIPTION,
-  args: {
-    selector: tool.schema.string().optional().describe("CSS selector to wait for"),
-    timeout: tool.schema.number().optional().describe("Timeout in milliseconds"),
-    cdp_port: tool.schema.number().optional().describe("CDP port"),
-  },
+  ...browserWaitDef,
   execute: async ({ selector, timeout, cdp_port }) => {
     try {
       if (!selector && !timeout) return "Error: Provide either selector or timeout"
