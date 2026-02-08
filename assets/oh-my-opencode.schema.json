@@ -256,6 +256,9 @@
           "variant": {
             "type": "string"
           },
+          "agent": {
+            "type": "string"
+          },
           "temperature": {
             "type": "number",
             "minimum": 0,

@@ -274,13 +274,23 @@ export const CATEGORY_SKILLS: Record<string, string[]> = {
   ],
 }
 
+export const CATEGORY_AGENTS: Record<string, string> = {
+  "visual-engineering": "T4 - frontend builder",
+  ultrabrain: "D5 - backend builder",
+  artistry: "T4 - frontend builder",
+  quick: "D5 - backend builder",
+  "most-capable": "D5 - backend builder",
+  writing: "W7 - writer",
+  general: "D5 - backend builder",
+}
+
 const BUILTIN_CATEGORIES = Object.keys(DEFAULT_CATEGORIES).join(", ")
 
 export const DELEGATE_TASK_DESCRIPTION = `Spawn agent task with category-based or direct agent selection.
 
 MUTUALLY EXCLUSIVE: Provide EITHER category OR agent, not both (unless resuming).
 
-- category: Use predefined category (${BUILTIN_CATEGORIES}) → Spawns Sisyphus-Junior with category config
+- category: Use predefined category (${BUILTIN_CATEGORIES}) → Spawns domain-specific agent with category config
 - agent: Use specific agent directly (e.g., "K9 - advisor", "X1 - explorer")
 - background: true=async (returns task_id), false=sync (waits for result). Default: false. Use background=true ONLY for parallel exploration with 5+ independent queries.
 - resume: Session ID to resume (from previous task output). Continues agent with FULL CONTEXT PRESERVED - saves tokens, maintains continuity.
