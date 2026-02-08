@@ -535,7 +535,7 @@ describe("shouldDeleteAgentConfig", () => {
     // #given: Config with fields matching category defaults
     const config = {
       category: "visual-engineering",
-      model: "google/gemini-3-pro",
+      temperature: 0.7,
     }
 
     // #when: Check if config should be deleted
@@ -564,8 +564,10 @@ describe("shouldDeleteAgentConfig", () => {
     const configs = [
       { category: "ultrabrain" },
       { category: "quick" },
-      { category: "unspecified-high" },
-      { category: "unspecified-low" },
+      { category: "artistry" },
+      { category: "most-capable" },
+      { category: "writing" },
+      { category: "general" },
     ]
 
     // #when: Check each config
