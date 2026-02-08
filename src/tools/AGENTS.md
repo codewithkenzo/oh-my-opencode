@@ -2,7 +2,7 @@
 
 ## OVERVIEW
 
-20+ tools: LSP (11), AST-Grep (2), Search (2), Session (4), Agent delegation (3), System (2). High-performance C++ bindings via @ast-grep/napi.
+102 tools across 7 lazy-loaded profiles: core (23), research (9), browser (18), native-search (2), external-api (23), local-service (15), orchestration (12). High-performance C++ bindings via @ast-grep/napi.
 
 ## STRUCTURE
 
@@ -41,6 +41,20 @@ tools/
 | **System** | interactive_bash, look_at | CLI, multimodal |
 | **MCP/Skill** | skill, skill_mcp, mcp_query, slashcommand | Skill execution + custom MCP discovery |
 
+## TOOL PROFILES
+
+Tools are grouped into 7 profiles for lazy loading (`src/tools/tool-profiles.ts`):
+
+| Profile | Count | Purpose |
+|---------|-------|---------|
+| core | 23 | LSP, grep, glob, session, tickets - always loaded |
+| research | 9 | Exa, Context7, grep_app, zread - web/docs search |
+| browser | 18 | Playwright browser automation |
+| native-search | 2 | AST-Grep search/replace |
+| external-api | 23 | Runware, Civitai, Ripple - external APIs |
+| local-service | 15 | Syncthing - local service integration |
+| orchestration | 12 | delegate_task, background, skills, interactive_bash |
+
 ## HOW TO ADD
 
 1. Create `src/tools/[name]/` with standard files
@@ -73,11 +87,40 @@ tools/
 3. Export from `src/tools/index.ts`
 4. Add to `builtinTools` object
 
+### Lazy Loading (createLazyTool)
+
+For tools that should only load their implementation on first use:
+```typescript
+import { createLazyTool } from "../lazy-tool-wrapper"
+import { myToolDef } from "./def"
+
+export const myTool = createLazyTool({
+  name: "my_tool",
+  description: myToolDef.description,
+  args: myToolDef.args,
+  loader: () => import("./tools").then((m) => m.myTool),
+})
+```
+
+### Hybrid Tools (createHybridTool)
+
+For tools that prefer MCP but fall back to builtin:
+```typescript
+import { createHybridTool } from "../hybrid-router"
+
+export const myTool = createHybridTool({
+  mcpName: "my-mcp",
+  mcpToolName: "my_tool",
+  builtinDef: myToolDef,
+  builtinLoader: () => import("./tools"),
+})
+```
+
 ### Lazy Loading (def.ts Pattern)
 
 - Split lightweight metadata (`description`, `args`) into `def.ts`, keep execution in `tools.ts`.
 - This enables true lazy loading by avoiding heavy implementation imports during tool discovery.
-- Current adopters: `browser`, `runware`, `raindrop`, `syncthing`, `ticket`, `civitai`, `ast-grep`, `unified-model-search`.
+- Current adopters: `agent-browser`, `ast-grep`, `civitai`, `raindrop`, `runware`, `syncthing`, `ticket`, `unified-model-search`.
 
 ## LSP SPECIFICS
 

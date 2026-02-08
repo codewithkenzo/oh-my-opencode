@@ -65,6 +65,8 @@ const mcps = createBuiltinMcps(["websearch"])
 
 ## NOTES
 
-- **Remote only**: All built-in MCPs use HTTP/SSE, no stdio
-- **Disable config**: User can disable via `disabled_mcps: ["name"]`
+- **Remote only (this directory)**: Built-in MCPs in `src/mcp/` use HTTP/SSE
+- **Local/stdio support**: Also supported via `src/features/skill-mcp-manager/` (skill-embedded MCP in SKILL.md YAML frontmatter or `mcp.json`)
+- **Custom MCP discovery**: `src/tools/mcp-query/` supports project/user `.mcp.json` MCP servers
+- **Disable config**: User can disable built-ins via `disabled_mcps: ["name"]`
 - **Exa requires key**: Set `EXA_API_KEY` env var for websearch

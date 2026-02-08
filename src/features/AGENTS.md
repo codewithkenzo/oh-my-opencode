@@ -24,7 +24,7 @@ features/
 ├── claude-code-mcp-loader/     # .mcp.json with ${VAR} expansion
 ├── claude-code-plugin-loader/  # installed_plugins.json
 ├── claude-code-session-state/  # Session state persistence
-├── opencode-skill-loader/      # Skills from 6 directories
+├── opencode-skill-loader/      # Skills from 6 directories, async resolution + template extraction
 ├── context-injector/           # AGENTS.md/README.md injection
 ├── boulder-state/              # Todo state persistence
 ├── task-toast-manager/         # Toast notifications
@@ -39,6 +39,13 @@ features/
 | Skills | `.opencode/skill/` > `~/.config/opencode/skill/` > `.claude/skills/` > `~/.claude/skills/` |
 | Agents | `.claude/agents/` > `~/.claude/agents/` |
 | MCPs | `.claude/.mcp.json` > `.mcp.json` > `~/.claude/.mcp.json` |
+
+## CATEGORY SKILLS
+
+Category-based skill auto-injection is defined in `src/tools/delegate-task/constants.ts` (`CATEGORY_SKILLS`).
+When `delegate_task(category=...)` is called, category skills are auto-merged with explicit skills.
+
+See `src/agents/AGENTS.md` for the full category -> skills mapping.
 
 ## BACKGROUND AGENT
 
@@ -55,6 +62,12 @@ features/
 - **Environment**: `${VAR}` expansion in config
 - **Lifecycle**: 5m idle cleanup, session-scoped
 - **Used by**: `skill_mcp` (skill-embedded MCP) and `mcp_query` (custom `.mcp.json` MCP)
+
+## OPENCODE SKILL LOADER
+
+- **Template source**: `extractSkillTemplate()` prefers assembled templates (merged subdirectory docs + wrappers)
+- **Resolution path**: `resolveMultipleSkillsAsync()` is the primary async resolver for category/agent skill injection
+- **Git-master injection**: `resolveMultipleSkillsAsync()` applies git-master footer/co-author watermark injection via `injectGitMasterConfig()`
 
 ## CONFIG TOGGLES
 

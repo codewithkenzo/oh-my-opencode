@@ -16,8 +16,9 @@ shared/
 ├── data-path.ts           # XDG-compliant storage (~/.local/share)
 ├── opencode-config-dir.ts # ~/.config/opencode resolution
 ├── claude-config-dir.ts   # ~/.claude resolution
-├── migration.ts           # Legacy config migration (omo → Sisyphus)
+├── migration.ts           # Legacy config migration (agent names, permission compat, omo -> Sisyphus)
 ├── opencode-version.ts    # Version comparison (>= 1.0.150)
+├── model-requirements.ts  # Agent model fallback chains
 ├── external-plugin-detector.ts # OAuth spoofing detection
 ├── env-expander.ts        # ${VAR} expansion in configs
 ├── system-directive.ts    # System directive types
@@ -36,6 +37,7 @@ shared/
 | Restrict agent tools | `createAgentToolAllowlist(tools)` |
 | Resolve paths | `getOpenCodeConfigDir()`, `getClaudeConfigDir()` |
 | Migrate config | `migrateConfigFile(path, rawConfig)` |
+| Agent model fallback | `resolveModelWithFallback()` with chains in `model-requirements.ts` |
 | Compare versions | `isOpenCodeVersionAtLeast("1.1.0")` |
 
 ## KEY PATTERNS

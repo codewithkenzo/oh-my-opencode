@@ -42,6 +42,7 @@ cli/
 | `doctor` | 14 health checks, `--verbose`, `--json`, `--category` |
 | `run` | Launch OpenCode session with completion enforcement |
 | `get-local-version` | Version detection, update checking |
+| `version` | Print installed CLI version |
 
 ## DOCTOR CHECK CATEGORIES
 
