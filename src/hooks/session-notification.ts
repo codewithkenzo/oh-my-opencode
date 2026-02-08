@@ -65,14 +65,14 @@ async function sendNotification(
 
       const esTitle = title.replace(/\\/g, "\\\\").replace(/"/g, '\\"')
       const esMessage = message.replace(/\\/g, "\\\\").replace(/"/g, '\\"')
-      await ctx.$`${osascriptPath} -e ${"display notification \"" + esMessage + "\" with title \"" + esTitle + "\""}`.catch(() => {})
+      await ctx.$`${osascriptPath} -e ${"display notification \"" + esMessage + "\" with title \"" + esTitle + "\""}`.catch(() => { /* intentional: notification/sound failure is non-critical */ })
       break
     }
     case "linux": {
       const notifySendPath = await getNotifySendPath()
       if (!notifySendPath) return
 
-      await ctx.$`${notifySendPath} ${title} ${message} 2>/dev/null`.catch(() => {})
+      await ctx.$`${notifySendPath} ${title} ${message} 2>/dev/null`.catch(() => { /* intentional: notification/sound failure is non-critical */ })
       break
     }
     case "win32": {
@@ -93,7 +93,7 @@ $Toast = [Windows.UI.Notifications.ToastNotification]::new($SerializedXml)
 $Notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('OpenCode')
 $Notifier.Show($Toast)
 `.trim().replace(/\n/g, "; ")
-      await ctx.$`${powershellPath} -Command ${toastScript}`.catch(() => {})
+      await ctx.$`${powershellPath} -Command ${toastScript}`.catch(() => { /* intentional: notification/sound failure is non-critical */ })
       break
     }
   }
@@ -104,17 +104,17 @@ async function playSound(ctx: PluginInput, p: Platform, soundPath: string): Prom
     case "darwin": {
       const afplayPath = await getAfplayPath()
       if (!afplayPath) return
-      ctx.$`${afplayPath} ${soundPath}`.catch(() => {})
+      ctx.$`${afplayPath} ${soundPath}`.catch(() => { /* intentional: notification/sound failure is non-critical */ })
       break
     }
     case "linux": {
       const paplayPath = await getPaplayPath()
       if (paplayPath) {
-        ctx.$`${paplayPath} ${soundPath} 2>/dev/null`.catch(() => {})
+        ctx.$`${paplayPath} ${soundPath} 2>/dev/null`.catch(() => { /* intentional: notification/sound failure is non-critical */ })
       } else {
         const aplayPath = await getAplayPath()
         if (aplayPath) {
-          ctx.$`${aplayPath} ${soundPath} 2>/dev/null`.catch(() => {})
+          ctx.$`${aplayPath} ${soundPath} 2>/dev/null`.catch(() => { /* intentional: notification/sound failure is non-critical */ })
         }
       }
       break
@@ -122,7 +122,7 @@ async function playSound(ctx: PluginInput, p: Platform, soundPath: string): Prom
     case "win32": {
       const powershellPath = await getPowershellPath()
       if (!powershellPath) return
-      ctx.$`${powershellPath} -Command ${"(New-Object Media.SoundPlayer '" + soundPath.replace(/'/g, "''") + "').PlaySync()"}`.catch(() => {})
+      ctx.$`${powershellPath} -Command ${"(New-Object Media.SoundPlayer '" + soundPath.replace(/'/g, "''") + "').PlaySync()"}`.catch(() => { /* intentional: notification/sound failure is non-critical */ })
       break
     }
   }
