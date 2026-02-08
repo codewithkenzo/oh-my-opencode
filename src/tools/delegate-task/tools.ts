@@ -15,7 +15,7 @@ import { log, getAgentToolRestrictions, resolveModel, getOpenCodeConfigPaths } f
 
 type OpencodeClient = PluginInput["client"]
 
-const SISYPHUS_JUNIOR_AGENT = "Sisyphus-Junior"
+const SISYPHUS_JUNIOR_AGENT = "D5 - backend builder"
 const CATEGORY_EXAMPLES = Object.keys(DEFAULT_CATEGORIES).map(k => `'${k}'`).join(", ")
 
 function parseModelString(model: string): { providerID: string; modelID: string } | undefined {

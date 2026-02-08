@@ -275,7 +275,7 @@ export function createSkillTool(options: SkillLoadOptions = {}): ToolDefinition 
 
         try {
           const { client } = options
-          const agentToUse = skill.definition.agent || "Sisyphus-Junior"
+          const agentToUse = skill.definition.agent || "D5 - backend builder"
 
           const createResult = await client.session.create({
             body: {
