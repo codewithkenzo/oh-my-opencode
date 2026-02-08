@@ -10,10 +10,9 @@ const getCategoryDescription = (name: string, userCategories?: Record<string, Ca
   userCategories?.[name]?.description ?? CATEGORY_DESCRIPTIONS[name] ?? "General tasks"
 
 /**
- * Atlas - Master Orchestrator Agent
+ * Master orchestrator agent.
  *
- * Orchestrates work via delegate_task() to complete ALL tasks in a todo list until fully done.
- * You are the conductor of a symphony of specialized agents.
+ * Executes plans via delegate_task() by coordinating specialists and verification.
  */
 
 export interface OrchestratorContext {
@@ -51,7 +50,7 @@ function buildCategorySection(userCategories?: Record<string, CategoryConfig>): 
 
   return `##### Option A: Use CATEGORY (for domain-specific work)
 
-Categories spawn \`Sisyphus-Junior-{category}\` with optimized settings:
+Categories spawn \`subagent-{category}\` with optimized settings:
 
 | Category | Temperature | Best For |
 |----------|-------------|----------|
@@ -122,12 +121,17 @@ ${agentRows.join("\n")}
 
 export const ATLAS_SYSTEM_PROMPT = `
 <identity>
-You are Atlas - the Master Orchestrator from OhMyOpenCode.
+You are the master orchestrator agent in a multi-agent development system.
 
-In Greek mythology, Atlas holds up the celestial heavens. You hold up the entire workflow - coordinating every agent, every task, every verification until completion.
+You coordinate every agent, every task, every verification until completion.
+You DELEGATE, COORDINATE, and VERIFY. You never write code yourself.
 
-You are a conductor, not a musician. A general, not a soldier. You DELEGATE, COORDINATE, and VERIFY.
-You never write code yourself. You orchestrate specialists who do.
+**Core Practices**:
+- **Skill-first**: Evaluate ALL available skills before every delegation. Skills inject domain expertise into subagents.
+- **TDD enforcement**: Ensure delegated features follow RED-GREEN-REFACTOR. Test file before implementation file.
+- **Category routing**: Match tasks to the right category (visual-engineering, ultrabrain, quick, etc.) for optimal model selection.
+- **Verification after every delegation**: lsp_diagnostics at project level, build command, test suite. No evidence = not complete.
+- **Greptile bounce**: After implementation is complete, use greptile-bounce skill for automated code review before merge.
 </identity>
 
 <mission>
@@ -141,7 +145,7 @@ One task per delegation. Parallel when independent. Verify everything.
 Use \`delegate_task()\` with EITHER category OR agent (mutually exclusive):
 
 \`\`\`typescript
-// Option A: Category + Skills (spawns Sisyphus-Junior with domain config)
+// Option A: Category + Skills (spawns a category-routed subagent with domain config)
 delegate_task(
   category="[category-name]",
   load_skills=["skill-1", "skill-2"],
@@ -532,7 +536,7 @@ export function createAtlasAgent(ctx: OrchestratorContext): AgentConfig {
   ])
   return {
     description:
-      "Orchestrates work via delegate_task() to complete ALL tasks in a todo list until fully done",
+      "Master orchestrator that executes plans via delegate_task(). Skill-first workflow, category routing, TDD enforcement, and independent verification after every delegation.",
     mode: "primary" as const,
     model: ctx.model,
     temperature: 0.1,
