@@ -85,7 +85,7 @@ import { createModelCacheState, getModelLimit } from "./plugin-state";
 import { createConfigHandler } from "./plugin-handlers";
 import { loadAllPluginComponents } from "./features/claude-code-plugin-loader";
 
-const OhMyOpenCodePlugin: Plugin = async (ctx) => {
+export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
   const startupTimer = createStartupTimer();
 
   // Start background tmux check immediately
@@ -646,8 +646,6 @@ await editErrorRecovery?.["tool.execute.after"](input, output);
     },
   };
 };
-
-export default OhMyOpenCodePlugin;
 
 export type {
   OhMyOpenCodeConfig,

@@ -20,11 +20,26 @@ export const BuiltinAgentNameSchema = z.enum([
   "Musashi",
   "Musashi - boulder",
   "Musashi - plan",
+  "J1 - junior",
+  "M1 - analyst",
+  "M2 - reviewer",
   "K9 - advisor",
+  "V1 - viewer",
   "R2 - researcher",
   "X1 - explorer",
+  "H3 - bulk builder",
+  "F1 - fast builder",
+  "S6 - designer",
   "T4 - frontend builder",
   "D5 - backend builder",
+  "G5 - debugger",
+  "W7 - writer",
+  "M10 - critic",
+  "B3 - security",
+  "O9 - specialist",
+  "Senshi - distributor",
+  "Seichou - growth",
+  "Tsunagi - networker",
 ])
 
 export const BuiltinSkillNameSchema = z.enum([
@@ -52,11 +67,26 @@ export const OverridableAgentNameSchema = z.enum([
   "Musashi",
   "Musashi - boulder",
   "Musashi - plan",
+  "J1 - junior",
+  "M1 - analyst",
+  "M2 - reviewer",
   "K9 - advisor",
+  "V1 - viewer",
   "R2 - researcher",
   "X1 - explorer",
+  "H3 - bulk builder",
+  "F1 - fast builder",
+  "S6 - designer",
   "T4 - frontend builder",
   "D5 - backend builder",
+  "G5 - debugger",
+  "W7 - writer",
+  "M10 - critic",
+  "B3 - security",
+  "O9 - specialist",
+  "Senshi - distributor",
+  "Seichou - growth",
+  "Tsunagi - networker",
 ])
 
 export const AgentNameSchema = BuiltinAgentNameSchema
@@ -331,8 +361,6 @@ export const LazyLoadingConfigSchema = z.object({
   enabled: z.boolean().default(false),
   /** Log timing information for lazy-loaded tools (default: false) */
   log_timing: z.boolean().default(false),
-  /** Tool profiles to expose by default. Others loaded on demand. */
-  default_profiles: z.array(z.string()).optional(),
   /** Per-tool route policy overrides for hybrid tools */
   tool_routing: ToolRoutingConfigSchema,
 })
