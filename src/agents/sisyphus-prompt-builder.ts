@@ -380,9 +380,9 @@ export function buildCategorySkillsDelegationGuide(categories: AvailableCategory
 
 **delegate_task() combines categories and skills for optimal task execution.**
 
-#### Available Categories (Domain-Optimized Models)
+#### Available Categories (Domain-Optimized Settings)
 
-Each category is configured with a model optimized for that domain. Read the description to understand when to use it.
+Each category is configured with temperature and routing optimized for that domain. Read the description to understand when to use it.
 
 | Category | Domain / Best For |
 |----------|-------------------|
