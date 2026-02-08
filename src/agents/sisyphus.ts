@@ -143,7 +143,7 @@ ${researcherSection}
 
 ### Parallel Execution (DEFAULT behavior)
 
-**Explore/Librarian = Grep, not consultants.
+**X1/R2 = Grep, not consultants.
 
 \`\`\`typescript
 // CORRECT: Always background, always parallel
