@@ -201,6 +201,7 @@ export function createBuiltinToolsWithLazyLoading(opts?: {
   const result: Record<string, ToolDefinition> = { ...eagerTools }
 
   for (const [name, entry] of Object.entries(lazyToolRegistry)) {
+    if (!activeToolNames.has(name)) continue
     result[name] = createLazyTool({
       name,
       description: entry.def.description,

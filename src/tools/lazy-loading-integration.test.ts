@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test"
-import { builtinTools, createBuiltinToolsWithLazyLoading } from "./index"
+import { builtinTools, createBuiltinToolsWithLazyLoading, TOOL_PROFILES } from "./index"
+import type { ToolProfile } from "./tool-profiles"
 
 const EAGER_TOOLS = [
   "lsp_goto_definition", "lsp_find_references", "lsp_symbols",
@@ -74,9 +75,10 @@ describe("lazy loading integration", () => {
       }
     })
 
-    it("returns same tool names as builtinTools", () => {
-      // #given both tool sources
-      const lazyTools = createBuiltinToolsWithLazyLoading()
+    it("returns same tool names as builtinTools when all profiles active", () => {
+      // #given both tool sources with all profiles enabled
+      const allProfiles = Object.keys(TOOL_PROFILES) as ToolProfile[]
+      const lazyTools = createBuiltinToolsWithLazyLoading({ activeProfiles: allProfiles })
       const builtinNames = new Set(Object.keys(builtinTools))
       const lazyNames = new Set(Object.keys(lazyTools))
 
@@ -85,10 +87,26 @@ describe("lazy loading integration", () => {
       expect(lazyNames).toEqual(builtinNames)
     })
 
+    it("returns only core tools when no profiles specified", () => {
+      // #given lazy loading with default (core only) profiles
+      const coreTools = createBuiltinToolsWithLazyLoading()
+      const coreToolNames = new Set(Object.keys(coreTools))
+
+      // #when checking tool names
+      // #then should only contain eager (core/research/orchestration) tools, not lazy browser/runware/etc
+      expect(coreToolNames.has("lsp_goto_definition")).toBe(true)
+      expect(coreToolNames.has("grep")).toBe(true)
+      expect(coreToolNames.has("browser_open")).toBe(false)
+      expect(coreToolNames.has("runwareGenerate")).toBe(false)
+      expect(coreToolNames.has("civitai_search")).toBe(false)
+    })
+
     it("fires onFirstLoad callback", async () => {
-      // #given a lazy tool with onFirstLoad callback
+      // #given a lazy tool with onFirstLoad callback and all profiles active
+      const allProfiles = Object.keys(TOOL_PROFILES) as ToolProfile[]
       const loads: Array<{ name: string; ms: number }> = []
       const tools = createBuiltinToolsWithLazyLoading({
+        activeProfiles: allProfiles,
         onFirstLoad: (name, ms) => loads.push({ name, ms }),
       })
 

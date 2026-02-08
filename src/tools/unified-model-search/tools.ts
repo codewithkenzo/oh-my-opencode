@@ -1,6 +1,6 @@
 import { tool } from "@opencode-ai/plugin/tool"
 import type { ToolDefinition } from "@opencode-ai/plugin/tool"
-import { UNIFIED_MODEL_SEARCH_DESCRIPTION } from "./constants"
+import { unifiedModelSearchDef } from "./def"
 import { searchModels as searchCivitai } from "../civitai/client"
 import { searchModels as searchRunware } from "../runware/client"
 import type { Model } from "../civitai/types"
@@ -106,26 +106,7 @@ function formatResults(results: UnifiedModelResult[], errors: string[]): string 
 }
 
 export const unified_model_search: ToolDefinition = tool({
-  description: UNIFIED_MODEL_SEARCH_DESCRIPTION,
-  args: {
-    query: tool.schema.string().describe("Search query for model name or keyword"),
-    source: tool.schema
-      .enum(["all", "civitai", "runware"])
-      .optional()
-      .describe("Which source to search: 'all' (default), 'civitai', or 'runware'"),
-    category: tool.schema
-      .string()
-      .optional()
-      .describe("Filter by category (e.g. 'Checkpoint', 'LORA' for Civitai; 'checkpoint', 'lora' for Runware)"),
-    architecture: tool.schema
-      .string()
-      .optional()
-      .describe("Filter by architecture (e.g. 'SDXL 1.0', 'SD 1.5', 'Flux.1 D')"),
-    limit: tool.schema
-      .number()
-      .optional()
-      .describe("Max results per source (default 10)"),
-  },
+  ...unifiedModelSearchDef,
   async execute(params) {
     const source = params.source || "all"
     const limit = params.limit || 10
