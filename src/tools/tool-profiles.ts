@@ -1,4 +1,4 @@
-export type ToolProfile = "core" | "research" | "browser" | "native-search" | "external-api" | "local-service"
+export type ToolProfile = "core" | "research" | "browser" | "native-search" | "external-api" | "local-service" | "orchestration"
 
 export const TOOL_PROFILES: Record<ToolProfile, readonly string[]> = {
   core: [
@@ -99,6 +99,20 @@ export const TOOL_PROFILES: Record<ToolProfile, readonly string[]> = {
     "ticket_dep",
     "ticket_undep",
     "ticket_blocked",
+  ],
+  orchestration: [
+    "background_output",
+    "background_cancel",
+    "call_omo_agent",
+    "look_at",
+    "delegate_task",
+    "supermemory",
+    "skill",
+    "find_skills",
+    "skill_mcp",
+    "mcp_query",
+    "slashcommand",
+    "interactive_bash",
   ],
 }
 

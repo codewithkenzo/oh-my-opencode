@@ -18,7 +18,6 @@ hooks/
 ├── rules-injector/             # Conditional rules from .claude/rules/
 ├── directory-agents-injector/  # Auto-injects AGENTS.md files
 ├── directory-readme-injector/  # Auto-injects README.md files
-├── preemptive-compaction/      # Triggers summary at 85% context
 ├── edit-error-recovery/        # Recovers from tool failures
 ├── thinking-block-validator/   # Ensures valid <thinking> format
 ├── context-window-monitor.ts   # Reminds agents of remaining headroom

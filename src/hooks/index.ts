@@ -1,6 +1,6 @@
-export { createTodoContinuationEnforcer, type TodoContinuationEnforcer } from "./todo-continuation-enforcer";
+export { createTodoContinuationEnforcerHook, type TodoContinuationEnforcer } from "./todo-continuation-enforcer";
 export { createContextWindowMonitorHook } from "./context-window-monitor";
-export { createSessionNotification } from "./session-notification";
+export { createSessionNotificationHook } from "./session-notification";
 export { createSessionRecoveryHook, type SessionRecoveryHook, type SessionRecoveryOptions } from "./session-recovery";
 export { createCommentCheckerHooks } from "./comment-checker";
 export { createToolOutputTruncatorHook } from "./tool-output-truncator";

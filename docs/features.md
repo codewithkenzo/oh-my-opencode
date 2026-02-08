@@ -288,7 +288,6 @@ When agents thrive, you thrive. But I want to help you directly too.
 - **Empty Message Sanitizer**: Prevents API errors from empty chat messages by automatically sanitizing message content before sending.
 - **Grep Output Truncator**: Grep can return mountains of text. This dynamically truncates output based on your remaining context window—keeps 50% headroom, caps at 50k tokens.
 - **Tool Output Truncator**: Same idea, broader scope. Truncates output from Grep, Glob, LSP tools, and AST-grep. Prevents one verbose search from eating your entire context.
-- **Preemptive Compaction**: Compacts session proactively before hitting hard token limits. Runs at 85% context window usage. **Enabled by default.** Disable via `disabled_hooks: ["preemptive-compaction"]`.
 - **Compaction Context Injector**: Preserves critical context (AGENTS.md, current directory info) during session compaction so you don't lose important state.
 - **Thinking Block Validator**: Validates thinking blocks to ensure proper formatting and prevent API errors from malformed thinking content.
 - **Claude Code Hooks**: Executes hooks from Claude Code's settings.json - this is the compatibility layer that runs PreToolUse/PostToolUse/UserPromptSubmit/Stop hooks.

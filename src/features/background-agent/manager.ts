@@ -64,7 +64,7 @@ export class BackgroundManager {
   private pendingByParent: Map<string, Set<string>>  // Track pending tasks per parent for batching
   private client: OpencodeClient
   private directory: string
-  private pollingInterval?: ReturnType<typeof setInterval>
+  private pollingInterval?: ReturnType<typeof setTimeout>
   private concurrencyManager: ConcurrencyManager
   private shutdownTriggered = false
   private config?: BackgroundTaskConfig
@@ -533,20 +533,20 @@ export class BackgroundManager {
     return existingTask
   }
 
-  private async checkSessionTodos(sessionID: string): Promise<boolean> {
+  private async checkSessionTodos(sessionID: string): Promise<"hasIncomplete" | "noTodos" | "unknownError"> {
     try {
       const response = await this.client.session.todo({
         path: { id: sessionID },
       })
       const todos = (response.data ?? response) as Todo[]
-      if (!todos || todos.length === 0) return false
+      if (!todos || todos.length === 0) return "noTodos"
 
       const incomplete = todos.filter(
         (t) => t.status !== "completed" && t.status !== "cancelled"
       )
-      return incomplete.length > 0
+      return incomplete.length > 0 ? "hasIncomplete" : "noTodos"
     } catch {
-      return false
+      return "unknownError"
     }
   }
 
@@ -606,7 +606,7 @@ export class BackgroundManager {
           return
         }
 
-        const hasIncompleteTodos = await this.checkSessionTodos(sessionID)
+        const todoResult = await this.checkSessionTodos(sessionID)
 
         // Re-check status after async operation again
         if (task.status !== "running") {
@@ -614,8 +614,13 @@ export class BackgroundManager {
           return
         }
 
-        if (hasIncompleteTodos) {
+        if (todoResult === "hasIncomplete") {
           log("[background-agent] Task has incomplete todos, waiting for todo-continuation:", task.id)
+          return
+        }
+
+        if (todoResult === "unknownError") {
+          log("[background-agent] Todo check failed, not completing task:", task.id)
           return
         }
 
@@ -790,15 +795,26 @@ export class BackgroundManager {
   private startPolling(): void {
     if (this.pollingInterval) return
 
-    this.pollingInterval = setInterval(() => {
-      this.pollRunningTasks()
-    }, 2000)
-    this.pollingInterval.unref()
+    const schedulePoll = (): void => {
+      this.pollingInterval = setTimeout(async () => {
+        await this.pollRunningTasks()
+
+        if (this.hasRunningTasks()) {
+          schedulePoll()
+        } else {
+          this.pollingInterval = undefined
+        }
+      }, 2000)
+
+      this.pollingInterval.unref()
+    }
+
+    schedulePoll()
   }
 
   private stopPolling(): void {
     if (this.pollingInterval) {
-      clearInterval(this.pollingInterval)
+      clearTimeout(this.pollingInterval)
       this.pollingInterval = undefined
     }
   }
@@ -874,6 +890,9 @@ export class BackgroundManager {
     // Atomically mark as completed to prevent race conditions
     task.status = "completed"
     task.completedAt = new Date()
+    if (task.sessionID) {
+      subagentSessions.delete(task.sessionID)
+    }
 
     // Release concurrency BEFORE any async operations to prevent slot leaks
     if (task.concurrencyKey) {
@@ -1165,9 +1184,14 @@ Use \`background_output(task_id="${task.id}")\` to retrieve this result when rea
           // Re-check status after async operation
           if (task.status !== "running") continue
 
-          const hasIncompleteTodos = await this.checkSessionTodos(sessionID)
-          if (hasIncompleteTodos) {
+          const todoResult = await this.checkSessionTodos(sessionID)
+          if (todoResult === "hasIncomplete") {
             log("[background-agent] Task has incomplete todos via polling, waiting:", task.id)
+            continue
+          }
+
+          if (todoResult === "unknownError") {
+            log("[background-agent] Todo check failed via polling, waiting:", task.id)
             continue
           }
 
@@ -1251,8 +1275,8 @@ Use \`background_output(task_id="${task.id}")\` to retrieve this result when rea
                 // Re-check status after async operation
                 if (task.status !== "running") continue
 
-                const hasIncompleteTodos = await this.checkSessionTodos(sessionID)
-                if (!hasIncompleteTodos) {
+                const todoResult = await this.checkSessionTodos(sessionID)
+                if (todoResult === "noTodos") {
                   await this.tryCompleteTask(task, "stability detection")
                   continue
                 }

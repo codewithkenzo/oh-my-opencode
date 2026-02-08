@@ -1,9 +1,9 @@
 import type { Plugin } from "@opencode-ai/plugin";
 import {
-  createTodoContinuationEnforcer,
+  createTodoContinuationEnforcerHook,
   createContextWindowMonitorHook,
   createSessionRecoveryHook,
-  createSessionNotification,
+  createSessionNotificationHook,
   createCommentCheckerHooks,
   createToolOutputTruncatorHook,
   createDirectoryAgentsInjectorHook,
@@ -85,7 +85,18 @@ import { createModelCacheState, getModelLimit } from "./plugin-state";
 import { createConfigHandler } from "./plugin-handlers";
 import { loadAllPluginComponents } from "./features/claude-code-plugin-loader";
 
-const OhMyOpenCodePlugin: Plugin = async (ctx) => {
+type ContextInjectorMessagesTransform = NonNullable<
+  ReturnType<typeof createContextInjectorMessagesTransformHook>["experimental.chat.messages.transform"]
+>;
+type ThinkingBlockMessagesTransform = NonNullable<
+  ReturnType<typeof createThinkingBlockValidatorHook>["experimental.chat.messages.transform"]
+>;
+type ExperimentalMessagesTransformInput = Parameters<ContextInjectorMessagesTransform>[0] &
+  Parameters<ThinkingBlockMessagesTransform>[0];
+type ExperimentalMessagesTransformOutput = Parameters<ContextInjectorMessagesTransform>[1] &
+  Parameters<ThinkingBlockMessagesTransform>[1];
+
+export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
   const startupTimer = createStartupTimer();
 
   // Start background tmux check immediately
@@ -120,7 +131,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
         allPlugins: externalNotifier.allPlugins,
       });
     } else {
-      sessionNotification = createSessionNotification(ctx);
+      sessionNotification = createSessionNotificationHook(ctx);
     }
   }
 
@@ -233,7 +244,7 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
   initTaskToastManager(ctx.client);
 
   const todoContinuationEnforcer = isHookEnabled("todo-continuation-enforcer")
-    ? createTodoContinuationEnforcer(ctx, { backgroundManager })
+    ? createTodoContinuationEnforcerHook(ctx, { backgroundManager })
     : null;
 
   if (sessionRecovery && todoContinuationEnforcer) {
@@ -454,15 +465,13 @@ const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     },
 
     "experimental.chat.messages.transform": async (
-      input: Record<string, never>,
-      output: { messages: Array<{ info: unknown; parts: unknown[] }> }
+      input: ExperimentalMessagesTransformInput,
+      output: ExperimentalMessagesTransformOutput
     ) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await contextInjectorMessagesTransform?.["experimental.chat.messages.transform"]?.(input, output as any);
+      await contextInjectorMessagesTransform?.["experimental.chat.messages.transform"]?.(input, output);
       await thinkingBlockValidator?.[
         "experimental.chat.messages.transform"
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ]?.(input, output as any);
+      ]?.(input, output);
 
     },
 
@@ -646,8 +655,6 @@ await editErrorRecovery?.["tool.execute.after"](input, output);
     },
   };
 };
-
-export default OhMyOpenCodePlugin;
 
 export type {
   OhMyOpenCodeConfig,

@@ -22,6 +22,7 @@ export interface SessionRecoveryOptions {
 }
 
 type Client = ReturnType<typeof createOpencodeClient>
+type SessionPromptInput = Parameters<Client["session"]["prompt"]>[0]
 
 type RecoveryErrorType =
   | "tool_result_missing"
@@ -181,11 +182,16 @@ async function recoverToolResultMissing(
   }))
 
   try {
-    await client.session.prompt({
+    const toolResultPrompt = {
       path: { id: sessionID },
-      // @ts-expect-error - SDK types may not include tool_result parts
       body: { parts: toolResultParts },
-    })
+    } as SessionPromptInput & {
+      body: {
+        parts: typeof toolResultParts
+      }
+    }
+
+    await client.session.prompt(toolResultPrompt)
 
     return true
   } catch {

@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test"
 
-import type { BackgroundManager } from "../features/background-agent"
-import { setMainSession, subagentSessions, _resetForTesting } from "../features/claude-code-session-state"
-import { createTodoContinuationEnforcer } from "./todo-continuation-enforcer"
+import type { BackgroundManager } from "../../features/background-agent"
+import { setMainSession, subagentSessions, _resetForTesting } from "../../features/claude-code-session-state"
+import { createTodoContinuationEnforcerHook } from "."
 
 describe("todo-continuation-enforcer", () => {
   let promptCalls: Array<{ sessionID: string; agent?: string; model?: { providerID?: string; modelID?: string }; text: string }>
@@ -75,7 +75,7 @@ describe("todo-continuation-enforcer", () => {
     const sessionID = "main-123"
     setMainSession(sessionID)
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {
       backgroundManager: createMockBackgroundManager(false),
     })
 
@@ -105,7 +105,7 @@ describe("todo-continuation-enforcer", () => {
       { id: "1", content: "Task 1", status: "completed", priority: "high" },
     ]})
 
-    const hook = createTodoContinuationEnforcer(mockInput, {})
+    const hook = createTodoContinuationEnforcerHook(mockInput, {})
 
     // #when - session goes idle
     await hook.handler({
@@ -123,7 +123,7 @@ describe("todo-continuation-enforcer", () => {
     const sessionID = "main-789"
     setMainSession(sessionID)
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {
       backgroundManager: createMockBackgroundManager(true),
     })
 
@@ -143,7 +143,7 @@ describe("todo-continuation-enforcer", () => {
     setMainSession("main-session")
     const otherSession = "other-session"
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - non-main session goes idle
     await hook.handler({
@@ -162,7 +162,7 @@ describe("todo-continuation-enforcer", () => {
     const bgTaskSession = "bg-task-session"
     subagentSessions.add(bgTaskSession)
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - background task session goes idle
     await hook.handler({
@@ -182,7 +182,7 @@ describe("todo-continuation-enforcer", () => {
     const sessionID = "main-cancel"
     setMainSession(sessionID)
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - session goes idle
     await hook.handler({
@@ -208,7 +208,7 @@ describe("todo-continuation-enforcer", () => {
     const sessionID = "main-grace"
     setMainSession(sessionID)
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - session goes idle
     await hook.handler({
@@ -234,7 +234,7 @@ describe("todo-continuation-enforcer", () => {
     const sessionID = "main-assistant"
     setMainSession(sessionID)
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - session goes idle
     await hook.handler({
@@ -261,7 +261,7 @@ describe("todo-continuation-enforcer", () => {
     const sessionID = "main-tool"
     setMainSession(sessionID)
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - session goes idle
     await hook.handler({
@@ -285,7 +285,7 @@ describe("todo-continuation-enforcer", () => {
     const sessionID = "main-recovery"
     setMainSession(sessionID)
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - mark as recovering
     hook.markRecovering(sessionID)
@@ -306,7 +306,7 @@ describe("todo-continuation-enforcer", () => {
     const sessionID = "main-recovery-done"
     setMainSession(sessionID)
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - mark as recovering then complete
     hook.markRecovering(sessionID)
@@ -328,7 +328,7 @@ describe("todo-continuation-enforcer", () => {
     const sessionID = "main-delete"
     setMainSession(sessionID)
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - session goes idle
     await hook.handler({
@@ -353,7 +353,7 @@ describe("todo-continuation-enforcer", () => {
     setMainSession(sessionID)
 
     // #when - create hook with skipAgents option (should not throw)
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {
       skipAgents: ["Prometheus (Planner)", "custom-agent"],
     })
 
@@ -371,7 +371,7 @@ describe("todo-continuation-enforcer", () => {
     const sessionID = "main-toast"
     setMainSession(sessionID)
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - session goes idle
     await hook.handler({
@@ -389,7 +389,7 @@ describe("todo-continuation-enforcer", () => {
     const sessionID = "main-no-throttle"
     setMainSession(sessionID)
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - first idle cycle completes
     await hook.handler({
@@ -421,7 +421,7 @@ describe("todo-continuation-enforcer", () => {
     const sessionID = "main-noabort-error"
     setMainSession(sessionID)
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - non-abort error occurs (e.g., network error, API error)
     await hook.handler({
@@ -465,7 +465,7 @@ describe("todo-continuation-enforcer", () => {
       { info: { id: "msg-2", role: "assistant", error: { name: "MessageAbortedError", data: { message: "The operation was aborted" } } } },
     ]
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - session goes idle
     await hook.handler({
@@ -488,7 +488,7 @@ describe("todo-continuation-enforcer", () => {
       { info: { id: "msg-2", role: "assistant" } },
     ]
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - session goes idle
     await hook.handler({
@@ -511,7 +511,7 @@ describe("todo-continuation-enforcer", () => {
       { info: { id: "msg-2", role: "user" } },
     ]
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - session goes idle
     await hook.handler({
@@ -534,7 +534,7 @@ describe("todo-continuation-enforcer", () => {
       { info: { id: "msg-2", role: "assistant", error: { name: "AbortError" } } },
     ]
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - session goes idle
     await hook.handler({
@@ -556,7 +556,7 @@ describe("todo-continuation-enforcer", () => {
       { info: { id: "msg-2", role: "assistant" } },
     ]
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - abort error event fires
     await hook.handler({
@@ -586,7 +586,7 @@ describe("todo-continuation-enforcer", () => {
       { info: { id: "msg-2", role: "assistant" } },
     ]
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - AbortError event fires
     await hook.handler({
@@ -616,7 +616,7 @@ describe("todo-continuation-enforcer", () => {
       { info: { id: "msg-2", role: "assistant" } },
     ]
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - abort error fires
     await hook.handler({
@@ -648,7 +648,7 @@ describe("todo-continuation-enforcer", () => {
       { info: { id: "msg-2", role: "assistant" } },
     ]
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - abort error fires
     await hook.handler({
@@ -687,7 +687,7 @@ describe("todo-continuation-enforcer", () => {
       { info: { id: "msg-2", role: "assistant" } },
     ]
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - abort error fires
     await hook.handler({
@@ -725,7 +725,7 @@ describe("todo-continuation-enforcer", () => {
       { info: { id: "msg-2", role: "assistant" } },
     ]
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - abort error fires
     await hook.handler({
@@ -763,7 +763,7 @@ describe("todo-continuation-enforcer", () => {
       { info: { id: "msg-2", role: "assistant" } },
     ]
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - abort error event fires (but API doesn't have it yet)
     await hook.handler({
@@ -793,7 +793,7 @@ describe("todo-continuation-enforcer", () => {
       { info: { id: "msg-2", role: "assistant", error: { name: "MessageAbortedError" } } },
     ]
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {})
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {})
 
     // #when - session goes idle without prior session.error event
     await hook.handler({
@@ -811,7 +811,7 @@ describe("todo-continuation-enforcer", () => {
     const sessionID = "main-model-preserve"
     setMainSession(sessionID)
 
-    const hook = createTodoContinuationEnforcer(createMockPluginInput(), {
+    const hook = createTodoContinuationEnforcerHook(createMockPluginInput(), {
       backgroundManager: createMockBackgroundManager(false),
     })
 
@@ -861,7 +861,7 @@ describe("todo-continuation-enforcer", () => {
       directory: "/tmp/test",
     } as any
 
-    const hook = createTodoContinuationEnforcer(mockInput, {
+    const hook = createTodoContinuationEnforcerHook(mockInput, {
       backgroundManager: createMockBackgroundManager(false),
     })
 

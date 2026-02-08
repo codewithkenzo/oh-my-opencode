@@ -1,13 +1,5 @@
 import type { LoadedSkill, SkillScope } from "./types"
-
-const SCOPE_PRIORITY: Record<SkillScope, number> = {
-	builtin: 1,
-	config: 2,
-	user: 3,
-	opencode: 4,
-	project: 5,
-	"opencode-project": 6,
-}
+import { SCOPE_PRIORITY } from "./constants"
 
 export interface SkillIndexEntry {
 	name: string

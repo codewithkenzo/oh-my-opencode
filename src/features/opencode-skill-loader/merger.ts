@@ -1,4 +1,4 @@
-import type { LoadedSkill, SkillScope, SkillMetadata } from "./types"
+import type { LoadedSkill, SkillMetadata } from "./types"
 import type { SkillsConfig, SkillDefinition } from "../../config/schema"
 import type { BuiltinSkill } from "../builtin-skills/types"
 import type { CommandDefinition } from "../claude-code-command-loader/types"
@@ -8,15 +8,8 @@ import { homedir } from "os"
 import { parseFrontmatter } from "../../shared/frontmatter"
 import { sanitizeModelField } from "../../shared/model-sanitizer"
 import { deepMerge } from "../../shared/deep-merge"
+import { SCOPE_PRIORITY } from "./constants"
 
-const SCOPE_PRIORITY: Record<SkillScope, number> = {
-  builtin: 1,
-  config: 2,
-  user: 3,
-  opencode: 4,
-  project: 5,
-  "opencode-project": 6,
-}
 
 function parseAllowedToolsValue(value: string | string[] | undefined): string[] | undefined {
   if (!value) return undefined

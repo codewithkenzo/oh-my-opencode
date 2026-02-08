@@ -14,6 +14,7 @@ import {
 } from "./constants"
 import * as os from "node:os"
 import { log } from "../../shared/logger"
+import { extractChannel } from "./utils"
 
 export function isLocalDevMode(directory: string): boolean {
   return getLocalDevPath(directory) !== null
@@ -270,7 +271,6 @@ export async function checkForUpdate(directory: string): Promise<UpdateCheckResu
     return { needsUpdate: false, currentVersion: null, latestVersion: null, isLocalDev: false, isPinned: false }
   }
 
-  const { extractChannel } = await import("./index")
   const channel = extractChannel(pluginInfo.pinnedVersion ?? currentVersion)
   const latestVersion = await getLatestVersion(channel)
   if (!latestVersion) {

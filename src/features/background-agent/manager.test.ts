@@ -1676,6 +1676,57 @@ describe("BackgroundManager - Non-blocking Queue Integration", () => {
   })
 })
 
+describe("BackgroundManager todo read failures", () => {
+  test("should not complete task on session.idle when todo-read fails", async () => {
+    // #given
+    const client = {
+      session: {
+        prompt: async () => ({}),
+        messages: async () => ({
+          data: [
+            {
+              info: { role: "assistant" },
+              parts: [{ type: "text", text: "done" }],
+            },
+          ],
+        }),
+        todo: async () => {
+          throw new Error("todo read failed")
+        },
+      },
+    }
+    const manager = new BackgroundManager({ client, directory: tmpdir() } as unknown as PluginInput)
+    stubNotifyParentSession(manager)
+
+    const task: BackgroundTask = {
+      id: "task-todo-failure",
+      sessionID: "session-todo-failure",
+      parentSessionID: "parent-session",
+      parentMessageID: "parent-message",
+      description: "Todo read failure regression",
+      prompt: "run",
+      agent: "explore",
+      status: "running",
+      startedAt: new Date(Date.now() - 10_000),
+    }
+    getTaskMap(manager).set(task.id, task)
+
+    // #when
+    const idleEvent = {
+      type: "session.idle",
+      properties: { sessionID: "session-todo-failure" },
+    } as unknown as Parameters<BackgroundManager["handleEvent"]>[0]
+    manager.handleEvent(idleEvent)
+    await new Promise((resolve) => setTimeout(resolve, 30))
+
+    // #then
+    expect(task.status).toBe("running")
+    expect(task.completedAt).toBeUndefined()
+
+    manager.shutdown()
+  })
+})
+
 describe("BackgroundManager.checkAndInterruptStaleTasks", () => {
   test("should NOT interrupt task running less than 30 seconds (min runtime guard)", async () => {
     const client = {
@@ -1925,4 +1976,3 @@ describe("BackgroundManager.checkAndInterruptStaleTasks", () => {
     expect(task.status).toBe("cancelled")
   })
 })
-

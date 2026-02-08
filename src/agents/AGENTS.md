@@ -23,8 +23,8 @@
 | | `R2 - researcher` | External docs/OSS research (librarian) |
 | | `V1 - viewer` | Multimodal/PDF analysis |
 | **Builders** | | |
-| | `T4 - frontend builder` | UI/UX (Takumi) |
-| | `D5 - backend builder` | APIs/databases (Daiku) |
+| | `T4 - frontend builder` | UI/UX (Takumi) - Oracle alias, configured via overrides |
+| | `D5 - backend builder` | APIs/databases (Daiku) - Oracle alias, configured via overrides |
 | | `H3 - bulk builder` | Bulk operations (Hayai) |
 | | `F1 - fast builder` | Fast scaffolding |
 | | `S6 - designer` | Design work (Shokunin) |

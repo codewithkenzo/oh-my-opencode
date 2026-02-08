@@ -103,7 +103,7 @@ export async function run(options: RunOptions): Promise<number> {
         }
       }
 
-      await eventProcessor.catch(() => {})
+      await eventProcessor.catch(() => { /* intentional: event processing failure should not crash the runner */ })
       cleanup()
       return 130
     } catch (err) {

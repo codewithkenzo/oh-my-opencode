@@ -49,15 +49,15 @@ export const LEGACY_TO_MUSASHI_NAME: Record<string, BuiltinAgentName> = {
 
 type AgentSource = AgentFactory | AgentConfig
 
-const agentSources: Record<BuiltinAgentName, AgentSource> = {
+const agentSources: Partial<Record<BuiltinAgentName, AgentSource>> = {
   "Musashi": createSisyphusAgent,
   "Musashi - boulder": createAtlasAgent as unknown as AgentFactory,
   "Musashi - plan": createMetisAgent,  // Prometheus/planning agent
   "K9 - advisor": createOracleAgent,
   "X1 - explorer": createExploreAgent,
   "R2 - researcher": createLibrarianAgent,
-  "T4 - frontend builder": createOracleAgent,  // Placeholder, will be configured via overrides
-  "D5 - backend builder": createOracleAgent,    // Placeholder, will be configured via overrides
+  "T4 - frontend builder": createOracleAgent,  // Intentional Oracle alias - configured via agent overrides in user config
+  "D5 - backend builder": createOracleAgent,    // Intentional Oracle alias - configured via agent overrides in user config
 }
 
 /**

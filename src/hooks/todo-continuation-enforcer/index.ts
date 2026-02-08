@@ -1,15 +1,15 @@
 import type { PluginInput } from "@opencode-ai/plugin"
 import { existsSync, readdirSync } from "node:fs"
 import { join } from "node:path"
-import type { BackgroundManager } from "../features/background-agent"
-import { getMainSessionID, subagentSessions } from "../features/claude-code-session-state"
+import type { BackgroundManager } from "../../features/background-agent"
+import { getMainSessionID, subagentSessions } from "../../features/claude-code-session-state"
 import {
     findNearestMessageWithFields,
     MESSAGE_STORAGE,
     type ToolPermission,
-} from "../features/hook-message-injector"
-import { log } from "../shared/logger"
-import { createSystemDirective, SystemDirectiveTypes } from "../shared/system-directive"
+} from "../../features/hook-message-injector"
+import { log } from "../../shared/logger"
+import { createSystemDirective, SystemDirectiveTypes } from "../../shared/system-directive"
 
 const HOOK_NAME = "todo-continuation-enforcer"
 
@@ -91,7 +91,7 @@ function isLastAssistantMessageAborted(messages: Array<{ info?: MessageInfo }>):
   return errorName === "MessageAbortedError" || errorName === "AbortError"
 }
 
-export function createTodoContinuationEnforcer(
+export function createTodoContinuationEnforcerHook(
   ctx: PluginInput,
   options: TodoContinuationEnforcerOptions = {}
 ): TodoContinuationEnforcer {

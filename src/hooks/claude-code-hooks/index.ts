@@ -111,7 +111,7 @@ export function createClaudeCodeHooksHook(
           path: { id: input.sessionID },
         })
         parentSessionId = sessionInfo.data?.parentID
-      } catch {}
+      } catch { /* intentional: hook execution failure should not block agent */ }
 
       const isFirstMessage = !sessionFirstMessageProcessed.has(input.sessionID)
       sessionFirstMessageProcessed.add(input.sessionID)
@@ -223,7 +223,7 @@ export function createClaudeCodeHooksHook(
                 duration: 4000,
               },
             })
-            .catch(() => {})
+            .catch(() => { /* intentional: hook output failure is non-critical */ })
           throw new Error(result.reason ?? "Hook blocked the operation")
         }
 
@@ -285,7 +285,7 @@ export function createClaudeCodeHooksHook(
                 duration: 4000,
               },
             })
-            .catch(() => {})
+            .catch(() => { /* intentional: hook output failure is non-critical */ })
         }
 
         if (result.warnings && result.warnings.length > 0) {
@@ -306,7 +306,7 @@ export function createClaudeCodeHooksHook(
                 duration: 2000,
               },
             })
-            .catch(() => {})
+            .catch(() => { /* intentional: hook output failure is non-critical */ })
         }
       }
     },
@@ -357,7 +357,7 @@ export function createClaudeCodeHooksHook(
             path: { id: sessionID },
           })
           parentSessionId = sessionInfo.data?.parentID
-        } catch {}
+        } catch { /* intentional: hook execution failure should not block agent */ }
 
         if (!isHookDisabled(config, "Stop")) {
           const stopCtx: StopContext = {

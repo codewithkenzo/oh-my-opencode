@@ -6,42 +6,9 @@ import { log } from "../../shared/logger"
 import { getConfigLoadErrors, clearConfigLoadErrors } from "../../shared/config-errors"
 import { runBunInstall } from "../../cli/config-manager"
 import type { AutoUpdateCheckerOptions } from "./types"
+import { extractChannel, isPrereleaseVersion, isDistTag, isPrereleaseOrDistTag } from "./utils"
 
 const SISYPHUS_SPINNER = ["·", "•", "●", "○", "◌", "◦", " "]
-
-export function isPrereleaseVersion(version: string): boolean {
-  return version.includes("-")
-}
-
-export function isDistTag(version: string): boolean {
-  const startsWithDigit = /^\d/.test(version)
-  return !startsWithDigit
-}
-
-export function isPrereleaseOrDistTag(pinnedVersion: string | null): boolean {
-  if (!pinnedVersion) return false
-  return isPrereleaseVersion(pinnedVersion) || isDistTag(pinnedVersion)
-}
-
-export function extractChannel(version: string | null): string {
-  if (!version) return "latest"
-  
-  if (isDistTag(version)) {
-    return version
-  }
-  
-  if (isPrereleaseVersion(version)) {
-    const prereleasePart = version.split("-")[1]
-    if (prereleasePart) {
-      const channelMatch = prereleasePart.match(/^(alpha|beta|rc|canary|next)/)
-      if (channelMatch) {
-        return channelMatch[1]
-      }
-    }
-  }
-  
-  return "latest"
-}
 
 export function createAutoUpdateCheckerHook(ctx: PluginInput, options: AutoUpdateCheckerOptions = {}) {
   const { showStartupToast = true, isSisyphusEnabled = false, autoUpdate = true } = options
@@ -256,5 +223,6 @@ async function showLocalDevToast(ctx: PluginInput, version: string | null, isSis
 }
 
 export type { UpdateCheckResult, AutoUpdateCheckerOptions } from "./types"
+export { extractChannel, isPrereleaseVersion, isDistTag, isPrereleaseOrDistTag } from "./utils"
 export { checkForUpdate } from "./checker"
 export { invalidatePackage, invalidateCache } from "./cache"
