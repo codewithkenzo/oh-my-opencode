@@ -1,27 +1,27 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-01-19T18:10:00+09:00
-**Commit:** 45660940
-**Branch:** dev
+**Generated:** 2026-02-08
+**Commit:** 7671cacd
+**Branch:** sprint5-cleanup
 
 ## OVERVIEW
 
-OpenCode plugin implementing multi-model agent orchestration (Claude Opus 4.5, GPT-5.2, Gemini 3, Grok, GLM-4.7). 31 lifecycle hooks, 20+ tools (LSP, AST-Grep, delegation), 11 specialized agents, Claude Code compatibility layer. "oh-my-zsh" for OpenCode.
+OpenCode plugin implementing multi-model agent orchestration (Claude Opus 4.5, GPT-5.2, Gemini 3, GLM-4.7). 31 lifecycle hooks, 20+ tools grouped into 7 lazy-loaded profiles, 8 specialized agents, Claude Code compatibility layer. "oh-my-zsh" for OpenCode.
 
 ## STRUCTURE
 
 ```
 oh-my-opencode/
 ├── src/
-│   ├── agents/        # 10 AI agents (Sisyphus, oracle, librarian, explore, frontend, etc.) - see src/agents/AGENTS.md
+│   ├── agents/        # 8 AI agents (Musashi, K9, X1, R2, T4, D5) - see src/agents/AGENTS.md
 │   ├── hooks/         # 31 lifecycle hooks (PreToolUse, PostToolUse, Stop, etc.) - see src/hooks/AGENTS.md
-│   ├── tools/         # 20+ tools (LSP, AST-Grep, delegation, session) - see src/tools/AGENTS.md
+│   ├── tools/         # 20+ tools with lazy-loaded profiles and category routing - see src/tools/AGENTS.md
 │   ├── features/      # Background agents, Claude Code compat layer - see src/features/AGENTS.md
 │   ├── shared/        # 43 cross-cutting utilities - see src/shared/AGENTS.md
 │   ├── cli/           # CLI installer, doctor, run - see src/cli/AGENTS.md
 │   ├── mcp/           # Built-in MCPs: websearch, context7, grep_app
 │   ├── config/        # Zod schema, TypeScript types
-│   └── index.ts       # Main plugin entry (568 lines)
+│   └── index.ts       # Main plugin entry (672 lines)
 ├── script/            # build-schema.ts, publish.ts, build-binaries.ts
 ├── packages/          # 7 platform-specific binaries
 └── dist/              # Build output (ESM + .d.ts)
@@ -31,7 +31,7 @@ oh-my-opencode/
 
 | Task | Location | Notes |
 |------|----------|-------|
-| Add agent | `src/agents/` | Create .ts with factory, add to `builtinAgents` in index.ts |
+| Add agent | `src/agents/` | Create factory and register in `agentSources` in `src/agents/utils.ts` |
 | Add hook | `src/hooks/` | Create dir with `createXXXHook()`, register in index.ts |
 | Add tool | `src/tools/` | Dir with index/types/constants/tools.ts, add to `builtinTools` |
 | Add MCP | `src/mcp/` | Create config, add to index.ts |
@@ -44,7 +44,7 @@ oh-my-opencode/
 | Skill MCP | `src/features/skill-mcp-manager/` | MCP servers embedded in skills |
 | CLI installer | `src/cli/install.ts` | Interactive TUI (462 lines) |
 | Doctor checks | `src/cli/doctor/checks/` | 14 health checks across 6 categories |
-| Orchestrator | `src/hooks/sisyphus-orchestrator/` | Main orchestration hook (771 lines) |
+| Orchestrator | `src/hooks/atlas/` | Main orchestration hook (773 lines) |
 
 ## TDD (Test-Driven Development)
 
@@ -52,9 +52,9 @@ oh-my-opencode/
 
 | Phase | Action | Verification |
 |-------|--------|--------------|
-| **RED** | Write test describing expected behavior | `bun test` → FAIL (expected) |
-| **GREEN** | Implement minimum code to pass | `bun test` → PASS |
-| **REFACTOR** | Improve code quality, remove duplication | `bun test` → PASS (must stay green) |
+| **RED** | Write test describing expected behavior | `bun test` -> FAIL (expected) |
+| **GREEN** | Implement minimum code to pass | `bun test` -> PASS |
+| **REFACTOR** | Improve code quality, remove duplication | `bun test` -> PASS (must stay green) |
 
 **Rules:**
 - NEVER write implementation before test
@@ -105,17 +105,14 @@ oh-my-opencode/
 
 | Agent | Default Model | Purpose |
 |-------|---------------|---------|
-| Sisyphus | anthropic/claude-opus-4-5 | Primary orchestrator with extended thinking |
-| oracle | openai/gpt-5.2 | Read-only consultation, high-IQ debugging |
-| librarian | opencode/glm-4.7-free | Multi-repo analysis, docs, GitHub search |
-| explore | opencode/grok-code | Fast codebase exploration (contextual grep) |
-| frontend-ui-ux-engineer | google/gemini-3-pro-preview | UI generation, visual design |
-| document-writer | google/gemini-3-flash | Technical documentation |
-| multimodal-looker | google/gemini-3-flash | PDF/image analysis |
-| Prometheus (Planner) | anthropic/claude-opus-4-5 | Strategic planning, interview mode |
-| Metis (Plan Consultant) | anthropic/claude-sonnet-4-5 | Pre-planning analysis |
-| Momus (Plan Reviewer) | anthropic/claude-sonnet-4-5 | Plan validation |
-| B3 - security | anthropic/claude-sonnet-4-5 | OWASP Top 10, security assessment, vulnerability detection |
+| Musashi | anthropic/claude-opus-4-5 | Primary orchestrator |
+| Musashi - boulder | anthropic/claude-sonnet-4-5 | Master orchestrator via delegate_task() |
+| Musashi - plan | anthropic/claude-opus-4-5 | Planning mode (Prometheus) |
+| K9 - advisor | openai/gpt-5.2 | Read-only strategic consultant |
+| X1 - explorer | anthropic/claude-haiku-4-5 | Fast codebase exploration |
+| R2 - researcher | opencode/glm-4.7 | Multi-repo analysis, docs, GitHub search |
+| T4 - frontend builder | (user config) | Frontend UI/UX via category routing |
+| D5 - backend builder | (user config) | Backend/general via category routing |
 
 ## COMMANDS
 
@@ -126,6 +123,35 @@ bun run rebuild        # Clean + Build
 bun run build:schema   # Schema only
 bun test               # Run tests (83 test files)
 ```
+
+## TOOL PROFILES
+
+7 profiles for lazy-loaded tool groups:
+
+| Profile | Tools | Purpose |
+|---------|-------|---------|
+| core | LSP, grep, glob, session, tickets | Always loaded |
+| research | Exa, Context7, grep_app, zread | Web/docs search |
+| browser | Playwright browser tools | Browser automation |
+| native-search | AST-Grep search/replace | Structural code search |
+| external-api | Runware, Civitai, Ripple | External service APIs |
+| local-service | Syncthing tools | Local service integration |
+| orchestration | delegate_task, background, skills | Agent coordination |
+
+## CATEGORY ROUTING
+
+`delegate_task(category=...)` routes to agents with auto-injected skills:
+
+| Category | Agent | Auto Skills |
+|----------|-------|-------------|
+| visual-engineering | T4 - frontend builder | frontend-ui-ux, frontend-stack, component-stack, ... |
+| ultrabrain | D5 - backend builder | blueprint-architect, effect-ts-expert, ... |
+| quick | D5 - backend builder | git-master, git-workflow |
+| most-capable | D5 - backend builder | blueprint-architect, testing-stack, ... |
+| writing | D5 - backend builder | kenzo-agents-md, research-tools, ... |
+| general | D5 - backend builder | linearis, git-workflow, research-tools, ... |
+
+Config: `src/tools/delegate-task/constants.ts` (`CATEGORY_AGENTS`, `CATEGORY_SKILLS`)
 
 ## DEPLOYMENT
 
@@ -139,23 +165,23 @@ bun test               # Run tests (83 test files)
 
 ## CI PIPELINE
 
-- **ci.yml**: Parallel test/typecheck → build → auto-commit schema on master → rolling `next` draft release
-- **publish.yml**: Manual workflow_dispatch → version bump → changelog → 8-package OIDC npm publish → force-push master
+- **ci.yml**: Parallel test/typecheck -> build -> auto-commit schema on master -> rolling `next` draft release
+- **publish.yml**: Manual workflow_dispatch -> version bump -> changelog -> 8-package OIDC npm publish -> force-push master
 
 ## COMPLEXITY HOTSPOTS
 
 | File | Lines | Description |
 |------|-------|-------------|
-| `src/agents/orchestrator-sisyphus.ts` | 1531 | Orchestrator agent, 7-section delegation, wisdom accumulation |
-| `src/features/builtin-skills/skills.ts` | 1203 | Skill definitions (playwright, git-master, frontend-ui-ux) |
+| `src/agents/atlas.ts` | 572 | Master orchestrator agent (boulder flow) |
+| `src/features/builtin-skills/skills/git-master.ts` | 1108 | Git operations policy, commit/PR workflow rules |
 | `src/agents/prometheus-prompt.ts` | 1196 | Planning agent, interview mode, Momus loop |
-| `src/features/background-agent/manager.ts` | 1165 | Task lifecycle, concurrency, notification batching |
-| `src/hooks/sisyphus-orchestrator/index.ts` | 771 | Orchestrator hook implementation |
-| `src/tools/delegate-task/tools.ts` | 761 | Category-based task delegation |
-| `src/cli/config-manager.ts` | 730 | JSONC parsing, multi-level config |
-| `src/agents/sisyphus.ts` | 640 | Main Sisyphus prompt |
+| `src/features/background-agent/manager.ts` | 1359 | Task lifecycle, concurrency, notification batching |
+| `src/hooks/atlas/index.ts` | 773 | Atlas orchestration hook implementation |
+| `src/tools/delegate-task/tools.ts` | 788 | Category-based task delegation |
+| `src/cli/config-manager.ts` | 617 | JSONC parsing, multi-level config |
+| `src/agents/sisyphus.ts` | 450 | Main Musashi agent prompt |
 | `src/features/builtin-commands/templates/refactor.ts` | 619 | Refactoring command template |
-| `src/tools/lsp/client.ts` | 596 | LSP protocol, JSON-RPC |
+| `src/tools/lsp/client.ts` | 598 | LSP protocol, JSON-RPC |
 
 ## MCP ARCHITECTURE
 
@@ -168,7 +194,7 @@ Three-tier MCP system:
 
 - **Zod validation**: `src/config/schema.ts`
 - **JSONC support**: Comments and trailing commas
-- **Multi-level**: Project (`.opencode/`) → User (`~/.config/opencode/`)
+- **Multi-level**: Project (`.opencode/`) -> User (`~/.config/opencode/`)
 - **CLI doctor**: Validates config and reports errors
 
 ## NOTES
