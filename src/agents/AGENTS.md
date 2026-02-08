@@ -30,7 +30,7 @@ Default category -> agent routing is defined in `src/tools/delegate-task/constan
 | `artistry` | `T4 - frontend builder` | Creative visual tasks |
 | `quick` | `D5 - backend builder` | Fast/low-overhead implementation |
 | `most-capable` | `D5 - backend builder` | High-capability execution path |
-| `writing` | `W7 - writer` | Legacy alias, normalized to `D5 - backend builder` |
+| `writing` | `D5 - backend builder` | Documentation, prose, technical writing (W7 is legacy config alias) |
 | `general` | `D5 - backend builder` | Default general-purpose route |
 
 User category config can override routing per category via `categories.<name>.agent` (see `resolveCategoryConfig()` in `src/tools/delegate-task/tools.ts`).
