@@ -11,7 +11,11 @@ const mockContext: Parameters<ToolDefinition["execute"]>[1] = {
   sessionID: "test-session",
   messageID: "msg-1",
   agent: "test-agent",
+  directory: "/tmp/test",
+  worktree: "/tmp/test",
   abort: new AbortController().signal,
+  metadata: () => {},
+  ask: async () => {},
 }
 
 describe("createLazyTool", () => {

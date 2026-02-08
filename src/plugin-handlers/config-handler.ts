@@ -36,8 +36,34 @@ import { migrateAgentConfig } from "../shared/permission-compat";
 import { AGENT_NAME_MAP } from "../shared/migration";
 import { PROMETHEUS_SYSTEM_PROMPT, PROMETHEUS_PERMISSION } from "../agents/prometheus-prompt";
 import { DEFAULT_CATEGORIES } from "../tools/delegate-task/constants";
+import { TOOL_PROFILES } from "../tools/tool-profiles";
+import type { ToolProfile } from "../tools/tool-profiles";
 import type { ModelCacheState } from "../plugin-state";
 import type { CategoryConfig } from "../config/schema";
+
+const AGENT_DENIED_PROFILES: Record<string, ToolProfile[]> = {
+  "Musashi": ["external-api", "local-service"],
+  "Musashi - boulder": ["external-api", "local-service", "browser"],
+  "Musashi - plan": ["external-api", "local-service", "browser"],
+  "K9 - advisor": ["external-api", "local-service", "browser", "native-search", "orchestration"],
+  "X1 - explorer": ["external-api", "local-service", "browser", "orchestration"],
+  "R2 - researcher": ["external-api", "local-service", "browser", "native-search"],
+  "T4 - frontend builder": ["external-api", "local-service"],
+  "D5 - backend builder": ["external-api", "local-service", "browser"],
+};
+
+function buildProfileDenials(deniedProfiles: ToolProfile[]): Record<string, "deny"> {
+  const denials: Record<string, "deny"> = {};
+  for (const profile of deniedProfiles) {
+    const tools = TOOL_PROFILES[profile];
+    if (tools) {
+      for (const toolName of tools) {
+        denials[toolName] = "deny";
+      }
+    }
+  }
+  return denials;
+}
 
 export interface ConfigHandlerDeps {
   ctx: { directory: string; client?: any };
@@ -336,7 +362,7 @@ export function createConfigHandler(deps: ConfigHandlerDeps) {
       config.agent = {
         ...agentConfig,
         ...Object.fromEntries(
-          Object.entries(builtinAgents).filter(([k]) => k !== "Musashi")
+          Object.entries(builtinAgents).filter(([k]) => !(k in agentConfig))
         ),
         ...userAgents,
         ...projectAgents,
@@ -386,6 +412,14 @@ export function createConfigHandler(deps: ConfigHandlerDeps) {
     if (agentResult["D5 - backend builder"]) {
       const agent = agentResult["D5 - backend builder"] as AgentWithPermission;
       agent.permission = { ...agent.permission, delegate_task: "allow" };
+    }
+
+    for (const [agentName, deniedProfiles] of Object.entries(AGENT_DENIED_PROFILES)) {
+      if (agentResult[agentName]) {
+        const agent = agentResult[agentName] as AgentWithPermission;
+        const denials = buildProfileDenials(deniedProfiles);
+        agent.permission = { ...denials, ...agent.permission };
+      }
     }
 
     config.permission = {

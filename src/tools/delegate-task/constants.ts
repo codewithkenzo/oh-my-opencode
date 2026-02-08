@@ -229,20 +229,59 @@ export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 
 export const CATEGORY_SKILLS: Record<string, string[]> = {
   "visual-engineering": [
-    "frontend-ui-ux", // builtin - Designer-turned-developer for UI/UX
+    "frontend-ui-ux",    // builtin - Designer-turned-developer for UI/UX
+    "frontend-stack",    // React 19, TanStack, Tailwind v4 ecosystem overview
+    "component-stack",   // React 19, TanStack, Tailwind v4, Motion v12, Animate UI patterns
+    "kenzo-tailwind",    // Tailwind CSS v4 patterns, @theme, OKLCH, container queries
+    "motion-system",     // Motion v12 animation - springs, gestures, layout transitions
+    "visual-assets",     // Icon libraries, fonts, backgrounds for frontend
   ],
-  ultrabrain: [], // No matching skills available yet
+  ultrabrain: [
+    "blueprint-architect",  // Architecture planning, blueprints, stack decisions
+    "effect-ts-expert",     // Effect-TS typed errors, retry, DI, resilient APIs
+    "remeda-utils",         // Remeda functional utilities - pipe, type-safe transforms
+    "zod-patterns",         // Zod v4 validation - schemas, transforms, API contracts
+  ],
   artistry: [
-    "frontend-ui-ux", // builtin - Strong aesthetic focus for creative UI work
+    "frontend-ui-ux",       // builtin - Strong aesthetic focus for creative UI work
+    "kenzo-design-tokens",  // Design tokens - colors, typography, spacing, motion
+    "motion-system",        // Motion v12 animation patterns
+    "visual-assets",        // Icon libraries, fonts, backgrounds
+    "kenzo-portfolio-craft", // Dark-first design, choreographed animations
+    "ui-designer",          // Visual design workflow, brand identity, color palettes
   ],
   quick: [
-    "git-master", // builtin - Atomic commits, rebase/squash, history search
+    "git-master",           // builtin - Atomic commits, rebase/squash, history search
+    "git-workflow",         // Conventional commits, GitHub CLI, branches, PRs
   ],
-  "most-capable": [], // Intentionally empty - agent chooses skills dynamically
-  writing: [], // No matching skills available yet
+  "most-capable": [
+    "blueprint-architect",  // Architecture planning, blueprints
+    "effect-ts-expert",     // Effect-TS typed errors, retry, DI
+    "testing-stack",        // Vitest, Testcontainers, Playwright for Bun
+    "research-tools",       // Websearch (exa), grep_app, context7, zread
+    "backend-debugging",    // Backend debugging - APIs, databases, servers
+  ],
+  writing: [
+    "kenzo-agents-md",     // Create effective AGENTS.md files
+    "kenzo-seo-geo",       // GEO/AEO for LLM discoverability, llms.txt
+    "research-tools",      // Research tools for documentation research
+  ],
   general: [
-    "linearis", // builtin - Linear CLI for issue tracking
+    "linearis",            // builtin - Linear CLI for issue tracking
+    "git-workflow",        // Conventional commits, GitHub CLI
+    "research-tools",      // Websearch, grep_app, context7, zread
+    "zod-patterns",        // Zod v4 validation patterns
   ],
+}
+
+export const CATEGORY_AGENTS: Record<string, string> = {
+  "visual-engineering": "T4 - frontend builder",
+  ultrabrain: "D5 - backend builder",
+  artistry: "T4 - frontend builder",
+  quick: "D5 - backend builder",
+  "most-capable": "D5 - backend builder",
+  writing: "W7 - writer",
+  general: "D5 - backend builder",
 }
 
 const BUILTIN_CATEGORIES = Object.keys(DEFAULT_CATEGORIES).join(", ")
@@ -251,7 +290,7 @@ export const DELEGATE_TASK_DESCRIPTION = `Spawn agent task with category-based o
 
 MUTUALLY EXCLUSIVE: Provide EITHER category OR agent, not both (unless resuming).
 
-- category: Use predefined category (${BUILTIN_CATEGORIES}) → Spawns Sisyphus-Junior with category config
+- category: Use predefined category (${BUILTIN_CATEGORIES}) → Spawns domain-specific agent with category config
 - agent: Use specific agent directly (e.g., "K9 - advisor", "X1 - explorer")
 - background: true=async (returns task_id), false=sync (waits for result). Default: false. Use background=true ONLY for parallel exploration with 5+ independent queries.
 - resume: Session ID to resume (from previous task output). Continues agent with FULL CONTEXT PRESERVED - saves tokens, maintains continuity.

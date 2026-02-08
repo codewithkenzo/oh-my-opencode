@@ -10,7 +10,8 @@
 tools/
 ├── [tool-name]/
 │   ├── index.ts      # Barrel export
-│   ├── tools.ts      # Business logic, ToolDefinition
+│   ├── def.ts        # Lightweight metadata (description + args schema)
+│   ├── tools.ts      # Business logic, ToolDefinition (imports from def.ts)
 │   ├── types.ts      # Zod schemas
 │   └── constants.ts  # Fixed values, descriptions
 ├── lsp/              # 11 tools: goto_definition, references, symbols, diagnostics, rename
@@ -51,8 +52,32 @@ tools/
      execute: async (args) => { /* ... */ }
    })
    ```
+2b. For lazy-loadable tools, extract metadata to `def.ts`:
+   ```typescript
+   import { tool } from "@opencode-ai/plugin/tool"
+
+   export const myToolDef = {
+     description: "...",
+     args: { param: tool.schema.string() },
+   }
+   ```
+   Then spread in `tools.ts`:
+   ```typescript
+   import { myToolDef } from "./def"
+
+   export const myTool: ToolDefinition = tool({
+     ...myToolDef,
+     execute: async (args) => { /* ... */ }
+   })
+   ```
 3. Export from `src/tools/index.ts`
 4. Add to `builtinTools` object
+
+### Lazy Loading (def.ts Pattern)
+
+- Split lightweight metadata (`description`, `args`) into `def.ts`, keep execution in `tools.ts`.
+- This enables true lazy loading by avoiding heavy implementation imports during tool discovery.
+- Current adopters: `browser`, `runware`, `raindrop`, `syncthing`, `ticket`, `civitai`, `ast-grep`, `unified-model-search`.
 
 ## LSP SPECIFICS
 

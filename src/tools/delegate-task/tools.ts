@@ -4,7 +4,7 @@ import { join } from "node:path"
 import type { BackgroundManager } from "../../features/background-agent"
 import type { DelegateTaskArgs } from "./types"
 import type { CategoryConfig, CategoriesConfig, GitMasterConfig } from "../../config/schema"
-import { DELEGATE_TASK_DESCRIPTION, DEFAULT_CATEGORIES, CATEGORY_PROMPT_APPENDS, CATEGORY_SKILLS } from "./constants"
+import { DELEGATE_TASK_DESCRIPTION, DEFAULT_CATEGORIES, CATEGORY_PROMPT_APPENDS, CATEGORY_SKILLS, CATEGORY_AGENTS } from "./constants"
 import { findNearestMessageWithFields, findFirstMessageWithAgent, MESSAGE_STORAGE } from "../../features/hook-message-injector"
 import { resolveMultipleSkillsAsync } from "../../features/opencode-skill-loader/skill-content"
 import { discoverSkills } from "../../features/opencode-skill-loader"
@@ -15,7 +15,7 @@ import { log, getAgentToolRestrictions, resolveModel, getOpenCodeConfigPaths } f
 
 type OpencodeClient = PluginInput["client"]
 
-const SISYPHUS_JUNIOR_AGENT = "Sisyphus-Junior"
+const SISYPHUS_JUNIOR_AGENT = "D5 - backend builder"
 const CATEGORY_EXAMPLES = Object.keys(DEFAULT_CATEGORIES).map(k => `'${k}'`).join(", ")
 
 function parseModelString(model: string): { providerID: string; modelID: string } | undefined {
@@ -135,6 +135,7 @@ export function resolveCategoryConfig(
     ...defaultConfig,
     ...userConfig,
     model,
+    agent: userConfig?.agent || CATEGORY_AGENTS[categoryName],
   }
 
   let promptAppend = defaultPromptAppend
@@ -491,7 +492,7 @@ ${textContent || "(No text output)"}`
             break
         }
 
-        agentToUse = SISYPHUS_JUNIOR_AGENT
+        agentToUse = resolved.config.agent || CATEGORY_AGENTS[args.category] || SISYPHUS_JUNIOR_AGENT
         const parsedModel = parseModelString(actualModel)
         categoryModel = parsedModel
           ? (resolved.config.variant

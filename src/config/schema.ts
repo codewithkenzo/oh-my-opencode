@@ -202,6 +202,8 @@ export const CategoryConfigSchema = z.object({
   description: z.string().optional(),
   model: z.string().optional(),
   variant: z.string().optional(),
+  /** Agent to use for this category. Overrides the default CATEGORY_AGENTS mapping. */
+  agent: z.string().optional(),
   temperature: z.number().min(0).max(2).optional(),
   top_p: z.number().min(0).max(1).optional(),
   maxTokens: z.number().optional(),

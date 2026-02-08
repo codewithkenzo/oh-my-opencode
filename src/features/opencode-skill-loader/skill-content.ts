@@ -71,12 +71,23 @@ async function getAllSkills(options?: SkillResolutionOptions): Promise<LoadedSki
 }
 
 async function extractSkillTemplate(skill: LoadedSkill): Promise<string> {
+	// Prefer the fully-assembled template (includes references/, supporting files,
+	// and merged subdirectory content) over re-reading the raw SKILL.md file.
+	// The template is assembled by loadSkillFromPath() during skill discovery.
+	if (skill.definition.template) {
+		// Extract the body from the <skill-instruction> wrapper if present
+		const match = skill.definition.template.match(/<skill-instruction>([\s\S]*?)<\/skill-instruction>/)
+		if (match) {
+			return match[1].trim()
+		}
+		return skill.definition.template
+	}
 	if (skill.path) {
 		const content = readFileSync(skill.path, "utf-8")
 		const { body } = parseFrontmatter(content)
 		return body.trim()
 	}
-	return skill.definition.template || ""
+	return ""
 }
 
 export { clearSkillCache, getAllSkills, extractSkillTemplate }
