@@ -27,19 +27,6 @@ const allBuiltinMcps: Record<McpName, BuiltinMcpConfig> = {
   websearch,
   context7,
   grep_app,
-  runware: {
-    type: "local",
-    command: "bunx",
-    args: ["oh-my-opencode-mcp-runware"],
-    env: process.env.RUNWARE_API_KEY ? { RUNWARE_API_KEY: process.env.RUNWARE_API_KEY } : undefined,
-    enabled: true,
-  },
-  civitai: {
-    type: "local",
-    command: "bunx",
-    args: ["oh-my-opencode-mcp-civitai"],
-    enabled: true,
-  },
 }
 
 export function createBuiltinMcps(disabledMcps: string[] = []) {
