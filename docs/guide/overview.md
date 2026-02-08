@@ -6,11 +6,11 @@ Learn about Oh My OpenCode, a plugin that transforms OpenCode into the best agen
 
 ## TL;DR
 
-> **Sisyphus agent strongly recommends Opus 4.5 model. Using other models may result in significantly degraded experience.**
+> **Musashi strongly recommends Opus 4.5 for orchestration quality. Using weaker defaults may degrade results on complex tasks.**
 
 **Feeling lazy?** Just include `ultrawork` (or `ulw`) in your prompt. That's it. The agent figures out the rest.
 
-**Need precision?** Press **Tab** to enter Prometheus (Planner) mode, create a work plan through an interview process, then run `/start-work` to execute it with full orchestration.
+**Need precision?** Press **Tab** to enter Musashi - plan mode, create a work plan through an interview process, then run `/start-work` for Musashi - boulder execution.
 
 ---
 
@@ -34,7 +34,7 @@ ulw add authentication to my Next.js app
 ```
 
 The agent will automatically:
-1. Explore your codebase to understand existing patterns
+1. Map your codebase to understand existing patterns
 2. Research best practices via specialized agents
 3. Implement the feature following your conventions
 4. Verify with diagnostics and tests
@@ -44,23 +44,23 @@ This is the "just do it" mode. Full automatic mode.
 The agent is already smart enough, so it explores the codebase and make plans itself.
 **You don't have to think that deep. Agent will think that deep.**
 
-### Option 2: Prometheus Mode (For Precise Work)
+### Option 2: Musashi - plan Mode (For Precise Work)
 
-For complex or critical tasks, press **Tab** to switch to Prometheus (Planner) mode.
+For complex or critical tasks, press **Tab** to switch to Musashi - plan mode.
 
 **How it works:**
 
-1. **Prometheus interviews you** - Acts as your personal consultant, asking clarifying questions while researching your codebase to understand exactly what you need.
+1. **Musashi - plan interviews you** - Acts as your planning consultant, asking clarifying questions while researching your codebase to scope work correctly.
 
-2. **Plan generation** - Based on the interview, Prometheus generates a detailed work plan with tasks, acceptance criteria, and guardrails. Optionally reviewed by Momus (plan reviewer) for high-accuracy validation.
+2. **Plan generation** - Based on the interview, Musashi - plan generates a detailed work plan with tasks, acceptance criteria, and guardrails. Consultant/review passes are handled inside Musashi - plan mode.
 
-3. **Run `/start-work`** - The Orchestrator-Sisyphus takes over:
+3. **Run `/start-work`** - Musashi - boulder takes over:
    - Distributes tasks to specialized sub-agents
    - Verifies each task completion independently
    - Accumulates learnings across tasks
    - Tracks progress across sessions (resume anytime)
 
-**When to use Prometheus:**
+**When to use Musashi - plan:**
 - Multi-day or multi-session projects
 - Critical production changes
 - Complex refactoring spanning many files
@@ -70,27 +70,27 @@ For complex or critical tasks, press **Tab** to switch to Prometheus (Planner) m
 
 ## Critical Usage Guidelines
 
-### Always Use Prometheus + Orchestrator Together
+### Always Use Musashi - plan + Musashi - boulder Together
 
-**Do NOT use `orchestrator-sisyphus` without `/start-work`.**
+**Do NOT start orchestration without `/start-work`.**
 
-The orchestrator is designed to execute work plans created by Prometheus. Using it directly without a plan leads to unpredictable behavior.
+Execution orchestration is designed to run plans created by Musashi - plan. Starting without a plan leads to unstable outcomes.
 
 **Correct workflow:**
 ```
-1. Press Tab → Enter Prometheus mode
-2. Describe work → Prometheus interviews you
-3. Confirm plan → Review .sisyphus/plans/*.md
-4. Run /start-work → Orchestrator executes
+1. Press Tab → Enter Musashi - plan mode
+2. Describe work → Musashi - plan interviews you
+3. Confirm plan → Review `.sisyphus/plans/*.md`
+4. Run `/start-work` → Musashi - boulder executes
 ```
 
-**Prometheus and Orchestrator-Sisyphus are a pair. Always use them together.**
+**Musashi - plan and Musashi - boulder are a pair. Always use them together.**
 
 ---
 
 ## Next Steps
 
-- [Understanding the Orchestration System](./understanding-orchestration-system.md) - Deep dive into Prometheus → Orchestrator → Junior workflow
+- [Understanding the Orchestration System](./understanding-orchestration-system.md) - Deep dive into Musashi - plan → Musashi - boulder → category-routed execution workflow
 - [Ultrawork Manifesto](../ultrawork-manifesto.md) - Philosophy and principles behind Oh My OpenCode
 - [Installation Guide](./installation.md) - Detailed installation instructions
 - [Configuration Guide](../configurations.md) - Customize agents, models, and behaviors

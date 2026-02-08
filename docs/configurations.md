@@ -38,11 +38,11 @@ When both `oh-my-opencode.jsonc` and `oh-my-opencode.json` files exist, `.jsonc`
 
   /* Agent overrides - customize models for specific tasks */
   "agents": {
-    "oracle": {
-      "model": "openai/gpt-5.2"  // GPT for strategic reasoning
+    "K9 - advisor": {
+      "model": "openai/gpt-5.2"  // Strategic reasoning
     },
-    "explore": {
-      "model": "opencode/grok-code"  // Free & fast for exploration
+    "X1 - explorer": {
+      "model": "anthropic/claude-haiku-4-5"  // Fast exploration
     },
   },
 }
@@ -59,11 +59,11 @@ Override built-in agent settings:
 ```json
 {
   "agents": {
-    "explore": {
+    "X1 - explorer": {
       "model": "anthropic/claude-haiku-4-5",
       "temperature": 0.5
     },
-    "frontend-ui-ux-engineer": {
+    "T4 - frontend builder": {
       "disable": true
     }
   }
@@ -77,14 +77,14 @@ Use `prompt_append` to add extra instructions without replacing the default syst
 ```json
 {
   "agents": {
-    "librarian": {
+    "R2 - researcher": {
       "prompt_append": "Always use the elisp-dev-mcp for Emacs Lisp documentation lookups."
     }
   }
 }
 ```
 
-You can also override settings for `Sisyphus` (the main orchestrator) and `build` (the default agent) using the same options.
+You can also override settings for `Musashi` (the primary orchestrator), `Musashi - boulder`, and `Musashi - plan` using the same options.
 
 ### Permission Options
 
@@ -93,7 +93,7 @@ Fine-grained control over what agents can do:
 ```json
 {
   "agents": {
-    "explore": {
+    "X1 - explorer": {
       "permission": {
         "edit": "deny",
         "bash": "ask",
@@ -116,11 +116,11 @@ Or disable via `disabled_agents` in `~/.config/opencode/oh-my-opencode.json` or 
 
 ```json
 {
-  "disabled_agents": ["oracle", "frontend-ui-ux-engineer"]
+  "disabled_agents": ["K9 - advisor", "T4 - frontend builder"]
 }
 ```
 
-Available agents: `oracle`, `librarian`, `explore`, `frontend-ui-ux-engineer`, `document-writer`, `multimodal-looker`
+Available agents: `Musashi`, `Musashi - boulder`, `Musashi - plan`, `K9 - advisor`, `X1 - explorer`, `R2 - researcher`, `T4 - frontend builder`, `D5 - backend builder`
 
 ## Built-in Skills
 
@@ -154,17 +154,21 @@ Configure git-master skill behavior:
 
 | Option                   | Default | Description                                                                      |
 | ------------------------ | ------- | -------------------------------------------------------------------------------- |
-| `commit_footer`          | `true`  | Adds "Ultraworked with Sisyphus" footer to commit messages.                      |
-| `include_co_authored_by` | `true`  | Adds `Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>` trailer to commits. |
+| `commit_footer`          | `true`  | Adds "Ultraworked with Musashi" footer to commit messages.                      |
+| `include_co_authored_by` | `true`  | Adds `Co-authored-by: Musashi <clio-agent@sisyphuslabs.ai>` trailer to commits. |
 
-## Sisyphus Agent
+## Musashi Orchestration (`sisyphus_agent` key)
 
-When enabled (default), Sisyphus provides a powerful orchestrator with optional specialized agents:
+When enabled (default), Musashi orchestration provides the 8-agent architecture:
 
-- **Sisyphus**: Primary orchestrator agent (Claude Opus 4.5)
-- **OpenCode-Builder**: OpenCode's default build agent, renamed due to SDK limitations (disabled by default)
-- **Prometheus (Planner)**: OpenCode's default plan agent with work-planner methodology (enabled by default)
-- **Metis (Plan Consultant)**: Pre-planning analysis agent that identifies hidden requirements and AI failure points
+- **Musashi**: Primary orchestrator agent (`anthropic/claude-opus-4-5`)
+- **Musashi - boulder**: Master orchestrator via `delegate_task()` (`anthropic/claude-sonnet-4-5`)
+- **Musashi - plan**: Planning mode for interview/plan/review (`anthropic/claude-opus-4-5`)
+- **K9 - advisor**: Read-only strategic consultant (`openai/gpt-5.2`)
+- **X1 - explorer**: Fast codebase exploration (`anthropic/claude-haiku-4-5`)
+- **R2 - researcher**: Multi-repo/docs/GitHub research (`glm-4.7`)
+- **T4 - frontend builder**: Category-routed frontend specialist (user configured model)
+- **D5 - backend builder**: Category-routed backend/general specialist (user configured model)
 
 **Configuration Options:**
 
@@ -179,19 +183,19 @@ When enabled (default), Sisyphus provides a powerful orchestrator with optional 
 }
 ```
 
-**Example: Enable OpenCode-Builder:**
+**Example: Keep orchestration enabled (default):**
 
 ```json
 {
   "sisyphus_agent": {
-    "default_builder_enabled": true
+    "default_builder_enabled": false
   }
 }
 ```
 
-This enables OpenCode-Builder agent alongside Sisyphus. The default build agent is always demoted to subagent mode when Sisyphus is enabled.
+This keeps Musashi orchestration active while preserving the default build-agent demotion behavior.
 
-**Example: Disable all Sisyphus orchestration:**
+**Example: Disable all Musashi orchestration:**
 
 ```json
 {
@@ -201,23 +205,23 @@ This enables OpenCode-Builder agent alongside Sisyphus. The default build agent 
 }
 ```
 
-You can also customize Sisyphus agents like other agents:
+You can also customize Musashi architecture agents like other agents:
 
 ```json
 {
   "agents": {
-    "Sisyphus": {
-      "model": "anthropic/claude-sonnet-4",
-      "temperature": 0.3
+    "Musashi": {
+      "model": "anthropic/claude-opus-4-5",
+      "temperature": 0.1
     },
-    "OpenCode-Builder": {
-      "model": "anthropic/claude-opus-4"
-    },
-    "Prometheus (Planner)": {
-      "model": "openai/gpt-5.2"
-    },
-    "Metis (Plan Consultant)": {
+    "Musashi - boulder": {
       "model": "anthropic/claude-sonnet-4-5"
+    },
+    "Musashi - plan": {
+      "model": "anthropic/claude-opus-4-5"
+    },
+    "K9 - advisor": {
+      "model": "openai/gpt-5.2"
     }
   }
 }
@@ -225,10 +229,10 @@ You can also customize Sisyphus agents like other agents:
 
 | Option                    | Default | Description                                                                                                                            |
 | ------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `disabled`                | `false` | When `true`, disables all Sisyphus orchestration and restores original build/plan as primary.                                          |
+| `disabled`                | `false` | When `true`, disables Musashi orchestration and restores OpenCode default build/plan behavior.                                          |
 | `default_builder_enabled` | `false` | When `true`, enables OpenCode-Builder agent (same as OpenCode build, renamed due to SDK limitations). Disabled by default.             |
-| `planner_enabled`         | `true`  | When `true`, enables Prometheus (Planner) agent with work-planner methodology. Enabled by default.                                     |
-| `replace_plan`            | `true`  | When `true`, demotes default plan agent to subagent mode. Set to `false` to keep both Prometheus (Planner) and default plan available. |
+| `planner_enabled`         | `true`  | When `true`, enables `Musashi - plan` planning mode. Enabled by default.                                     |
+| `replace_plan`            | `true`  | When `true`, routes planning through Musashi planning flow. Set to `false` to keep default OpenCode plan behavior available. |
 
 ## Background Tasks
 
@@ -266,24 +270,29 @@ Configure concurrency limits for background agent tasks. This controls how many 
 
 ## Categories
 
-Categories enable domain-specific task delegation via the `delegate_task` tool. Each category applies runtime presets (model, temperature, prompt additions) when calling the `Sisyphus-Junior` agent.
+Categories enable domain-specific task delegation via the `delegate_task` tool. Instead of using a fixed single worker, categories route work to `T4 - frontend builder` or `D5 - backend builder` with auto-injected skill bundles.
 
 **Default Categories:**
 
-| Category         | Model                         | Description                                                                  |
-| ---------------- | ----------------------------- | ---------------------------------------------------------------------------- |
-| `visual`         | `google/gemini-3-pro-preview` | Frontend, UI/UX, design-focused tasks. High creativity (temp 0.7).           |
-| `business-logic` | `openai/gpt-5.2`              | Backend logic, architecture, strategic reasoning. Low creativity (temp 0.1). |
+| Category | Routed Agent | Auto Skills |
+| -------- | ------------ | ----------- |
+| `visual-engineering` | `T4 - frontend builder` | `frontend-ui-ux`, `frontend-stack`, `component-stack` |
+| `ultrabrain` | `D5 - backend builder` | `blueprint-architect`, `effect-ts-expert` |
+| `artistry` | `T4 - frontend builder` | creative/design skill stack |
+| `quick` | `D5 - backend builder` | `git-master`, `git-workflow` |
+| `most-capable` | `D5 - backend builder` | `blueprint-architect`, `testing-stack` |
+| `writing` | `D5 - backend builder` | `kenzo-agents-md`, `research-tools` |
+| `general` | `D5 - backend builder` | `linearis`, `git-workflow`, `research-tools` |
 
 **Usage:**
 
 ```
 // Via delegate_task tool
-delegate_task(category="visual", prompt="Create a responsive dashboard component")
-delegate_task(category="business-logic", prompt="Design the payment processing flow")
+delegate_task(category="visual-engineering", prompt="Create a responsive dashboard component")
+delegate_task(category="ultrabrain", prompt="Design the payment processing flow")
 
 // Or target a specific agent directly
-delegate_task(agent="oracle", prompt="Review this architecture")
+delegate_task(agent="K9 - advisor", prompt="Review this architecture")
 ```
 
 **Custom Categories:**

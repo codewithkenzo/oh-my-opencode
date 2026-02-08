@@ -2,20 +2,21 @@
 
 ## Agents: Your Teammates
 
-- **Sisyphus** (`anthropic/claude-opus-4-5`): **The default agent.** A powerful AI orchestrator for OpenCode. Plans, delegates, and executes complex tasks using specialized subagents with aggressive parallel execution. Emphasizes background task delegation and todo-driven workflow. Uses Claude Opus 4.5 with extended thinking (32k budget) for maximum reasoning capability.
-- **oracle** (`openai/gpt-5.2`): Architecture, code review, strategy. Uses GPT-5.2 for its stellar logical reasoning and deep analysis. Inspired by AmpCode.
-- **librarian** (`opencode/glm-4.7-free`): Multi-repo analysis, doc lookup, implementation examples. Uses GLM-4.7 Free for deep codebase understanding and GitHub research with evidence-based answers. Inspired by AmpCode.
-- **explore** (`opencode/grok-code`, `google/gemini-3-flash`, or `anthropic/claude-haiku-4-5`): Fast codebase exploration and pattern matching. Uses Gemini 3 Flash when Antigravity auth is configured, Haiku when Claude max20 is available, otherwise Grok. Inspired by Claude Code.
-- **frontend-ui-ux-engineer** (`google/gemini-3-pro-preview`): A designer turned developer. Builds gorgeous UIs. Gemini excels at creative, beautiful UI code.
-- **document-writer** (`google/gemini-3-flash`): Technical writing expert. Gemini is a wordsmith—writes prose that flows.
-- **multimodal-looker** (`google/gemini-3-flash`): Visual content specialist. Analyzes PDFs, images, diagrams to extract information.
+- **Musashi** (`anthropic/claude-opus-4-5`): Primary orchestrator. Plans, delegates, verifies, and keeps execution moving until completion.
+- **Musashi - boulder** (`anthropic/claude-sonnet-4-5`): Master execution orchestrator through `delegate_task()` and stateful continuation.
+- **Musashi - plan** (`anthropic/claude-opus-4-5`): Planning mode for interviews, scoped plans, consultant/review passes, and handoff.
+- **K9 - advisor** (`openai/gpt-5.2`): Read-only strategic consultant for architecture, debugging strategy, and technical trade-off analysis.
+- **X1 - explorer** (`anthropic/claude-haiku-4-5`): Fast codebase exploration, pattern discovery, and repository mapping.
+- **R2 - researcher** (`opencode/glm-4.7`): Multi-repo analysis, documentation lookup, and public implementation research.
+- **T4 - frontend builder** (`user configured`): Frontend/UI execution via category routing (`visual-engineering`, `artistry`).
+- **D5 - backend builder** (`user configured`): Backend/general/writing execution via category routing (`ultrabrain`, `quick`, `most-capable`, `writing`, `general`).
 
 The main agent invokes these automatically, but you can call them explicitly:
 
 ```
-Ask @oracle to review this design and propose an architecture
-Ask @librarian how this is implemented—why does the behavior keep changing?
-Ask @explore for the policy on this feature
+Ask @K9 - advisor to review this design and propose an architecture
+Ask @R2 - researcher how this is implemented and why behavior keeps changing
+Ask @X1 - explorer to map where this feature is implemented
 ```
 
 Customize agent models, prompts, and permissions in `oh-my-opencode.json`. See [Configuration](../README.md#configuration).
@@ -57,8 +58,20 @@ Hand your best tools to your best colleagues. Now they can properly refactor, na
 - **lsp_rename**: Rename symbol across workspace
 - **ast_grep_search**: AST-aware code pattern search (25 languages)
 - **ast_grep_replace**: AST-aware code replacement
-- **call_omo_agent**: Spawn specialized explore/librarian agents. Supports `run_in_background` parameter for async execution.
-- **delegate_task**: Category-based task delegation with specialized agents. Supports pre-configured categories (visual, business-logic) or direct agent targeting. Use `background_output` to retrieve results and `background_cancel` to cancel tasks. See [Categories](../README.md#categories).
+- **call_omo_agent**: Spawn specialized `X1 - explorer` / `R2 - researcher` agents. Supports `run_in_background` for async execution.
+- **delegate_task**: Category-based task delegation to `T4 - frontend builder` and `D5 - backend builder`, plus direct targeting of named specialists. Use `background_output` to retrieve results and `background_cancel` to cancel tasks. See [Categories](../README.md#categories).
+
+### Tool Profiles (Lazy Loaded)
+
+| Profile | Tools | Purpose |
+|---------|-------|---------|
+| `core` | LSP, grep, glob, session, tickets | Always loaded |
+| `research` | Exa, Context7, grep_app, zread | Web/docs search |
+| `browser` | Playwright browser tools | Browser automation |
+| `native-search` | AST-Grep search/replace | Structural code search |
+| `external-api` | Runware, Civitai, Ripple | External service APIs |
+| `local-service` | Syncthing tools | Local service integration |
+| `orchestration` | delegate_task, background, skills | Agent coordination |
 
 ### Session Management
 
@@ -236,7 +249,7 @@ Disable specific Claude Code compatibility features with the `claude_code` confi
 | `mcp`      | `~/.claude/.mcp.json`, `./.mcp.json`, `./.claude/.mcp.json`                           | Built-in MCP (context7, grep_app)                     |
 | `commands` | `~/.claude/commands/*.md`, `./.claude/commands/*.md`                                  | `~/.config/opencode/command/`, `./.opencode/command/` |
 | `skills`   | `~/.claude/skills/*/SKILL.md`, `./.claude/skills/*/SKILL.md`                          | -                                                     |
-| `agents`   | `~/.claude/agents/*.md`, `./.claude/agents/*.md`                                      | Built-in agents (oracle, librarian, etc.)             |
+| `agents`   | `~/.claude/agents/*.md`, `./.claude/agents/*.md`                                      | Built-in agents (Musashi, K9, X1, R2, T4, D5, etc.)   |
 | `hooks`    | `~/.claude/settings.json`, `./.claude/settings.json`, `./.claude/settings.local.json` | -                                                     |
 | `plugins`  | `~/.claude/plugins/` (Claude Code marketplace plugins)                                | -                                                     |
 
@@ -271,7 +284,7 @@ When agents thrive, you thrive. But I want to help you directly too.
   - Configure in `oh-my-opencode.json`: `{ "ralph_loop": { "enabled": true, "default_max_iterations": 100 } }`
 - **Keyword Detector**: Automatically detects keywords in your prompts and activates specialized modes:
   - `ultrawork` / `ulw`: Maximum performance mode with parallel agent orchestration
-  - `search` / `find` / `찾아` / `検索`: Maximized search effort with parallel explore and librarian agents
+  - `search` / `find` / `찾아` / `検索`: Maximized search effort with parallel `X1 - explorer` and `R2 - researcher` agents
   - `analyze` / `investigate` / `분석` / `調査`: Deep analysis mode with multi-phase expert consultation
 - **Todo Continuation Enforcer**: Makes agents finish all TODOs before stopping. Kills the chronic LLM habit of quitting halfway.
 - **Comment Checker**: LLMs love comments. Too many comments. This reminds them to cut the noise. Smartly ignores valid patterns (BDD, directives, docstrings) and demands justification for the rest. Clean code wins.
@@ -281,7 +294,7 @@ When agents thrive, you thrive. But I want to help you directly too.
 - **Agent Usage Reminder**: When you call search tools directly, reminds you to leverage specialized agents via background tasks for better results.
 - **Anthropic Auto Compact**: When Claude models hit token limits, automatically summarizes and compacts the session—no manual intervention needed.
 - **Session Recovery**: Automatically recovers from session errors (missing tool results, thinking block issues, empty messages). Sessions don't crash mid-run. Even if they do, they recover.
-- **Auto Update Checker**: Automatically checks for new versions of oh-my-opencode and can auto-update your configuration. Shows startup toast notifications displaying current version and Sisyphus status ("Sisyphus on steroids is steering OpenCode" when enabled, or "OpenCode is now on Steroids. oMoMoMoMo..." otherwise). Disable all features with `"auto-update-checker"` in `disabled_hooks`, or disable just toast notifications with `"startup-toast"` in `disabled_hooks`. See [Configuration > Hooks](../README.md#hooks).
+- **Auto Update Checker**: Automatically checks for new versions of oh-my-opencode and can auto-update your configuration. Shows startup toast notifications displaying current version and Musashi status ("Musashi on steroids is steering OpenCode" when enabled, or "OpenCode is now on Steroids. oMoMoMoMo..." otherwise). Disable all features with `"auto-update-checker"` in `disabled_hooks`, or disable just toast notifications with `"startup-toast"` in `disabled_hooks`. See [Configuration > Hooks](../README.md#hooks).
 - **Background Notification**: Get notified when background agent tasks complete.
 - **Session Notification**: Sends OS notifications when agents go idle. Works on macOS, Linux, and Windows—never miss when your agent needs input.
 - **Empty Task Response Detector**: Catches when Task tool returns nothing. Warns you about potential agent failures so you don't wait forever for a response that already came back empty.

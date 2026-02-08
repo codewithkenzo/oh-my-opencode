@@ -280,7 +280,7 @@ export const CATEGORY_AGENTS: Record<string, string> = {
   artistry: "T4 - frontend builder",
   quick: "D5 - backend builder",
   "most-capable": "D5 - backend builder",
-  writing: "W7 - writer",
+  writing: "D5 - backend builder",
   general: "D5 - backend builder",
 }
 
