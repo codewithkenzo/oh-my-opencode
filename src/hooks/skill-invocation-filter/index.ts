@@ -1,3 +1,9 @@
+/**
+ * Shared utility module (not a standalone registered hook).
+ * Exports `markSessionAsSlashCommand` consumed by:
+ *   - src/hooks/auto-slash-command/index.ts
+ *   - src/features/opencode-skill-loader/filtering.test.ts
+ */
 import type { PluginInput } from "@opencode-ai/plugin"
 import { getSkillByName } from "../../features/opencode-skill-loader"
 import { SYSTEM_DIRECTIVE_PREFIX } from "../../shared/system-directive"
