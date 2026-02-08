@@ -72,7 +72,7 @@ $ARGUMENTS
   },
   "security-scan": {
     description: "(builtin) Trigger B3 security specialist review",
-    agent: "B3 - security",
+    agent: "K9 - advisor",
     template: `<command-instruction>
 Perform a comprehensive security assessment of the specified target.
 
