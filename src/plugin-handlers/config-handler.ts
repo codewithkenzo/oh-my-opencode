@@ -42,6 +42,7 @@ import type { ModelCacheState } from "../plugin-state";
 import type { CategoryConfig } from "../config/schema";
 
 const AGENT_DENIED_PROFILES: Record<string, ToolProfile[]> = {
+  "Musashi": ["external-api", "local-service"],
   "Musashi - boulder": ["external-api", "local-service", "browser"],
   "Musashi - plan": ["external-api", "local-service", "browser"],
   "K9 - advisor": ["external-api", "local-service", "browser", "native-search", "orchestration"],
