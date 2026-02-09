@@ -5,16 +5,16 @@ import {
   buildKeyTriggersSection,
   buildToolSelectionTable,
   buildExploreSection,
-  buildLibrarianSection,
+  buildResearcherSection,
   buildDelegationTable,
   buildCategorySkillsDelegationGuide,
-  buildOracleSection,
+  buildAdvisorSection,
   buildHardBlocksSection,
   buildAntiPatternsSection,
   categorizeTools,
 } from "./sisyphus-prompt-builder"
 
-function buildDynamicSisyphusPrompt(
+function buildDynamicMusashiPrompt(
   availableAgents: AvailableAgent[],
   availableTools: AvailableTool[] = [],
   availableSkills: AvailableSkill[] = [],
@@ -23,19 +23,23 @@ function buildDynamicSisyphusPrompt(
   const keyTriggers = buildKeyTriggersSection(availableAgents, availableSkills)
   const toolSelection = buildToolSelectionTable(availableAgents, availableTools, availableSkills)
   const exploreSection = buildExploreSection(availableAgents)
-  const librarianSection = buildLibrarianSection(availableAgents)
+  const researcherSection = buildResearcherSection(availableAgents)
   const categorySkillsGuide = buildCategorySkillsDelegationGuide(availableCategories, availableSkills)
   const delegationTable = buildDelegationTable(availableAgents)
-  const oracleSection = buildOracleSection(availableAgents)
+  const advisorSection = buildAdvisorSection(availableAgents)
   const hardBlocks = buildHardBlocksSection(availableAgents)
   const antiPatterns = buildAntiPatternsSection(availableAgents)
 
   return `<Role>
-You are "Sisyphus" - Powerful AI Agent with orchestration capabilities from OhMyOpenCode.
+You are the primary orchestrator agent in a multi-agent development system (OhMyOpenCode).
 
-**Why Sisyphus?**: Humans roll their boulder every day. So do you. We're not so different—your code should be indistinguishable from a senior engineer's.
+Your code must be indistinguishable from a senior engineer's. No AI slop.
 
-**Identity**: SF Bay Area engineer. Work, delegate, verify, ship. No AI slop.
+**Core Practices**:
+- **Skill-first**: ALWAYS check available skills before acting. Skills → Direct Tools → Agents.
+- **TDD**: New features and bugfixes follow RED-GREEN-REFACTOR. Write test first, implement minimum, refactor while green.
+- **Verify everything**: lsp_diagnostics on changed files, typecheck, tests. No evidence = not complete.
+- **Atomic commits**: Separate test from implementation. Small focused changes.
 
 **Core Competencies**:
 - Parsing implicit requirements from explicit requests
@@ -135,11 +139,11 @@ ${toolSelection}
 
 ${exploreSection}
 
-${librarianSection}
+${researcherSection}
 
 ### Parallel Execution (DEFAULT behavior)
 
-**Explore/Librarian = Grep, not consultants.
+**X1/R2 = Grep, not consultants.
 
 \`\`\`typescript
 // CORRECT: Always background, always parallel
@@ -276,8 +280,8 @@ If project has build/test commands, run them at task completion.
 1. **STOP** all further edits immediately
 2. **REVERT** to last known working state (git checkout / undo edits)
 3. **DOCUMENT** what was attempted and what failed
-4. **CONSULT** Oracle with full failure context
-5. If Oracle cannot resolve → **ASK USER** before proceeding
+4. **CONSULT** K9 advisor with full failure context
+5. If K9 advisor cannot resolve → **ASK USER** before proceeding
 
 **Never**: Leave code in broken state, continue hoping it'll work, delete failing tests to "pass"
 
@@ -301,7 +305,7 @@ If verification fails:
 - This conserves resources and ensures clean workflow completion
 </Behavior_Instructions>
 
-${oracleSection}
+${advisorSection}
 
 <Task_Management>
 ## Todo Management (CRITICAL)
@@ -427,13 +431,13 @@ export function createSisyphusAgent(
   const skills = availableSkills ?? []
   const categories = availableCategories ?? []
   const prompt = availableAgents
-    ? buildDynamicSisyphusPrompt(availableAgents, tools, skills, categories)
-    : buildDynamicSisyphusPrompt([], tools, skills, categories)
+    ? buildDynamicMusashiPrompt(availableAgents, tools, skills, categories)
+    : buildDynamicMusashiPrompt([], tools, skills, categories)
 
   const permission = { question: "allow", call_omo_agent: "deny" } as AgentConfig["permission"]
   const base = {
     description:
-      "Sisyphus - Powerful AI orchestrator from OhMyOpenCode. Plans obsessively with todos, assesses search complexity before exploration, delegates strategically via category+skills combinations. Uses X1 - explorer for internal code (parallel-friendly), R2 - researcher for external docs.",
+      "Primary orchestrator agent. Plans with todos, delegates via category+skills, verifies independently. Skill-first workflow: check skills before acting. TDD for features/bugfixes. X1 - explorer for internal code, R2 - researcher for external docs.",
     mode: "primary" as const,
     model,
     maxTokens: 64000,

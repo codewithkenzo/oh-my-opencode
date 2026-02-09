@@ -122,8 +122,9 @@ describe("buildAgent with category and skills", () => {
     // #when
     const agent = buildAgent(source["test-agent"], TEST_MODEL)
 
-    // #then - category's built-in model is applied
-    expect(agent.model).toBe("google/gemini-3-pro")
+    // #then - category applies temperature, but model stays unset when category has no model
+    expect(agent.model).toBeUndefined()
+    expect(agent.temperature).toBe(0.7)
   })
 
   test("agent with category and existing model keeps existing model", () => {
@@ -244,9 +245,10 @@ describe("buildAgent with category and skills", () => {
     // #when
     const agent = buildAgent(source["test-agent"], TEST_MODEL)
 
-    // #then - category's built-in model and skills are applied
-    expect(agent.model).toBe("openai/gpt-5.2-codex")
-    expect(agent.variant).toBe("xhigh")
+    // #then - category applies temperature and skills, while model/variant stay unset
+    expect(agent.model).toBeUndefined()
+    expect(agent.variant).toBeUndefined()
+    expect(agent.temperature).toBe(0.1)
     expect(agent.prompt).toContain("Role: Designer-Turned-Developer")
     expect(agent.prompt).toContain("Task description")
   })

@@ -6,7 +6,7 @@ import { createAgentToolRestrictions } from "../shared/permission-compat"
 export const ORACLE_PROMPT_METADATA: AgentPromptMetadata = {
   category: "advisor",
   cost: "EXPENSIVE",
-  promptAlias: "Oracle",
+  promptAlias: "K9",
   triggers: [
     { domain: "Architecture decisions", trigger: "Multi-system tradeoffs, unfamiliar patterns" },
     { domain: "Self-review", trigger: "After completing significant implementation" },
@@ -30,7 +30,7 @@ export const ORACLE_PROMPT_METADATA: AgentPromptMetadata = {
   ],
 }
 
-const ORACLE_SYSTEM_PROMPT = `You are a strategic technical advisor with deep reasoning capabilities, operating as a specialized consultant within an AI-assisted development environment.
+const ORACLE_SYSTEM_PROMPT = `You are a read-only strategic advisor within a multi-agent development system. You analyze, recommend, and review - you never write code directly.
 
 ## Context
 
@@ -106,7 +106,7 @@ export function createOracleAgent(model: string): AgentConfig {
 
   const base = {
     description:
-      "Read-only consultation agent. High-IQ reasoning specialist for debugging hard problems and high-difficulty architecture design.",
+      "Read-only consultation agent. Specialized in debugging complex issues, architecture design, and strategic technical decisions.",
     mode: "subagent" as const,
     model,
     temperature: 0.1,
