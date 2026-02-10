@@ -3,6 +3,8 @@ import type { BuiltinAgentName, AgentOverrideConfig, AgentOverrides, AgentFactor
 import type { CategoriesConfig, CategoryConfig, GitMasterConfig } from "../config/schema"
 import { createSisyphusAgent } from "./sisyphus"
 import { createOracleAgent, ORACLE_PROMPT_METADATA } from "./oracle"
+import { createFrontendBuilderAgent, FRONTEND_BUILDER_PROMPT_METADATA } from "./frontend-builder"
+import { createBackendBuilderAgent, BACKEND_BUILDER_PROMPT_METADATA } from "./backend-builder"
 import { createLibrarianAgent, LIBRARIAN_PROMPT_METADATA } from "./librarian"
 import { createExploreAgent, EXPLORE_PROMPT_METADATA } from "./explore"
 import { createMetisAgent } from "./metis"
@@ -56,8 +58,8 @@ const agentSources: Partial<Record<BuiltinAgentName, AgentSource>> = {
   "K9 - advisor": createOracleAgent,
   "X1 - explorer": createExploreAgent,
   "R2 - researcher": createLibrarianAgent,
-  "T4 - frontend builder": createOracleAgent,  // Intentional Oracle alias - configured via agent overrides in user config
-  "D5 - backend builder": createOracleAgent,    // Intentional Oracle alias - configured via agent overrides in user config
+  "T4 - frontend builder": createFrontendBuilderAgent,
+  "D5 - backend builder": createBackendBuilderAgent,
 }
 
 /**
@@ -68,6 +70,8 @@ const agentMetadata: Partial<Record<BuiltinAgentName, AgentPromptMetadata>> = {
   "K9 - advisor": ORACLE_PROMPT_METADATA,
   "R2 - researcher": LIBRARIAN_PROMPT_METADATA,
   "X1 - explorer": EXPLORE_PROMPT_METADATA,
+  "T4 - frontend builder": FRONTEND_BUILDER_PROMPT_METADATA,
+  "D5 - backend builder": BACKEND_BUILDER_PROMPT_METADATA,
 }
 
 function isFactory(source: AgentSource): source is AgentFactory {

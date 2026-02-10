@@ -34,12 +34,7 @@ const AGENT_RESTRICTIONS: Record<string, Record<string, boolean>> = {
     delegate_task: false,
   },
 
-  "T4 - frontend builder": {
-    read: true,
-  },
-  "multimodal-looker": {  // Legacy
-    read: true,
-  },
+
 }
 
 export function getAgentToolRestrictions(agentName: string): Record<string, boolean> {
