@@ -349,6 +349,135 @@ describe("sisyphus-task", () => {
     })
   })
 
+  describe("agent model override", () => {
+    test("agent user-config model takes priority over category fallback model", async () => {
+      // #given
+      const { createDelegateTask } = require("./tools")
+      let launchInput: any
+
+      const mockManager = {
+        launch: async (input: any) => {
+          launchInput = input
+          return {
+            id: "task-agent-model",
+            sessionID: "session-agent-model",
+            description: "Agent model task",
+            agent: "T4 - frontend builder",
+            status: "running",
+          }
+        },
+      }
+
+      const mockClient = {
+        app: { agents: async () => ({ data: [] }) },
+        config: { get: async () => ({ data: { model: SYSTEM_DEFAULT_MODEL } }) },
+        session: {
+          create: async () => ({ data: { id: "test-session" } }),
+          prompt: async () => ({ data: {} }),
+          messages: async () => ({ data: [] }),
+        },
+      }
+
+      const tool = createDelegateTask({
+        manager: mockManager,
+        client: mockClient,
+        userAgents: {
+          "T4 - frontend builder": { model: "kimi-for-coding/k2p5" },
+        },
+      })
+
+      const toolContext = {
+        sessionID: "parent-session",
+        messageID: "parent-message",
+        agent: "Sisyphus",
+        abort: new AbortController().signal,
+      }
+
+      // #when
+      await tool.execute(
+        {
+          description: "Frontend task",
+          prompt: "Build a component",
+          category: "visual-engineering",
+          run_in_background: true,
+          skills: [],
+        },
+        toolContext
+      )
+
+      // #then
+      expect(launchInput.model).toEqual({
+        providerID: "kimi-for-coding",
+        modelID: "k2p5",
+      })
+    })
+
+    test("explicit category model takes priority over agent model", async () => {
+      // #given
+      const { createDelegateTask } = require("./tools")
+      let launchInput: any
+
+      const mockManager = {
+        launch: async (input: any) => {
+          launchInput = input
+          return {
+            id: "task-cat-model",
+            sessionID: "session-cat-model",
+            description: "Category model task",
+            agent: "T4 - frontend builder",
+            status: "running",
+          }
+        },
+      }
+
+      const mockClient = {
+        app: { agents: async () => ({ data: [] }) },
+        config: { get: async () => ({ data: { model: SYSTEM_DEFAULT_MODEL } }) },
+        session: {
+          create: async () => ({ data: { id: "test-session" } }),
+          prompt: async () => ({ data: {} }),
+          messages: async () => ({ data: [] }),
+        },
+      }
+
+      const tool = createDelegateTask({
+        manager: mockManager,
+        client: mockClient,
+        userCategories: {
+          "visual-engineering": { model: "google/gemini-3-pro" },
+        },
+        userAgents: {
+          "T4 - frontend builder": { model: "kimi-for-coding/k2p5" },
+        },
+      })
+
+      const toolContext = {
+        sessionID: "parent-session",
+        messageID: "parent-message",
+        agent: "Sisyphus",
+        abort: new AbortController().signal,
+      }
+
+      // #when
+      await tool.execute(
+        {
+          description: "Frontend task",
+          prompt: "Build a component",
+          category: "visual-engineering",
+          run_in_background: true,
+          skills: [],
+        },
+        toolContext
+      )
+
+      // #then - category explicit model wins
+      expect(launchInput.model).toEqual({
+        providerID: "google",
+        modelID: "gemini-3-pro",
+      })
+    })
+  })
+
   describe("skills parameter", () => {
     test("DELEGATE_TASK_DESCRIPTION documents skills parameter with empty array option", () => {
       // #given / #when / #then

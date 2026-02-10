@@ -269,6 +269,7 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
   );
   const lookAt = isLookAtEnabled ? createLookAt(ctx) : null;
   const supermemory = createSupermemoryTool(ctx.directory);
+  const agentsConfig = pluginConfig.agents as Record<string, { model?: string }> | undefined
   const delegateTask = createDelegateTask({
     manager: backgroundManager,
     client: ctx.client,
@@ -276,7 +277,8 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     userCategories: pluginConfig.categories,
     userCategorySkills: pluginConfig.category_skills,
     gitMasterConfig: pluginConfig.git_master,
-    sisyphusJuniorModel: (pluginConfig.agents as Record<string, { model?: string }> | undefined)?.["D5 - backend builder"]?.model,
+    sisyphusJuniorModel: agentsConfig?.["D5 - backend builder"]?.model,
+    userAgents: agentsConfig,
   });
   const disabledSkills = new Set(pluginConfig.disabled_skills ?? []);
   const systemMcpNames = getSystemMcpServerNames();

@@ -166,6 +166,7 @@ export interface DelegateTaskToolOptions {
   userCategorySkills?: Record<string, string[]>
   gitMasterConfig?: GitMasterConfig
   sisyphusJuniorModel?: string
+  userAgents?: Record<string, { model?: string }>
 }
 
 export interface BuildSystemContentInput {
@@ -188,7 +189,7 @@ export function buildSystemContent(input: BuildSystemContentInput): string | und
 }
 
 export function createDelegateTask(options: DelegateTaskToolOptions): ToolDefinition {
-  const { manager, client, directory, userCategories, userCategorySkills, gitMasterConfig, sisyphusJuniorModel } = options
+  const { manager, client, directory, userCategories, userCategorySkills, gitMasterConfig, sisyphusJuniorModel, userAgents } = options
 
   return tool({
     description: DELEGATE_TASK_DESCRIPTION,
@@ -493,12 +494,25 @@ ${textContent || "(No text output)"}`
         }
 
         agentToUse = resolved.config.agent || CATEGORY_AGENTS[args.category] || SISYPHUS_JUNIOR_AGENT
-        const parsedModel = parseModelString(actualModel)
+
+        // Model priority: agent config > category config > inherited > system default
+        const agentUserModel = userAgents?.[agentToUse]?.model
+        const categoryUserModel = userCategories?.[args.category]?.model
+        const effectiveModel = (agentUserModel && !categoryUserModel)
+          ? agentUserModel
+          : actualModel
+
+        const parsedModel = parseModelString(effectiveModel)
         categoryModel = parsedModel
           ? (resolved.config.variant
             ? { ...parsedModel, variant: resolved.config.variant }
             : parsedModel)
           : undefined
+
+        if (agentUserModel && !categoryUserModel && parsedModel) {
+          modelInfo = { model: effectiveModel, type: "user-defined" }
+        }
+
         categoryPromptAppend = resolved.promptAppend || undefined
       } else {
         if (!args.subagent_type?.trim()) {
