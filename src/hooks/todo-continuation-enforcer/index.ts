@@ -39,6 +39,8 @@ interface SessionState {
   isRecovering?: boolean
   countdownStartedAt?: number
   abortDetectedAt?: number
+  injectionCount?: number
+  lastTodoSnapshot?: string
 }
 
 const CONTINUATION_PROMPT = `${createSystemDirective(SystemDirectiveTypes.TODO_CONTINUATION)}
@@ -52,6 +54,7 @@ Incomplete tasks remain in your todo list. Continue working on the next pending 
 const COUNTDOWN_SECONDS = 2
 const TOAST_DURATION_MS = 900
 const COUNTDOWN_GRACE_PERIOD_MS = 500
+const MAX_INJECTIONS_PER_SNAPSHOT = 3
 
 function getMessageDir(sessionID: string): string | null {
   if (!existsSync(MESSAGE_STORAGE)) return null
@@ -407,6 +410,25 @@ export function createTodoContinuationEnforcerHook(
         return
       }
 
+      const state2 = getState(sessionID)
+      const todoSnapshot = todos
+        .filter(t => t.status !== "completed" && t.status !== "cancelled")
+        .map(t => t.id)
+        .sort()
+        .join(",")
+
+      if (state2.lastTodoSnapshot === todoSnapshot) {
+        state2.injectionCount = (state2.injectionCount ?? 0) + 1
+      } else {
+        state2.lastTodoSnapshot = todoSnapshot
+        state2.injectionCount = 1
+      }
+
+      if (state2.injectionCount > MAX_INJECTIONS_PER_SNAPSHOT) {
+        log(`[${HOOK_NAME}] Skipped: max injections reached for unchanged todos`, { sessionID, injectionCount: state2.injectionCount, maxAllowed: MAX_INJECTIONS_PER_SNAPSHOT })
+        return
+      }
+
       startCountdown(sessionID, incompleteCount, todos.length, resolvedInfo)
       return
     }
@@ -427,7 +449,11 @@ export function createTodoContinuationEnforcerHook(
             return
           }
         }
-        if (state) state.abortDetectedAt = undefined
+        if (state) {
+          state.abortDetectedAt = undefined
+          state.injectionCount = 0
+          state.lastTodoSnapshot = undefined
+        }
         cancelCountdown(sessionID)
       }
 
