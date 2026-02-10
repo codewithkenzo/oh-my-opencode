@@ -16,8 +16,8 @@ This module was compressed from 23 -> 8 built-ins (Sprint 1). Sprint 4.2 adds ca
 | Advisors | `K9 - advisor` | Read-only strategic consultant for architecture/debugging |
 | Explorers | `X1 - explorer` | Internal codebase exploration and contextual search |
 | Explorers | `R2 - researcher` | External docs/OSS research and multi-repo analysis |
-| Builders | `T4 - frontend builder` | Frontend-oriented Oracle alias; behavior/model comes from overrides/category |
-| Builders | `D5 - backend builder` | Backend-oriented Oracle alias; behavior/model comes from overrides/category |
+| Builders | `T4 - frontend builder` | Frontend implementation (UI, components, styles, client logic) |
+| Builders | `D5 - backend builder` | Backend implementation (APIs, data layers, tooling, server logic) |
 
 ## CATEGORY ROUTING
 
@@ -69,6 +69,8 @@ agents/
 ├── sisyphus-prompt-builder.ts
 ├── sisyphus.ts
 ├── types.ts
+├── frontend-builder.ts
+├── backend-builder.ts
 ├── utils.test.ts
 └── utils.ts
 ```
@@ -87,12 +89,13 @@ Model resolution is runtime-based (`resolveModelWithFallback`) and configurable 
 | `K9 - advisor` | `gpt-5.2` -> `claude-opus-4-5` -> `gemini-3-pro` | `0.1` |
 | `X1 - explorer` | `claude-haiku-4-5` -> `gpt-5-nano` | `0.1` |
 | `R2 - researcher` | `glm-4.7` -> `big-pickle` -> `claude-sonnet-4-5` | `0.1` |
-| `T4 - frontend builder` | system default unless overridden (Oracle alias) | `0.1` |
-| `D5 - backend builder` | system default unless overridden (Oracle alias) | `0.1` |
+| `T4 - frontend builder` | system default unless overridden | `0.1` |
+| `D5 - backend builder` | system default unless overridden | `0.1` |
 
 Notes:
-- `T4 - frontend builder` and `D5 - backend builder` intentionally use `createOracleAgent` in `agentSources`.
-- They are differentiated by category routing and user overrides (model, prompt append, variant), not by separate factory code.
+- `T4 - frontend builder` uses `createFrontendBuilderAgent` with a UI/component-focused prompt.
+- `D5 - backend builder` uses `createBackendBuilderAgent` with a server/API-focused prompt.
+- Both have full read/write/edit access (unlike K9/X1/R2 which are read-only).
 
 ## LEGACY NAME MAPPING
 
@@ -152,8 +155,8 @@ Derived from each agent factory permission config:
 | `K9 - advisor` | `write`, `edit`, `task`, `delegate_task` denied |
 | `X1 - explorer` | `write`, `edit`, `task`, `delegate_task`, `call_omo_agent` denied |
 | `R2 - researcher` | `write`, `edit`, `task`, `delegate_task`, `call_omo_agent` denied |
-| `T4 - frontend builder` | same restrictions as `K9 - advisor` (Oracle alias) |
-| `D5 - backend builder` | same restrictions as `K9 - advisor` (Oracle alias) |
+| `T4 - frontend builder` | `task`, `call_omo_agent` denied (has write/edit access) |
+| `D5 - backend builder` | `task`, `call_omo_agent` denied (has write/edit access) |
 
 ## KEY PATTERNS
 
@@ -161,7 +164,7 @@ Derived from each agent factory permission config:
 - **Source registry**: `agentSources` is the single built-in agent map.
 - **Prompt metadata**: `AgentPromptMetadata` powers dynamic Sisyphus/Atlas prompt sections.
 - **Model routing**: `resolveModelWithFallback` + `AGENT_MODEL_REQUIREMENTS`.
-- **Alias strategy**: T4/D5 reuse Oracle factory intentionally; behavior split is config/category-driven.
+- **Builder factories**: T4 uses `createFrontendBuilderAgent`, D5 uses `createBackendBuilderAgent` — each with domain-specific prompts and full write access.
 - **Category composition**: `CATEGORY_AGENTS` picks executor, `CATEGORY_SKILLS` injects domain guidance.
 
 ## ANTI-PATTERNS

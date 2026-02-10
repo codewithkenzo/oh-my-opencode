@@ -111,8 +111,8 @@ oh-my-opencode/
 | K9 - advisor | openai/gpt-5.2 | Read-only strategic consultant |
 | X1 - explorer | anthropic/claude-haiku-4-5 | Fast codebase exploration |
 | R2 - researcher | opencode/glm-4.7 | Multi-repo analysis, docs, GitHub search |
-| T4 - frontend builder | (user config) | Frontend UI/UX via category routing |
-| D5 - backend builder | (user config) | Backend/general via category routing |
+| T4 - frontend builder | (user config) | Frontend implementation (UI, components, styles, client logic) |
+| D5 - backend builder | (user config) | Backend implementation (APIs, data layers, tooling, server logic) |
 
 ## COMMANDS
 
