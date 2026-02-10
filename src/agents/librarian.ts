@@ -35,6 +35,7 @@ export function createLibrarianAgent(model: string): AgentConfig {
     mode: "subagent" as const,
     model,
     temperature: 0.1,
+    color: "#22C55E",
     ...restrictions,
     prompt: `# Research Agent
 

@@ -212,6 +212,7 @@ export function createFrontendBuilderAgent(model: string): AgentConfig {
     mode: "subagent" as const,
     model,
     temperature: 0.1,
+    color: "#F97316",
     ...restrictions,
     prompt: FRONTEND_BUILDER_PROMPT,
   } as AgentConfig

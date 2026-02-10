@@ -287,6 +287,7 @@ export function createMetisAgent(model: string): AgentConfig {
     ...metisRestrictions,
     prompt: METIS_SYSTEM_PROMPT,
     thinking: { type: "enabled", budgetTokens: 32000 },
+    color: "#C0C0C0",
   } as AgentConfig
 }
 

@@ -542,7 +542,7 @@ export function createAtlasAgent(ctx: OrchestratorContext): AgentConfig {
     temperature: 0.1,
     prompt: buildDynamicOrchestratorPrompt(ctx),
     thinking: { type: "enabled", budgetTokens: 32000 },
-    color: "#10B981",
+    color: "#EF4444",
     ...restrictions,
   } as AgentConfig
 }

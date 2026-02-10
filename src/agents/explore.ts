@@ -37,6 +37,7 @@ export function createExploreAgent(model: string): AgentConfig {
     mode: "subagent" as const,
     model,
     temperature: 0.1,
+    color: "#92400E",
     ...restrictions,
     prompt: `You are an internal codebase search agent. Find files, code patterns, and structural information. Return actionable results with absolute paths.
 

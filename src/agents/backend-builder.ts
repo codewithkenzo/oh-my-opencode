@@ -227,6 +227,7 @@ export function createBackendBuilderAgent(model: string): AgentConfig {
     mode: "subagent" as const,
     model,
     temperature: 0.1,
+    color: "#3B82F6",
     ...restrictions,
     prompt: BACKEND_BUILDER_PROMPT,
   } as AgentConfig

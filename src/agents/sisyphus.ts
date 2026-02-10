@@ -442,7 +442,7 @@ export function createSisyphusAgent(
     model,
     maxTokens: 64000,
     prompt,
-    color: "#00CED1",
+    color: "#1A1A1A",
     permission,
   }
 
