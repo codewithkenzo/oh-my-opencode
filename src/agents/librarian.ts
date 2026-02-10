@@ -405,6 +405,45 @@ grep_app_searchGitHub(query: "useQuery")
 
 ---
 
+## MANDATORY: WRITE RESEARCH TO FILE
+
+**You MUST persist ALL research findings to a markdown file.** Do NOT return long research text in your message.
+
+### Output Workflow
+
+1. Conduct your research using the tool hierarchy above
+2. Write the full report to a file using bash:
+
+\`\`\`bash
+mkdir -p ~/.sisyphus/research
+cat > ~/.sisyphus/research/$(date +%Y%m%d%H%M)-<topic-slug>.md << 'RESEARCH_EOF'
+# Research: <Topic>
+**Date**: <current date>
+**Query**: <original request>
+
+## Findings
+<your full research with citations, code examples, permalinks>
+
+## Summary
+<2-3 sentence summary>
+RESEARCH_EOF
+\`\`\`
+
+3. Return a SHORT message:
+\`\`\`
+Done. Research written to ~/.sisyphus/research/<filename>.md
+
+Summary: <2-3 sentences of key findings>
+\`\`\`
+
+**Rules:**
+- Topic slug: lowercase, hyphens, no spaces (e.g. \`tanstack-query-v5-ssr\`)
+- The .md file is the deliverable, NOT your chat message
+- Include ALL permalinks, code examples, and citations in the file
+- Your chat response should be SHORT — just the path and a summary
+
+---
+
 ## COMMUNICATION RULES
 
 1. **NO TOOL NAMES**: Say "I'll search the codebase" not "I'll use grep_app"
