@@ -311,3 +311,58 @@ describe("buildAgent with category and skills", () => {
     expect(agent.prompt).toBe("Base prompt")
   })
 })
+
+describe("non-core tool exclusion from primary agents", () => {
+  const { ORCHESTRATOR_DENIED_TOOL_NAMES, RESEARCH_TOOL_NAMES } = require("../tools/tool-profiles")
+
+  test("Musashi denies all non-core/non-orchestration tools", async () => {
+    // #given
+    const agents = await createBuiltinAgents([], {}, undefined, TEST_DEFAULT_MODEL)
+
+    // #when
+    const permission = agents.Musashi.permission as Record<string, string>
+
+    // #then
+    for (const toolName of ORCHESTRATOR_DENIED_TOOL_NAMES) {
+      expect(permission[toolName]).toBe("deny")
+    }
+  })
+
+  test("Musashi-boulder denies all non-core/non-orchestration tools", async () => {
+    // #given
+    const agents = await createBuiltinAgents([], {}, undefined, TEST_DEFAULT_MODEL)
+
+    // #when
+    const permission = agents["Musashi - boulder"].permission as Record<string, string>
+
+    // #then
+    for (const toolName of ORCHESTRATOR_DENIED_TOOL_NAMES) {
+      expect(permission[toolName]).toBe("deny")
+    }
+  })
+
+  test("R2 researcher does NOT deny research tools", async () => {
+    // #given
+    const agents = await createBuiltinAgents([], {}, undefined, TEST_DEFAULT_MODEL)
+
+    // #when
+    const permission = agents["R2 - researcher"].permission as Record<string, string> | undefined
+
+    // #then
+    for (const toolName of RESEARCH_TOOL_NAMES) {
+      expect(permission?.[toolName]).not.toBe("deny")
+    }
+  })
+
+  test("T4 frontend builder does NOT deny browser tools", async () => {
+    // #given
+    const agents = await createBuiltinAgents([], {}, undefined, TEST_DEFAULT_MODEL)
+
+    // #when
+    const permission = agents["T4 - frontend builder"].permission as Record<string, string> | undefined
+
+    // #then
+    expect(permission?.["browser_open"]).not.toBe("deny")
+    expect(permission?.["browser_click"]).not.toBe("deny")
+  })
+})

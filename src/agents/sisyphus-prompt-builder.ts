@@ -62,29 +62,6 @@ function formatToolsForPrompt(tools: AvailableTool[]): string {
   return parts.join(", ")
 }
 
-export function buildKeyTriggersSection(agents: AvailableAgent[], skills: AvailableSkill[] = []): string {
-  const keyTriggers = agents
-    .filter((a) => a.metadata.keyTrigger)
-    .map((a) => `- ${a.metadata.keyTrigger}`)
-
-  const skillTriggers = skills
-    .filter((s) => s.description)
-    .map((s) => `- **Skill \`${s.name}\`**: ${extractTriggerFromDescription(s.description)}`)
-
-  const allTriggers = [...keyTriggers, ...skillTriggers]
-
-  if (allTriggers.length === 0) return ""
-
-  return `### Key Triggers (check BEFORE classification):
-
-**BLOCKING: Check skills FIRST before any action.**
-If a skill matches, invoke it IMMEDIATELY via \`skill\` tool.
-
-${allTriggers.join("\n")}
-- **GitHub mention (@mention in issue/PR)** → This is a WORK REQUEST. Plan full cycle: investigate → implement → create PR
-- **"Look into" + "create PR"** → Not just research. Full implementation cycle expected.`
-}
-
 function extractTriggerFromDescription(description: string): string {
   const triggerMatch = description.match(/Trigger[s]?[:\s]+([^.]+)/i)
   if (triggerMatch) return triggerMatch[1].trim()
@@ -98,40 +75,62 @@ function extractTriggerFromDescription(description: string): string {
   return description.split(".")[0] || description
 }
 
+/**
+ * Single canonical skill reference. Listed ONCE, referenced by all sections.
+ */
+export function buildSkillsReference(skills: AvailableSkill[]): string {
+  if (skills.length === 0) return ""
+
+  const rows = skills.map((s) => {
+    const trigger = extractTriggerFromDescription(s.description)
+    return `| \`${s.name}\` | ${trigger} |`
+  })
+
+  return `<Skills>
+## Available Skills
+
+**Skill-first**: Before ANY action, scan this table. If a skill matches → invoke via \`skill\` tool IMMEDIATELY.
+When delegating via \`delegate_task()\`, include ALL matching skills in \`load_skills=[...]\`.
+
+| Skill | Trigger / Domain |
+|-------|------------------|
+${rows.join("\n")}
+</Skills>`
+}
+
+export function buildKeyTriggersSection(agents: AvailableAgent[], _skills: AvailableSkill[] = []): string {
+  const keyTriggers = agents
+    .filter((a) => a.metadata.keyTrigger)
+    .map((a) => `- ${a.metadata.keyTrigger}`)
+
+  if (keyTriggers.length === 0) return ""
+
+  return `### Key Triggers (check BEFORE classification):
+
+**BLOCKING: Check <Skills> table FIRST.** If a skill matches, invoke it IMMEDIATELY.
+
+${keyTriggers.join("\n")}
+- **GitHub mention (@mention in issue/PR)** → WORK REQUEST. Full cycle: investigate → implement → PR.
+- **"Look into" + "create PR"** → Full implementation cycle, not just research.`
+}
+
 export function buildToolSelectionTable(
   agents: AvailableAgent[],
   tools: AvailableTool[] = [],
-  skills: AvailableSkill[] = []
+  _skills: AvailableSkill[] = []
 ): string {
   const rows: string[] = [
-    "### Tool & Skill Selection:",
+    "### Tool & Agent Selection:",
     "",
-    "**Priority Order**: Skills → Direct Tools → Agents",
+    "**Priority**: Skills (see <Skills>) → Direct Tools → Agents",
     "",
+    "| Resource | Cost | When to Use |",
+    "|----------|------|-------------|",
   ]
-
-  // Skills section (highest priority)
-  if (skills.length > 0) {
-    rows.push("#### Skills (INVOKE FIRST if matching)")
-    rows.push("")
-    rows.push("| Skill | When to Use |")
-    rows.push("|-------|-------------|")
-    for (const skill of skills) {
-      const shortDesc = extractTriggerFromDescription(skill.description)
-      rows.push(`| \`${skill.name}\` | ${shortDesc} |`)
-    }
-    rows.push("")
-  }
-
-  // Tools and Agents table
-  rows.push("#### Tools & Agents")
-  rows.push("")
-  rows.push("| Resource | Cost | When to Use |")
-  rows.push("|----------|------|-------------|")
 
   if (tools.length > 0) {
     const toolsDisplay = formatToolsForPrompt(tools)
-    rows.push(`| ${toolsDisplay} | FREE | Not Complex, Scope Clear, No Implicit Assumptions |`)
+    rows.push(`| ${toolsDisplay} | FREE | Scope clear, not complex |`)
   }
 
   const costOrder = { FREE: 0, CHEAP: 1, EXPENSIVE: 2 }
@@ -141,11 +140,11 @@ export function buildToolSelectionTable(
 
   for (const agent of sortedAgents) {
     const shortDesc = agent.description.split(".")[0] || agent.description
-    rows.push(`| \`${agent.name}\` agent | ${agent.metadata.cost} | ${shortDesc} |`)
+    rows.push(`| \`${agent.name}\` | ${agent.metadata.cost} | ${shortDesc} |`)
   }
 
   rows.push("")
-  rows.push("**Default flow**: skill (if match) → X1 - explorer/R2 - researcher (background) + tools → K9 - advisor (if required)")
+  rows.push("**Default flow**: skill → X1/R2 (background) + tools → K9 (if stuck)")
 
   return rows.join("\n")
 }
@@ -157,12 +156,10 @@ export function buildExploreSection(agents: AvailableAgent[]): string {
   const useWhen = exploreAgent.metadata.useWhen || []
   const avoidWhen = exploreAgent.metadata.avoidWhen || []
 
-  return `### Explore Agent = Contextual Grep
+  return `### X1 = Contextual Grep (fire liberally)
 
-Use it as a **peer tool**, not a fallback. Fire liberally.
-
-| Use Direct Tools | Use Explore Agent |
-|------------------|-------------------|
+| Direct Tools | X1 - explorer |
+|--------------|---------------|
 ${avoidWhen.map((w) => `| ${w} |  |`).join("\n")}
 ${useWhen.map((w) => `|  | ${w} |`).join("\n")}`
 }
@@ -173,29 +170,22 @@ export function buildResearcherSection(agents: AvailableAgent[]): string {
 
   const useWhen = librarianAgent.metadata.useWhen || []
 
-  return `### Research Agent = Reference Grep
+  return `### R2 = Reference Grep (external docs, OSS)
 
-Search **external references** (docs, OSS, web). Fire proactively when unfamiliar libraries are involved.
+| Internal (X1) | External (R2) |
+|----------------|---------------|
+| OUR codebase | Docs, OSS repos, web |
+| Project patterns | Library APIs & best practices |
 
-| Contextual Grep (Internal) | Reference Grep (External) |
-|----------------------------|---------------------------|
-| Search OUR codebase | Search EXTERNAL resources |
-| Find patterns in THIS repo | Find examples in OTHER repos |
-| How does our code work? | How does this library work? |
-| Project-specific logic | Official API documentation |
-| | Library best practices & quirks |
-| | OSS implementation examples |
-
-**Trigger phrases** (fire R2 - researcher immediately):
-${useWhen.map((w) => `- "${w}"`).join("\n")}`
+**Fire R2 immediately for**: ${useWhen.map((w) => `"${w}"`).join(", ")}`
 }
 
 export function buildDelegationTable(agents: AvailableAgent[]): string {
   const rows: string[] = [
-    "### Delegation Table:",
+    "### Delegation Routing:",
     "",
-    "| Domain | Delegate To | Trigger |",
-    "|--------|-------------|---------|",
+    "| Domain | Agent | Trigger |",
+    "|--------|-------|---------|",
   ]
 
   for (const agent of agents) {
@@ -211,55 +201,14 @@ export function buildFrontendSection(agents: AvailableAgent[]): string {
   const frontendAgent = agents.find((a) => a.name === "T4 - frontend builder")
   if (!frontendAgent) return ""
 
-  return `### Frontend Files: VISUAL = HARD BLOCK (zero tolerance)
+  return `### Frontend: VISUAL = HARD BLOCK
 
-**DEFAULT ASSUMPTION**: Any frontend file change is VISUAL until proven otherwise.
+**ANY** styling/className/layout/animation keyword → DELEGATE to T4. Zero exceptions.
 
-#### HARD BLOCK: Visual Changes (NEVER touch directly)
+Keywords: \`style, className, tailwind, css, color, background, border, shadow, margin, padding, width, height, flex, grid, animation, transition, hover, responsive, font-size, icon, svg, image, layout, position, display, opacity, z-index, transform, gradient, theme\`
 
-| Pattern | Action | No Exceptions |
-|---------|--------|---------------|
-| \`.tsx\`, \`.jsx\` with styling | DELEGATE | Even "just add className" |
-| \`.vue\`, \`.svelte\` | DELEGATE | Even single prop change |
-| \`.css\`, \`.scss\`, \`.sass\`, \`.less\` | DELEGATE | Even color/margin tweak |
-| Any file with visual keywords | DELEGATE | See keyword list below |
-
-#### Keyword Detection (INSTANT DELEGATE)
-
-If your change involves **ANY** of these keywords → **STOP. DELEGATE.**
-
-\`\`\`
-style, className, tailwind, css, color, background, border, shadow,
-margin, padding, width, height, flex, grid, animation, transition,
-hover, responsive, font-size, font-weight, icon, svg, image, layout,
-position, display, opacity, z-index, transform, gradient, theme
-\`\`\`
-
-**YOU CANNOT**:
-- "Just quickly fix this style"
-- "It's only one className"
-- "Too simple to delegate"
-
-#### EXCEPTION: Pure Logic Only
-
-You MAY handle directly **ONLY IF ALL** conditions are met:
-1. Change is **100% logic** (API, state, event handlers, types, utils)
-2. **Zero** visual keywords in your diff
-3. No styling, layout, or appearance changes whatsoever
-
-| Pure Logic Examples | Visual Examples (DELEGATE) |
-|---------------------|---------------------------|
-| Add onClick API call | Change button color |
-| Fix pagination logic | Add loading spinner animation |
-| Add form validation | Make modal responsive |
-| Update state management | Adjust spacing/margins |
-
-#### Mixed Changes → SPLIT
-
-If change has BOTH logic AND visual:
-1. Handle logic yourself
-2. DELEGATE visual part to \`T4 - frontend builder\`
-3. **Never** combine them into one edit`
+**Exception**: Pure logic only (API calls, state, event handlers, types) with ZERO visual keywords in diff.
+Mixed changes → split logic (you) from visual (T4).`
 }
 
 export function buildAdvisorSection(agents: AvailableAgent[]): string {
@@ -270,24 +219,14 @@ export function buildAdvisorSection(agents: AvailableAgent[]): string {
   const avoidWhen = oracleAgent.metadata.avoidWhen || []
 
   return `<Oracle_Usage>
-## K9 Advisor — Read-Only High-IQ Consultant
+## K9 Advisor — Read-Only Consultant
 
-K9 advisor is a read-only, expensive, high-quality reasoning model for debugging and architecture. Consultation only.
+Expensive, high-quality reasoning model. Consultation only.
 
-### WHEN to Consult:
+**Consult for**: ${useWhen.join("; ")}
+**Skip for**: ${avoidWhen.join("; ")}
 
-| Trigger | Action |
-|---------|--------|
-${useWhen.map((w) => `| ${w} | K9 advisor FIRST, then implement |`).join("\n")}
-
-### WHEN NOT to Consult:
-
-${avoidWhen.map((w) => `- ${w}`).join("\n")}
-
-### Usage Pattern:
-Briefly announce "Consulting K9 advisor for [reason]" before invocation.
-
-**Exception**: This is the ONLY case where you announce before acting. For all other work, start immediately without status updates.
+Announce "Consulting K9 for [reason]" before invocation (only case where you announce).
 </Oracle_Usage>`
 }
 
@@ -295,22 +234,22 @@ export function buildHardBlocksSection(agents: AvailableAgent[]): string {
   const frontendAgent = agents.find((a) => a.name === "T4 - frontend builder")
 
   const blocks = [
-    "| Type error suppression (`as any`, `@ts-ignore`) | Never |",
+    "| Type suppression (`as any`, `@ts-ignore`) | Never |",
     "| Commit without explicit request | Never |",
     "| Speculate about unread code | Never |",
-    "| Leave code in broken state after failures | Never |",
+    "| Leave code broken after failures | Never |",
   ]
 
   if (frontendAgent) {
     blocks.unshift(
-      "| Frontend VISUAL changes (styling, className, layout, animation, any visual keyword) | **HARD BLOCK** - Always delegate to `T4 - frontend builder`. Zero tolerance. |"
+      "| Frontend VISUAL changes | **HARD BLOCK** — delegate to T4. Zero tolerance. |"
     )
   }
 
-  return `## Hard Blocks (NEVER violate)
+  return `## Hard Blocks
 
-| Constraint | No Exceptions |
-|------------|---------------|
+| Constraint | Exception |
+|------------|-----------|
 ${blocks.join("\n")}`
 }
 
@@ -319,21 +258,17 @@ export function buildAntiPatternsSection(agents: AvailableAgent[]): string {
 
   const patterns = [
     "| **Type Safety** | `as any`, `@ts-ignore`, `@ts-expect-error` |",
-    "| **Error Handling** | Empty catch blocks `catch(e) {}` |",
-    "| **Testing** | Deleting failing tests to \"pass\" |",
-    "| **Search** | Firing agents for single-line typos or obvious syntax errors |",
-    "| **Debugging** | Shotgun debugging, random changes |",
+    "| **Error Handling** | Empty catch blocks |",
+    "| **Testing** | Deleting failing tests |",
+    "| **Search** | Agents for single-line typos |",
+    "| **Debugging** | Shotgun debugging |",
   ]
 
   if (frontendAgent) {
-    patterns.splice(
-      4,
-      0,
-      "| **Frontend** | ANY direct edit to visual/styling code. Keyword detected = DELEGATE. Pure logic only = OK |"
-    )
+    patterns.splice(4, 0, "| **Frontend** | Direct visual/styling edits — DELEGATE |")
   }
 
-  return `## Anti-Patterns (BLOCKING violations)
+  return `## Anti-Patterns (BLOCKING)
 
 | Category | Forbidden |
 |----------|-----------|
@@ -363,82 +298,31 @@ export function buildUltraworkAgentSection(agents: AvailableAgent[]): string {
   return lines.join("\n")
 }
 
-export function buildCategorySkillsDelegationGuide(categories: AvailableCategory[], skills: AvailableSkill[]): string {
-  if (categories.length === 0 && skills.length === 0) return ""
+export function buildCategorySkillsDelegationGuide(categories: AvailableCategory[], _skills: AvailableSkill[]): string {
+  if (categories.length === 0) return ""
 
   const categoryRows = categories.map((c) => {
     const desc = c.description || c.name
     return `| \`${c.name}\` | ${desc} |`
   })
 
-  const skillRows = skills.map((s) => {
-    const desc = s.description.split(".")[0] || s.description
-    return `| \`${s.name}\` | ${desc} |`
-  })
+  return `### Delegation System
 
-  return `### Category + Skills Delegation System
+\`delegate_task()\` = category + skills for optimal routing.
 
-**delegate_task() combines categories and skills for optimal task execution.**
+#### Categories
 
-#### Available Categories (Domain-Optimized Settings)
-
-Each category is configured with temperature and routing optimized for that domain. Read the description to understand when to use it.
-
-| Category | Domain / Best For |
-|----------|-------------------|
+| Category | Domain |
+|----------|--------|
 ${categoryRows.join("\n")}
 
-#### Available Skills (Domain Expertise Injection)
+#### Skill Selection Protocol
 
-Skills inject specialized instructions into the subagent. Read the description to understand when each skill applies.
-
-| Skill | Expertise Domain |
-|-------|------------------|
-${skillRows.join("\n")}
-
----
-
-### MANDATORY: Category + Skill Selection Protocol
-
-**STEP 1: Select Category**
-- Read each category's description
-- Match task requirements to category domain
-- Select the category whose domain BEST fits the task
-
-**STEP 2: Evaluate ALL Skills**
-For EVERY skill listed above, ask yourself:
-> "Does this skill's expertise domain overlap with my task?"
-
-- If YES → INCLUDE in \`load_skills=[...]\`
-- If NO → You MUST justify why (see below)
-
-**STEP 3: Justify Omissions**
-
-If you choose NOT to include a skill that MIGHT be relevant, you MUST provide:
-
-\`\`\`
-SKILL EVALUATION for "[skill-name]":
-- Skill domain: [what the skill description says]
-- Task domain: [what your task is about]
-- Decision: OMIT
-- Reason: [specific explanation of why domains don't overlap]
-\`\`\`
-
-**WHY JUSTIFICATION IS MANDATORY:**
-- Forces you to actually READ skill descriptions
-- Prevents lazy omission of potentially useful skills
-- Subagents are STATELESS - they only know what you tell them
-- Missing a relevant skill = suboptimal output
-
----
-
-### Delegation Pattern
+1. **Select category** matching task domain
+2. **Scan <Skills> table** — include ALL matching skills in \`load_skills=[...]\`
+3. Subagents are STATELESS — missing a skill = suboptimal output
 
 \`\`\`typescript
-delegate_task(
-  category="[selected-category]",
-  load_skills=["skill-1", "skill-2"],  // Include ALL relevant skills
-  prompt="..."
-)
+delegate_task(category="[name]", load_skills=["skill-1", "skill-2"], prompt="...")
 \`\`\``
 }

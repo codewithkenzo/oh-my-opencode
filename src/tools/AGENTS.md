@@ -43,17 +43,24 @@ tools/
 
 ## TOOL PROFILES
 
-Tools are grouped into 7 profiles for lazy loading (`src/tools/tool-profiles.ts`):
+Tools are grouped into 7 profiles for lazy loading (`src/tools/tool-profiles.ts`).
 
-| Profile | Count | Purpose |
-|---------|-------|---------|
-| core | 23 | LSP, grep, glob, session, tickets - always loaded |
-| research | 9 | Exa, Context7, grep_app, zread - web/docs search |
-| browser | 18 | Playwright browser automation |
-| native-search | 2 | AST-Grep search/replace |
-| external-api | 23 | Runware, Civitai, Ripple - external APIs |
-| local-service | 15 | Syncthing - local service integration |
-| orchestration | 12 | delegate_task, background, skills, interactive_bash |
+All 6 non-orchestration profiles are registered globally via `ALL_PROFILES` in `src/index.ts`. Orchestrator agents (Musashi, boulder) deny 67 non-core tools via `ORCHESTRATOR_DENIED_TOOL_NAMES` to keep their context lean, while subagents (T4, D5, K9, X1, R2) retain full access.
+
+| Profile | Count | Purpose | Orchestrator Access |
+|---------|-------|---------|---------------------|
+| core | 23 | LSP, grep, glob, session, tickets - always loaded | ✅ |
+| research | 9 | Exa, Context7, grep_app, zread - web/docs search | ❌ Denied |
+| browser | 18 | Playwright browser automation | ❌ Denied |
+| native-search | 2 | AST-Grep search/replace | ❌ Denied |
+| external-api | 23 | Runware, Civitai, Ripple - external APIs | ❌ Denied |
+| local-service | 15 | Syncthing - local service integration | ❌ Denied |
+| orchestration | 12 | delegate_task, background, skills, interactive_bash | Separate wiring |
+
+Key exports from `src/tools/tool-profiles.ts`:
+- `ALL_PROFILES` — `["core", "research", "browser", "native-search", "external-api", "local-service"]`
+- `ORCHESTRATOR_DENIED_TOOL_NAMES` — 67 tool names from research + browser + native-search + external-api + local-service
+- `RESEARCH_TOOL_NAMES` — legacy export for backward compat
 
 ## HOW TO ADD
 
@@ -120,7 +127,7 @@ export const myTool = createHybridTool({
 
 - Split lightweight metadata (`description`, `args`) into `def.ts`, keep execution in `tools.ts`.
 - This enables true lazy loading by avoiding heavy implementation imports during tool discovery.
-- Current adopters: `agent-browser`, `ast-grep`, `civitai`, `raindrop`, `runware`, `syncthing`, `ticket`, `unified-model-search`.
+- Current adopters: `agent-browser`, `ast-grep`, `civitai`, `raindrop`, `runware`, `syncthing`, `ticket`, `unified-model-search`, `exa`, `codesearch`, `context7`, `grep-app`, `zread`, `webfetch`.
 
 ## LSP SPECIFICS
 

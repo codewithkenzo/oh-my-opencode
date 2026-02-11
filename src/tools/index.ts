@@ -49,13 +49,12 @@ import { syncthingToolDefs } from "./syncthing/def"
 import { ticketToolDefs } from "./ticket/def"
 import { civitaiToolDefs } from "./civitai/def"
 import { unifiedModelSearchToolDefs } from "./unified-model-search/def"
-
-import { zread_search, zread_file, zread_structure } from "./zread"
-import { websearch as exa_websearch } from "./exa"
-import { codesearch as exa_codesearch } from "./codesearch"
-import { context7_resolve_library_id, context7_query_docs } from "./context7"
-import { grep_app_searchGitHub } from "./grep-app"
-import { webfetch } from "./webfetch"
+import { exaToolDefs } from "./exa/def"
+import { codesearchToolDefs } from "./codesearch/def"
+import { context7ToolDefs } from "./context7/def"
+import { grepAppToolDefs } from "./grep-app/def"
+import { zreadToolDefs } from "./zread/def"
+import { webfetchToolDefs } from "./webfetch/def"
 
 import { system_notify } from "./system-notify"
 export { sendSystemNotification } from "./system-notify"
@@ -72,7 +71,7 @@ export { createLookAt } from "./look-at"
 export { createDelegateTask, type DelegateTaskToolOptions, DEFAULT_CATEGORIES, CATEGORY_PROMPT_APPENDS } from "./delegate-task"
 export { createLazyTool } from "./lazy-tool-wrapper"
 export type { LazyToolOptions } from "./lazy-tool-wrapper"
-export { TOOL_PROFILES, TOOL_TO_PROFILE, getToolProfile, getToolsForProfile, getToolsForProfiles } from "./tool-profiles"
+export { TOOL_PROFILES, TOOL_TO_PROFILE, getToolProfile, getToolsForProfile, getToolsForProfiles, ALL_PROFILES, ORCHESTRATOR_DENIED_TOOL_NAMES, RESEARCH_TOOL_NAMES } from "./tool-profiles"
 export type { ToolProfile } from "./tool-profiles"
 
 export function createBackgroundTools(manager: BackgroundManager, client: OpencodeClient): Record<string, ToolDefinition> {
@@ -96,15 +95,6 @@ const eagerTools: Record<string, ToolDefinition> = {
   session_read,
   session_search,
   session_info,
-  zread_search,
-  zread_file,
-  zread_structure,
-  exa_websearch,
-  exa_codesearch,
-  context7_resolve_library_id,
-  context7_query_docs,
-  grep_app_searchGitHub,
-  webfetch,
   system_notify,
 }
 
@@ -168,6 +158,49 @@ function buildLazyRegistry(): Record<string, LazyToolEntry> {
   registry.unified_model_search = {
     def: unifiedModelSearchToolDefs.unified_model_search,
     loader: () => import("./unified-model-search/tools").then(m => m.unified_model_search),
+  }
+
+  // Research tools — profile-gated via "research" profile
+  for (const [name, def] of Object.entries(exaToolDefs)) {
+    registry[name] = {
+      def,
+      loader: () => import("./exa").then(m => ({ exa_websearch: m.websearch } as Record<string, ToolDefinition>)[name]),
+    }
+  }
+
+  for (const [name, def] of Object.entries(codesearchToolDefs)) {
+    registry[name] = {
+      def,
+      loader: () => import("./codesearch").then(m => ({ exa_codesearch: m.codesearch } as Record<string, ToolDefinition>)[name]),
+    }
+  }
+
+  for (const [name, def] of Object.entries(context7ToolDefs)) {
+    registry[name] = {
+      def,
+      loader: () => import("./context7").then(m => (m as Record<string, ToolDefinition>)[name]),
+    }
+  }
+
+  for (const [name, def] of Object.entries(grepAppToolDefs)) {
+    registry[name] = {
+      def,
+      loader: () => import("./grep-app").then(m => (m as Record<string, ToolDefinition>)[name]),
+    }
+  }
+
+  for (const [name, def] of Object.entries(zreadToolDefs)) {
+    registry[name] = {
+      def,
+      loader: () => import("./zread/tools").then(m => (m as Record<string, ToolDefinition>)[name]),
+    }
+  }
+
+  for (const [name, def] of Object.entries(webfetchToolDefs)) {
+    registry[name] = {
+      def,
+      loader: () => import("./webfetch").then(m => (m as Record<string, ToolDefinition>)[name]),
+    }
   }
 
   return registry

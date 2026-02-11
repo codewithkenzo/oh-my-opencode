@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test"
-import { builtinTools, createBuiltinToolsWithLazyLoading, TOOL_PROFILES } from "./index"
+import { builtinTools, createBuiltinToolsWithLazyLoading, TOOL_PROFILES, ALL_PROFILES } from "./index"
 import type { ToolProfile } from "./tool-profiles"
 
 const EAGER_TOOLS = [
@@ -7,10 +7,6 @@ const EAGER_TOOLS = [
   "lsp_diagnostics", "lsp_prepare_rename", "lsp_rename",
   "grep", "glob", "multiedit",
   "session_list", "session_read", "session_search", "session_info",
-  "zread_search", "zread_file", "zread_structure",
-  "exa_websearch", "exa_codesearch",
-  "context7_resolve_library_id", "context7_query_docs",
-  "grep_app_searchGitHub", "webfetch",
   "system_notify",
 ] as const
 
@@ -23,6 +19,13 @@ const LAZY_TOOL_SAMPLES = {
   civitai: ["civitai_search", "civitai_get", "civitai_tags"],
   astGrep: ["ast_grep_search", "ast_grep_replace"],
   unifiedModelSearch: ["unified_model_search"],
+  research: [
+    "exa_websearch", "exa_codesearch",
+    "context7_resolve_library_id", "context7_query_docs",
+    "grep_app_searchGitHub",
+    "zread_search", "zread_file", "zread_structure",
+    "webfetch",
+  ],
 } as const
 
 describe("lazy loading integration", () => {
@@ -93,12 +96,53 @@ describe("lazy loading integration", () => {
       const coreToolNames = new Set(Object.keys(coreTools))
 
       // #when checking tool names
-      // #then should only contain eager (core/research/orchestration) tools, not lazy browser/runware/etc
+      // #then should only contain eager (core) tools, not lazy browser/runware/research/etc
       expect(coreToolNames.has("lsp_goto_definition")).toBe(true)
       expect(coreToolNames.has("grep")).toBe(true)
       expect(coreToolNames.has("browser_open")).toBe(false)
       expect(coreToolNames.has("runwareGenerate")).toBe(false)
       expect(coreToolNames.has("civitai_search")).toBe(false)
+      // research tools are now profile-gated, not eager
+      expect(coreToolNames.has("exa_websearch")).toBe(false)
+      expect(coreToolNames.has("context7_resolve_library_id")).toBe(false)
+      expect(coreToolNames.has("grep_app_searchGitHub")).toBe(false)
+      expect(coreToolNames.has("zread_search")).toBe(false)
+      expect(coreToolNames.has("webfetch")).toBe(false)
+    })
+
+    it("includes research tools when research profile is active", () => {
+      // #given lazy loading with research profile enabled
+      const tools = createBuiltinToolsWithLazyLoading({ activeProfiles: ["core", "research"] })
+      const toolNames = new Set(Object.keys(tools))
+
+      // #when checking research tool names
+      // #then all research tools should be present
+      expect(toolNames.has("exa_websearch")).toBe(true)
+      expect(toolNames.has("exa_codesearch")).toBe(true)
+      expect(toolNames.has("context7_resolve_library_id")).toBe(true)
+      expect(toolNames.has("context7_query_docs")).toBe(true)
+      expect(toolNames.has("grep_app_searchGitHub")).toBe(true)
+      expect(toolNames.has("zread_search")).toBe(true)
+      expect(toolNames.has("zread_file")).toBe(true)
+      expect(toolNames.has("zread_structure")).toBe(true)
+      expect(toolNames.has("webfetch")).toBe(true)
+      // non-research tools should still be excluded
+      expect(toolNames.has("browser_open")).toBe(false)
+    })
+
+    it("includes all profile tools when ALL_PROFILES used", () => {
+      // #given lazy loading with all profiles enabled
+      const tools = createBuiltinToolsWithLazyLoading({ activeProfiles: ALL_PROFILES })
+      const toolNames = new Set(Object.keys(tools))
+
+      // #when checking tools from each profile
+      // #then all profiles should be represented
+      expect(toolNames.has("exa_websearch")).toBe(true)
+      expect(toolNames.has("browser_open")).toBe(true)
+      expect(toolNames.has("ast_grep_search")).toBe(true)
+      expect(toolNames.has("runwareGenerate")).toBe(true)
+      expect(toolNames.has("syncthing_status")).toBe(true)
+      expect(toolNames.has("civitai_search")).toBe(true)
     })
 
     it("fires onFirstLoad callback", async () => {

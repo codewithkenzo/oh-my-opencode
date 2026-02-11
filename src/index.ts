@@ -59,6 +59,7 @@ import {
 import {
   builtinTools,
   createBuiltinToolsWithLazyLoading,
+  ALL_PROFILES,
   createCallOmoAgent,
   createBackgroundTools,
   createLookAt,
@@ -361,6 +362,7 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
   const lazyLoadingEnabled = pluginConfig.lazy_loading?.enabled === true;
   const resolvedBuiltinTools = lazyLoadingEnabled
     ? createBuiltinToolsWithLazyLoading({
+        activeProfiles: ALL_PROFILES,
         onFirstLoad: pluginConfig.lazy_loading?.log_timing
           ? (name, ms) =>
               log("[lazy-tool] first load", {

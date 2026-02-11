@@ -4,7 +4,7 @@
 
 8 AI agents for multi-model orchestration using Musashi-style naming.
 
-This module was compressed from 23 -> 8 built-ins (Sprint 1). Sprint 4.2 adds category/skill routing in `delegate_task` so orchestration can select agent + skills by domain.
+This module was compressed from 23 -> 8 built-ins (Sprint 1). Sprint 4.2 adds category/skill routing in `delegate_task` so orchestration can select agent + skills by domain. Sprint 5 compressed Musashi/Atlas prompts (skills deduplicated 3x→1x via `buildSkillsReference()`) and registered all tool profiles globally with orchestrator-level denials.
 
 ## AGENT ROSTER
 
@@ -145,18 +145,25 @@ Backward compatibility map from `LEGACY_TO_MUSASHI_NAME` in `src/agents/utils.ts
 
 ## TOOL RESTRICTIONS
 
+All 6 non-core tool profiles are registered globally via `ALL_PROFILES` in `src/index.ts`. Orchestrator agents deny non-core tools via `ORCHESTRATOR_DENIED_TOOL_NAMES` (67 tools from research, browser, native-search, external-api, local-service profiles). Subagents (T4, D5, K9, X1, R2) retain full access to all profiles.
+
 Derived from each agent factory permission config:
 
 | Agent | Restricted Tools |
 |-------|------------------|
-| `Musashi` | `call_omo_agent` denied (question tool explicitly allowed) |
-| `Musashi - boulder` | `task`, `call_omo_agent` denied |
+| `Musashi` | `call_omo_agent` denied + 67 non-core/non-orchestration tools denied via `ORCHESTRATOR_DENIED_TOOL_NAMES` |
+| `Musashi - boulder` | `task`, `call_omo_agent` denied + 67 non-core/non-orchestration tools denied via `ORCHESTRATOR_DENIED_TOOL_NAMES` |
 | `Musashi - plan` | `write`, `edit`, `task`, `delegate_task` denied |
 | `K9 - advisor` | `write`, `edit`, `task`, `delegate_task` denied |
 | `X1 - explorer` | `write`, `edit`, `task`, `delegate_task`, `call_omo_agent` denied |
 | `R2 - researcher` | `write`, `edit`, `task`, `delegate_task`, `call_omo_agent` denied |
-| `T4 - frontend builder` | `task`, `call_omo_agent` denied (has write/edit access) |
-| `D5 - backend builder` | `task`, `call_omo_agent` denied (has write/edit access) |
+| `T4 - frontend builder` | `task`, `call_omo_agent` denied (has write/edit + all tool profiles) |
+| `D5 - backend builder` | `task`, `call_omo_agent` denied (has write/edit + all tool profiles) |
+
+Key exports from `src/tools/tool-profiles.ts`:
+- `ALL_PROFILES` — all 6 non-orchestration profiles registered globally
+- `ORCHESTRATOR_DENIED_TOOL_NAMES` — 67 tool names denied from Musashi/boulder
+- `RESEARCH_TOOL_NAMES` — legacy export for backward compat
 
 ## KEY PATTERNS
 

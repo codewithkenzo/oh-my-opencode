@@ -130,6 +130,28 @@ export function getToolsForProfile(profile: ToolProfile): string[] {
   return [...TOOL_PROFILES[profile]]
 }
 
+/** Research tool names for use in agent permission deny lists */
+export const RESEARCH_TOOL_NAMES = TOOL_PROFILES.research
+
+/** All non-core, non-orchestration tool names — denied from primary orchestrators (Musashi/boulder) */
+export const ORCHESTRATOR_DENIED_TOOL_NAMES: readonly string[] = [
+  ...TOOL_PROFILES.research,
+  ...TOOL_PROFILES.browser,
+  ...TOOL_PROFILES["native-search"],
+  ...TOOL_PROFILES["external-api"],
+  ...TOOL_PROFILES["local-service"],
+]
+
+/** All profile names for global registration */
+export const ALL_PROFILES: ToolProfile[] = [
+  "core",
+  "research",
+  "browser",
+  "native-search",
+  "external-api",
+  "local-service",
+]
+
 export function getToolsForProfiles(profiles: ToolProfile[]): Set<string> {
   const tools = new Set<string>()
   for (const profile of profiles) {
