@@ -41,6 +41,8 @@ tools/
 | **System** | interactive_bash, look_at | CLI, multimodal |
 | **MCP/Skill** | skill, skill_mcp, mcp_query, slashcommand | Skill execution + custom MCP discovery |
 
+**Note**: `DELEGATE_TASK_DESCRIPTION` mandates `run_in_background=true` as the default for all delegations. Background-first enables monitoring, recalibration, and parallel execution.
+
 ## TOOL PROFILES
 
 Tools are grouped into 7 profiles for lazy loading (`src/tools/tool-profiles.ts`).

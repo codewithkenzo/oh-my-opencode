@@ -43,12 +43,22 @@ If `delegate_task` is called with both category and explicit `skills`, the final
 | Category | Auto Skills |
 |----------|-------------|
 | `visual-engineering` | `frontend-ui-ux`, `frontend-stack`, `component-stack`, `kenzo-tailwind`, `motion-system`, `visual-assets` |
-| `ultrabrain` | `blueprint-architect`, `effect-ts-expert`, `remeda-utils`, `zod-patterns` |
+| `ultrabrain` | `blueprint-architect`, `effect-ts-expert`, `remeda-utils`, `zod-patterns`, `kenzo-zustand`, `kenzo-tanstack-query` |
 | `artistry` | `frontend-ui-ux`, `kenzo-design-tokens`, `motion-system`, `visual-assets`, `kenzo-portfolio-craft`, `ui-designer` |
-| `quick` | `git-master`, `git-workflow` |
-| `most-capable` | `blueprint-architect`, `effect-ts-expert`, `testing-stack`, `research-tools`, `backend-debugging` |
+| `quick` | `git-master`, `git-workflow`, `kenzo-agents-md` |
+| `most-capable` | `blueprint-architect`, `effect-ts-expert`, `testing-stack`, `research-tools`, `backend-debugging`, `kenzo-tanstack-start`, `kenzo-zustand`, `kenzo-tanstack-query` |
 | `writing` | `kenzo-agents-md`, `kenzo-seo-geo`, `research-tools` |
-| `general` | `linearis`, `git-workflow`, `research-tools`, `zod-patterns` |
+| `general` | `linearis`, `git-workflow`, `research-tools`, `zod-patterns`, `kenzo-agents-md`, `kenzo-deployment` |
+
+## BACKGROUND-FIRST DELEGATION
+
+All orchestrator agents (Musashi, Musashi - boulder) now use `run_in_background=true` for ALL `delegate_task()` calls. This enables:
+- Monitoring via `background_output(task_id)`
+- Recalibration and steering via session resumption
+- Parallel execution of independent tasks
+- Sequential dependency handling via `background_output(task_id, block=true)`
+
+kenzo-* skills are prioritized in all skill scanning and delegation.
 
 ## FILE STRUCTURE
 

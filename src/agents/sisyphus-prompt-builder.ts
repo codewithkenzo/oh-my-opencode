@@ -91,6 +91,7 @@ export function buildSkillsReference(skills: AvailableSkill[]): string {
 
 **Skill-first**: Before ANY action, scan this table. If a skill matches → invoke via \`skill\` tool IMMEDIATELY.
 When delegating via \`delegate_task()\`, include ALL matching skills in \`load_skills=[...]\`.
+**kenzo-* skills take priority** when multiple skills match — they encode battle-tested project-specific patterns.
 
 | Skill | Trigger / Domain |
 |-------|------------------|
@@ -319,10 +320,11 @@ ${categoryRows.join("\n")}
 #### Skill Selection Protocol
 
 1. **Select category** matching task domain
-2. **Scan <Skills> table** — include ALL matching skills in \`load_skills=[...]\`
+2. **Scan <Skills> table** — include ALL matching skills in \`load_skills=[...]\`. **Prioritize kenzo-* skills** — they encode battle-tested project patterns.
 3. Subagents are STATELESS — missing a skill = suboptimal output
 
 \`\`\`typescript
-delegate_task(category="[name]", load_skills=["skill-1", "skill-2"], prompt="...")
-\`\`\``
+delegate_task(category="[name]", load_skills=["skill-1", "skill-2"], run_in_background=true, prompt="...")
+\`\`\`
+Monitor: \`background_output(task_id)\` → verify result → resume if needed.`
 }

@@ -242,6 +242,8 @@ export const CATEGORY_SKILLS: Record<string, string[]> = {
     "effect-ts-expert",     // Effect-TS typed errors, retry, DI, resilient APIs
     "remeda-utils",         // Remeda functional utilities - pipe, type-safe transforms
     "zod-patterns",         // Zod v4 validation - schemas, transforms, API contracts
+    "kenzo-zustand",        // Zustand v5 state management for complex architecture
+    "kenzo-tanstack-query", // TanStack Query v5 data fetching for complex apps
   ],
   artistry: [
     "frontend-ui-ux",       // builtin - Strong aesthetic focus for creative UI work
@@ -254,6 +256,7 @@ export const CATEGORY_SKILLS: Record<string, string[]> = {
   quick: [
     "git-master",           // builtin - Atomic commits, rebase/squash, history search
     "git-workflow",         // Conventional commits, GitHub CLI, branches, PRs
+    "kenzo-agents-md",      // AGENTS.md updates are common quick tasks
   ],
   "most-capable": [
     "blueprint-architect",  // Architecture planning, blueprints
@@ -261,6 +264,9 @@ export const CATEGORY_SKILLS: Record<string, string[]> = {
     "testing-stack",        // Vitest, Testcontainers, Playwright for Bun
     "research-tools",       // Websearch (exa), grep_app, context7, zread
     "backend-debugging",    // Backend debugging - APIs, databases, servers
+    "kenzo-tanstack-start", // TanStack Start full-stack patterns for complex tasks
+    "kenzo-zustand",        // Zustand v5 state management patterns
+    "kenzo-tanstack-query", // TanStack Query v5 data fetching for complex features
   ],
   writing: [
     "kenzo-agents-md",     // Create effective AGENTS.md files
@@ -272,6 +278,8 @@ export const CATEGORY_SKILLS: Record<string, string[]> = {
     "git-workflow",        // Conventional commits, GitHub CLI
     "research-tools",      // Websearch, grep_app, context7, zread
     "zod-patterns",        // Zod v4 validation patterns
+    "kenzo-agents-md",     // AGENTS.md maintenance is a general task
+    "kenzo-deployment",    // Deployment is a common general task
   ],
 }
 
@@ -293,7 +301,7 @@ MUTUALLY EXCLUSIVE: Provide EITHER category OR agent, not both (unless resuming)
 
 - category: Use predefined category (${BUILTIN_CATEGORIES}) → Spawns domain-specific agent with category config
 - agent: Use specific agent directly (e.g., "K9 - advisor", "X1 - explorer")
-- background: true=async (returns task_id), false=sync (waits for result). Default: false. Use background=true ONLY for parallel exploration with 5+ independent queries.
+- background: true=async (returns task_id), false=sync (waits). Default: true. **ALWAYS use background=true** - it enables monitoring, recalibration, and parallel execution. Use \`background_output(task_id)\` to monitor and \`background_output(task_id, block=true)\` to wait for sequential dependencies.
 - resume: Session ID to resume (from previous task output). Continues agent with FULL CONTEXT PRESERVED - saves tokens, maintains continuity.
 - skills: Array of skill names to prepend to prompt (e.g., ["playwright", "frontend-ui-ux"]). Use [] (empty array) if no skills needed.
 
