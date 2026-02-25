@@ -43,6 +43,8 @@ tools/
 
 **Note**: `DELEGATE_TASK_DESCRIPTION` mandates `run_in_background=true` as the default for all delegations. Background-first enables monitoring, recalibration, and parallel execution.
 
+**Note**: Skill validation in `delegate_task` is soft — missing/unresolvable skills are skipped with `console.warn`, never blocking delegation.
+
 ## TOOL PROFILES
 
 Tools are grouped into 7 profiles for lazy loading (`src/tools/tool-profiles.ts`).
