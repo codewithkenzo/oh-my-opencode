@@ -42,13 +42,13 @@ If `delegate_task` is called with both category and explicit `skills`, the final
 
 | Category | Auto Skills |
 |----------|-------------|
-| `visual-engineering` | `frontend-ui-ux`, `frontend-stack`, `component-stack`, `kenzo-tailwind`, `motion-system`, `visual-assets` |
-| `ultrabrain` | `blueprint-architect`, `effect-ts-expert`, `remeda-utils`, `zod-patterns`, `kenzo-zustand`, `kenzo-tanstack-query` |
-| `artistry` | `frontend-ui-ux`, `kenzo-design-tokens`, `motion-system`, `visual-assets`, `kenzo-portfolio-craft`, `ui-designer` |
-| `quick` | `git-master`, `git-workflow`, `kenzo-agents-md` |
-| `most-capable` | `blueprint-architect`, `effect-ts-expert`, `testing-stack`, `research-tools`, `backend-debugging`, `kenzo-tanstack-start`, `kenzo-zustand`, `kenzo-tanstack-query` |
-| `writing` | `kenzo-agents-md`, `kenzo-seo-geo`, `research-tools` |
-| `general` | `linearis`, `git-workflow`, `research-tools`, `zod-patterns`, `kenzo-agents-md`, `kenzo-deployment` |
+| `visual-engineering` | `frontend-ui-ux`, `kenzo-frontend-stack`, `kenzo-component-stack`, `kenzo-tailwind`, `kenzo-motion-system`, `kenzo-visual-assets` |
+| `ultrabrain` | `kenzo-blueprint-architect`, `kenzo-effect-ts`, `kenzo-remeda-utils`, `kenzo-zod-patterns`, `kenzo-zustand`, `kenzo-tanstack-query` |
+| `artistry` | `frontend-ui-ux`, `kenzo-design-tokens`, `kenzo-motion-system`, `kenzo-visual-assets`, `kenzo-portfolio-craft`, `kenzo-ui-designer` |
+| `quick` | `git-master`, `kenzo-git-workflow`, `kenzo-agents-md` |
+| `most-capable` | `kenzo-blueprint-architect`, `kenzo-effect-ts`, `kenzo-testing-stack`, `kenzo-research-tools`, `kenzo-backend-debugging`, `kenzo-tanstack-start`, `kenzo-zustand`, `kenzo-tanstack-query` |
+| `writing` | `kenzo-agents-md`, `kenzo-seo-geo`, `kenzo-research-tools` |
+| `general` | `linearis`, `kenzo-git-workflow`, `kenzo-research-tools`, `kenzo-zod-patterns`, `kenzo-agents-md`, `kenzo-deployment` |
 
 ## BACKGROUND-FIRST DELEGATION
 

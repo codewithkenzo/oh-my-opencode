@@ -231,39 +231,39 @@ export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 export const CATEGORY_SKILLS: Record<string, string[]> = {
   "visual-engineering": [
     "frontend-ui-ux",    // builtin - Designer-turned-developer for UI/UX
-    "frontend-stack",    // React 19, TanStack, Tailwind v4 ecosystem overview
-    "component-stack",   // React 19, TanStack, Tailwind v4, Motion v12, Animate UI patterns
+    "kenzo-frontend-stack",    // React 19, TanStack, Tailwind v4 ecosystem overview
+    "kenzo-component-stack",   // React 19, TanStack, Tailwind v4, Motion v12, Animate UI patterns
     "kenzo-tailwind",    // Tailwind CSS v4 patterns, @theme, OKLCH, container queries
-    "motion-system",     // Motion v12 animation - springs, gestures, layout transitions
-    "visual-assets",     // Icon libraries, fonts, backgrounds for frontend
+    "kenzo-motion-system",     // Motion v12 animation - springs, gestures, layout transitions
+    "kenzo-visual-assets",     // Icon libraries, fonts, backgrounds for frontend
   ],
   ultrabrain: [
-    "blueprint-architect",  // Architecture planning, blueprints, stack decisions
-    "effect-ts-expert",     // Effect-TS typed errors, retry, DI, resilient APIs
-    "remeda-utils",         // Remeda functional utilities - pipe, type-safe transforms
-    "zod-patterns",         // Zod v4 validation - schemas, transforms, API contracts
+    "kenzo-blueprint-architect",  // Architecture planning, blueprints, stack decisions
+    "kenzo-effect-ts",     // Effect-TS typed errors, retry, DI, resilient APIs
+    "kenzo-remeda-utils",         // Remeda functional utilities - pipe, type-safe transforms
+    "kenzo-zod-patterns",         // Zod v4 validation - schemas, transforms, API contracts
     "kenzo-zustand",        // Zustand v5 state management for complex architecture
     "kenzo-tanstack-query", // TanStack Query v5 data fetching for complex apps
   ],
   artistry: [
     "frontend-ui-ux",       // builtin - Strong aesthetic focus for creative UI work
     "kenzo-design-tokens",  // Design tokens - colors, typography, spacing, motion
-    "motion-system",        // Motion v12 animation patterns
-    "visual-assets",        // Icon libraries, fonts, backgrounds
+    "kenzo-motion-system",        // Motion v12 animation patterns
+    "kenzo-visual-assets",        // Icon libraries, fonts, backgrounds
     "kenzo-portfolio-craft", // Dark-first design, choreographed animations
-    "ui-designer",          // Visual design workflow, brand identity, color palettes
+    "kenzo-ui-designer",          // Visual design workflow, brand identity, color palettes
   ],
   quick: [
     "git-master",           // builtin - Atomic commits, rebase/squash, history search
-    "git-workflow",         // Conventional commits, GitHub CLI, branches, PRs
+    "kenzo-git-workflow",         // Conventional commits, GitHub CLI, branches, PRs
     "kenzo-agents-md",      // AGENTS.md updates are common quick tasks
   ],
   "most-capable": [
-    "blueprint-architect",  // Architecture planning, blueprints
-    "effect-ts-expert",     // Effect-TS typed errors, retry, DI
-    "testing-stack",        // Vitest, Testcontainers, Playwright for Bun
-    "research-tools",       // Websearch (exa), grep_app, context7, zread
-    "backend-debugging",    // Backend debugging - APIs, databases, servers
+    "kenzo-blueprint-architect",  // Architecture planning, blueprints
+    "kenzo-effect-ts",     // Effect-TS typed errors, retry, DI
+    "kenzo-testing-stack",        // Vitest, Testcontainers, Playwright for Bun
+    "kenzo-research-tools",       // Websearch (exa), grep_app, context7, zread
+    "kenzo-backend-debugging",    // Backend debugging - APIs, databases, servers
     "kenzo-tanstack-start", // TanStack Start full-stack patterns for complex tasks
     "kenzo-zustand",        // Zustand v5 state management patterns
     "kenzo-tanstack-query", // TanStack Query v5 data fetching for complex features
@@ -271,13 +271,13 @@ export const CATEGORY_SKILLS: Record<string, string[]> = {
   writing: [
     "kenzo-agents-md",     // Create effective AGENTS.md files
     "kenzo-seo-geo",       // GEO/AEO for LLM discoverability, llms.txt
-    "research-tools",      // Research tools for documentation research
+    "kenzo-research-tools",      // Research tools for documentation research
   ],
   general: [
     "linearis",            // builtin - Linear CLI for issue tracking
-    "git-workflow",        // Conventional commits, GitHub CLI
-    "research-tools",      // Websearch, grep_app, context7, zread
-    "zod-patterns",        // Zod v4 validation patterns
+    "kenzo-git-workflow",        // Conventional commits, GitHub CLI
+    "kenzo-research-tools",      // Websearch, grep_app, context7, zread
+    "kenzo-zod-patterns",        // Zod v4 validation patterns
     "kenzo-agents-md",     // AGENTS.md maintenance is a general task
     "kenzo-deployment",    // Deployment is a common general task
   ],
