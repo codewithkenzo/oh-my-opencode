@@ -47,6 +47,7 @@ import { raindropToolDefs } from "./raindrop/def"
 import { runwareToolDefs } from "./runware/def"
 import { syncthingToolDefs } from "./syncthing/def"
 import { ticketToolDefs } from "./ticket/def"
+import { worktreeToolDefs } from "./worktree/def"
 import { civitaiToolDefs } from "./civitai/def"
 import { unifiedModelSearchToolDefs } from "./unified-model-search/def"
 import { exaToolDefs } from "./exa/def"
@@ -147,6 +148,13 @@ function buildLazyRegistry(): Record<string, LazyToolEntry> {
     registry[name] = {
       def,
       loader: () => import("./ticket/tools").then(m => m.ticketTools[name]),
+    }
+  }
+
+  for (const [name, def] of Object.entries(worktreeToolDefs)) {
+    registry[name] = {
+      def,
+      loader: () => import("./worktree/tools").then(m => m.worktreeTools[name]),
     }
   }
 
