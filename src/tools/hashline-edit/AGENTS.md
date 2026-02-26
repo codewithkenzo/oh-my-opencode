@@ -4,7 +4,7 @@
 
 ## OVERVIEW
 
-24 files. Implements the `hashline_edit` tool — hash-anchored file editing where every line reference includes a content hash (`LINE#ID`). Validates hashes before applying edits, rejecting stale references.
+25 TypeScript files. Implements the `hashline_edit` tool — hash-anchored file editing where every line reference includes a content hash (`LINE#ID`). Validates hashes before applying edits, rejecting stale references.
 
 ## THREE-OP MODEL
 

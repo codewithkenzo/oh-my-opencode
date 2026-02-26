@@ -18,14 +18,16 @@ cli/
 │   ├── formatter.ts      # Colored output, symbols
 │   ├── constants.ts      # Check IDs, categories, symbols
 │   ├── types.ts          # CheckResult, CheckDefinition
-│   └── checks/           # 14 checks across 6 categories
-│       ├── version.ts    # OpenCode + plugin version
+│   └── checks/           # 9 check modules (8 core + version)
+│       ├── opencode.ts   # OpenCode installation check
+│       ├── plugin.ts     # Plugin registration check
 │       ├── config.ts     # JSONC validity, Zod validation
 │       ├── auth.ts       # Anthropic, OpenAI, Google
 │       ├── dependencies.ts # AST-Grep, Comment Checker
+│       ├── gh.ts         # GitHub CLI availability
 │       ├── lsp.ts        # LSP server connectivity
 │       ├── mcp.ts        # MCP server validation
-│       └── gh.ts         # GitHub CLI availability
+│       └── version.ts    # OpenCode + plugin version
 ├── run/
 │   ├── index.ts          # Run command entry
 │   └── runner.ts         # Session launcher
@@ -39,21 +41,24 @@ cli/
 | Command | Purpose |
 |---------|---------|
 | `install` | Interactive setup, subscription detection |
-| `doctor` | 14 health checks, `--verbose`, `--json`, `--category` |
+| `doctor` | 9 check modules / 14 runtime checks, `--verbose`, `--json`, `--category` |
 | `run` | Launch OpenCode session with completion enforcement |
 | `get-local-version` | Version detection, update checking |
 | `version` | Print installed CLI version |
 
 ## DOCTOR CHECK CATEGORIES
 
-| Category | Checks |
-|----------|--------|
-| installation | opencode, plugin registration |
-| configuration | config validity, Zod validation |
-| authentication | anthropic, openai, google |
-| dependencies | ast-grep CLI/NAPI, comment-checker |
-| tools | LSP, MCP connectivity |
-| updates | version comparison |
+| Module | Check File |
+|--------|------------|
+| OpenCode installation | `opencode.ts` |
+| Plugin registration | `plugin.ts` |
+| Configuration | `config.ts` |
+| Authentication | `auth.ts` |
+| Dependencies | `dependencies.ts` |
+| GitHub CLI | `gh.ts` |
+| LSP | `lsp.ts` |
+| MCP | `mcp.ts` |
+| Version | `version.ts` |
 
 ## HOW TO ADD CHECK
 

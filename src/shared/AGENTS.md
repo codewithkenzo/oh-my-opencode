@@ -2,7 +2,7 @@
 
 ## OVERVIEW
 
-43 cross-cutting utilities: path resolution, token truncation, config parsing, Claude Code compatibility.
+42 cross-cutting utilities: path resolution, token truncation, config parsing, Claude Code compatibility.
 
 ## STRUCTURE
 
@@ -16,7 +16,7 @@ shared/
 ├── data-path.ts           # XDG-compliant storage (~/.local/share)
 ├── opencode-config-dir.ts # ~/.config/opencode resolution
 ├── claude-config-dir.ts   # ~/.claude resolution
-├── migration.ts           # Legacy config migration (agent names, permission compat, omo -> Sisyphus)
+├── migration.ts           # Legacy config migration (agent names, permission compat, omo -> Musashi)
 ├── opencode-version.ts    # Version comparison (>= 1.0.150)
 ├── model-requirements.ts  # Agent model fallback chains
 ├── external-plugin-detector.ts # OAuth spoofing detection

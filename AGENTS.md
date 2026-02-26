@@ -6,7 +6,7 @@
 
 ## OVERVIEW
 
-OpenCode plugin implementing multi-model agent orchestration (Claude Opus 4.5, GPT-5.2, Gemini 3, GLM-4.7). 37 lifecycle hooks, 103 tools grouped into 7 lazy-loaded profiles, 8 specialized agents, Claude Code compatibility layer. "oh-my-zsh" for OpenCode.
+OpenCode plugin implementing multi-model agent orchestration (Claude Opus 4.5, GPT-5.2, Gemini 3, GLM-4.7). 41 hook directories (38 configurable in `HookNameSchema`), 107 tools grouped into 7 lazy-loaded profiles, 8 specialized agents, Claude Code compatibility layer. "oh-my-zsh" for OpenCode.
 
 ## STRUCTURE
 
@@ -14,14 +14,14 @@ OpenCode plugin implementing multi-model agent orchestration (Claude Opus 4.5, G
 oh-my-opencode/
 ├── src/
 │   ├── agents/        # 8 AI agents (Musashi, K9, X1, R2, T4, D5) - see src/agents/AGENTS.md
-│   ├── hooks/         # 37 lifecycle hooks (PreToolUse, PostToolUse, Stop, etc.) - see src/hooks/AGENTS.md
-│   ├── tools/         # 103 tools with lazy-loaded profiles and category routing - see src/tools/AGENTS.md
+│   ├── hooks/         # 41 hook directories (38 configurable + internal hooks) - see src/hooks/AGENTS.md
+│   ├── tools/         # 34 tool directories, 107 tools with lazy-loaded profiles and routing - see src/tools/AGENTS.md
 │   ├── features/      # Background agents, Claude Code compat layer - see src/features/AGENTS.md
-│   ├── shared/        # 43 cross-cutting utilities - see src/shared/AGENTS.md
+│   ├── shared/        # 42 cross-cutting utilities - see src/shared/AGENTS.md
 │   ├── cli/           # CLI installer, doctor, run - see src/cli/AGENTS.md
 │   ├── mcp/           # Built-in MCPs: websearch, context7, grep_app
 │   ├── config/        # Zod schema, TypeScript types
-│   └── index.ts       # Main plugin entry (672 lines)
+│   └── index.ts       # Main plugin entry (779 lines)
 ├── script/            # build-schema.ts, publish.ts, build-binaries.ts
 ├── packages/          # 7 platform-specific binaries
 └── dist/              # Build output (ESM + .d.ts)
@@ -37,16 +37,17 @@ oh-my-opencode/
 | Hashline edit tool | `src/tools/hashline-edit/` | Line-addressed Edit workflow + hashline parsing |
 | Add MCP | `src/mcp/` | Create config, add to index.ts |
 | Add skill | `src/features/builtin-skills/` | Create dir with SKILL.md |
+| Builtin commands | `src/features/builtin-commands/templates/` | 11 templates: brainstorm, debug, finish, handoff, init-deep, ralph-loop, refactor, review, start-work, verify, worktree |
 | `/handoff` command | `src/features/builtin-commands/templates/handoff.ts` | Session continuity summary template |
 | LSP behavior | `src/tools/lsp/` | client.ts (connection), tools.ts (handlers) |
-| AST-Grep | `src/tools/ast-grep/` | napi.ts for @ast-grep/napi binding |
+| AST-Grep | `src/tools/ast-grep/` | cli.ts + tools.ts wrap @ast-grep binaries |
 | Config schema | `src/config/schema.ts` | Zod schema, run `bun run build:schema` after changes |
-| Claude Code compat | `src/features/claude-code-*-loader/` | Command, skill, agent, mcp loaders |
-| Background agents | `src/features/background-agent/` | manager.ts (1165 lines) for task lifecycle |
+| Claude Code compat | `src/features/claude-code-*-loader/` | Agent/command/mcp/plugin loaders (plus `src/features/opencode-skill-loader/`) |
+| Background agents | `src/features/background-agent/` | manager.ts (1385 lines) for task lifecycle |
 | Skill MCP | `src/features/skill-mcp-manager/` | MCP servers embedded in skills |
 | CLI installer | `src/cli/install.ts` | Interactive TUI (462 lines) |
-| Doctor checks | `src/cli/doctor/checks/` | 14 health checks across 6 categories |
-| Orchestrator | `src/hooks/atlas/` | Main orchestration hook (773 lines) |
+| Doctor checks | `src/cli/doctor/checks/` | 9 check modules (`auth`, `config`, `dependencies`, `gh`, `lsp`, `mcp`, `opencode`, `plugin`, `version`) |
+| Orchestrator | `src/hooks/atlas/` | Main orchestration hook (785 lines) |
 
 ## TDD (Test-Driven Development)
 
@@ -71,7 +72,7 @@ oh-my-opencode/
 - **Build**: `bun build` (ESM) + `tsc --emitDeclarationOnly`
 - **Exports**: Barrel pattern in index.ts; explicit named exports
 - **Naming**: kebab-case directories, `createXXXHook`/`createXXXTool` factories
-- **Testing**: BDD comments `#given/#when/#then`, 126 test files
+- **Testing**: BDD comments `#given/#when/#then`, 132 test files
 - **Temperature**: 0.1 for code agents, max 0.3
 
 ## ANTI-PATTERNS (THIS PROJECT)
@@ -125,7 +126,7 @@ bun run typecheck      # Type check
 bun run build          # ESM + declarations + schema
 bun run rebuild        # Clean + Build
 bun run build:schema   # Schema only
-bun test               # Run tests (126 test files, ~1604 tests)
+bun test               # Run tests (132 files, 1642 pass, 1 skip, 4662 expect() calls)
 ```
 
 ## TOOL PROFILES
@@ -176,17 +177,17 @@ Config: `src/tools/delegate-task/constants.ts` (`CATEGORY_AGENTS`, `CATEGORY_SKI
 
 | File | Lines | Description |
 |------|-------|-------------|
-| `src/agents/atlas.ts` | 572 | Master orchestrator agent (boulder flow) |
+| `src/agents/atlas/` | 480 (6 files) | Master orchestrator module (boulder flow) |
 | `src/features/builtin-skills/skills/git-master.ts` | 1108 | Git operations policy, commit/PR workflow rules |
-| `src/agents/prometheus-prompt.ts` | 1196 | Planning agent, interview mode, Momus loop |
-| `src/features/background-agent/manager.ts` | 1359 | Task lifecycle, concurrency, notification batching |
-| `src/hooks/atlas/index.ts` | 773 | Atlas orchestration hook implementation |
-| `src/hooks/runtime-fallback/` | 3528 (13 files) | Model fallback/retry orchestration with error classification |
-| `src/tools/delegate-task/tools.ts` | 788 | Category-based task delegation |
-| `src/cli/config-manager.ts` | 617 | JSONC parsing, multi-level config |
-| `src/agents/sisyphus.ts` | 450 | Main Musashi agent prompt |
+| `src/agents/prometheus-prompt.ts` | 1195 | Planning agent, interview mode, Momus loop |
+| `src/features/background-agent/manager.ts` | 1385 | Task lifecycle, concurrency, notification batching |
+| `src/hooks/atlas/index.ts` | 785 | Atlas orchestration hook implementation |
+| `src/hooks/runtime-fallback/` | 3518 (13 files) | Model fallback/retry orchestration with error classification |
+| `src/tools/delegate-task/tools.ts` | 801 | Category-based task delegation |
+| `src/cli/config-manager.ts` | 608 | JSONC parsing, multi-level config |
+| `src/agents/sisyphus.ts` | 320 | Main Musashi agent prompt |
 | `src/features/builtin-commands/templates/refactor.ts` | 619 | Refactoring command template |
-| `src/tools/lsp/client.ts` | 598 | LSP protocol, JSON-RPC |
+| `src/tools/lsp/client.ts` | 599 | LSP protocol, JSON-RPC |
 
 ## MCP ARCHITECTURE
 
@@ -204,7 +205,7 @@ Three-tier MCP system:
 
 ## NOTES
 
-- **Testing**: Bun native test (`bun test`), BDD-style, 126 test files (last run: ~1580 pass, 1 skip, ~23 fail; ~1604 total)
+- **Testing**: Bun native test (`bun test`), BDD-style, 132 files (last run: 1642 pass, 1 skip, 0 fail; 4662 `expect()` calls)
 - **OpenCode**: Requires >= 1.0.150
 - **Multi-lang docs**: README.md (EN), README.ko.md (KO), README.ja.md (JA), README.zh-cn.md (ZH-CN)
 - **Config**: `~/.config/opencode/oh-my-opencode.json` (user) or `.opencode/oh-my-opencode.json` (project)

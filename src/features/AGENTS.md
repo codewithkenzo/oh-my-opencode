@@ -8,7 +8,7 @@ Core feature modules + Claude Code compatibility layer. Background agents, skill
 
 ```
 features/
-├── background-agent/           # Task lifecycle (1165 lines manager.ts)
+├── background-agent/           # Task lifecycle (1385 lines manager.ts)
 │   ├── manager.ts              # Launch → poll → complete orchestration
 │   ├── concurrency.ts          # Per-provider/model limits
 │   └── types.ts                # BackgroundTask, LaunchInput
@@ -16,9 +16,9 @@ features/
 │   ├── manager.ts              # Lazy loading, idle cleanup
 │   └── types.ts                # SkillMcpConfig, transports
 ├── builtin-skills/             # Playwright, git-master, frontend-ui-ux
-│   └── skills.ts               # 1203 lines of skill definitions
-├── builtin-commands/           # ralph-loop, refactor, init-deep, start-work, handoff
-│   └── templates/              # Command implementations (5 templates)
+│   └── skills.ts               # Built-in skill registry
+├── builtin-commands/           # brainstorm, debug, finish, handoff, init-deep, ralph-loop, refactor, review, start-work, verify, worktree
+│   └── templates/              # Command implementations (11 templates)
 ├── claude-code-agent-loader/   # ~/.claude/agents/*.md
 ├── claude-code-command-loader/ # ~/.claude/commands/*.md
 ├── claude-code-mcp-loader/     # .mcp.json with ${VAR} expansion
@@ -39,6 +39,20 @@ features/
 | Skills | `.opencode/skill/` > `~/.config/opencode/skill/` > `.claude/skills/` > `~/.claude/skills/` |
 | Agents | `.claude/agents/` > `~/.claude/agents/` |
 | MCPs | `.claude/.mcp.json` > `.mcp.json` > `~/.claude/.mcp.json` |
+
+## BUILTIN COMMAND TEMPLATES
+
+- `brainstorm`
+- `debug`
+- `finish`
+- `handoff`
+- `init-deep`
+- `ralph-loop`
+- `refactor`
+- `review`
+- `start-work`
+- `verify`
+- `worktree`
 
 ## CATEGORY SKILLS
 

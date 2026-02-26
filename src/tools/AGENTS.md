@@ -2,7 +2,7 @@
 
 ## OVERVIEW
 
-103 tools across 7 lazy-loaded profiles: core (24), research (9), browser (18), native-search (2), external-api (23), local-service (15), orchestration (12). High-performance C++ bindings via @ast-grep/napi.
+34 tool directories exposing 107 tools across 7 lazy-loaded profiles: core (28), research (9), browser (18), native-search (2), external-api (23), local-service (15), orchestration (12). High-performance C++ bindings via @ast-grep/napi.
 
 ## STRUCTURE
 
@@ -14,21 +14,40 @@ tools/
 │   ├── tools.ts      # Business logic, ToolDefinition (imports from def.ts)
 │   ├── types.ts      # Zod schemas
 │   └── constants.ts  # Fixed values, descriptions
-├── lsp/              # 11 tools: goto_definition, references, symbols, diagnostics, rename
+├── agent-browser/    # Browser automation tools
 ├── ast-grep/         # 2 tools: search, replace (25 languages via NAPI)
-├── delegate-task/    # Category-based agent routing (761 lines)
-├── session-manager/  # 4 tools: list, read, search, info
-├── grep/             # Custom grep with timeout/truncation
+├── background-task/  # background_output, background_cancel
+├── call-omo-agent/   # Direct agent invocation
+├── civitai/          # Civitai external API tools
+├── codesearch/       # Exa code search integration
+├── context7/         # Context7 docs tools
+├── delegate-task/    # Category-based agent routing (801 lines)
+├── exa/              # Exa web search tools
 ├── glob/             # Custom glob with 60s timeout, 100 file limit
-├── hashline-edit/    # Line-addressed editing with hashline format (27 files)
+├── grep/             # Custom grep with timeout/truncation
+├── grep-app/         # GitHub code search integration
+├── hashline-edit/    # Line-addressed editing (25 TypeScript files)
+├── hybrid-router/    # MCP-first/builtin routing helper
 ├── interactive-bash/ # Tmux session management
 ├── look-at/          # Multimodal PDF/image analysis
-├── skill/            # Skill execution
-├── skill-mcp/        # Skill MCP operations
+├── lsp/              # LSP semantic tools
 ├── mcp-query/        # Custom MCP (.mcp.json) discovery/query tool
+├── multiedit/        # Multiple edits in one file operation
+├── raindrop/         # Ripple collection API tools
+├── runware/          # Runware image/video API tools
+├── session-manager/  # 4 tools: list, read, search, info
+├── skill/            # Skill execution + discovery
+├── skill-mcp/        # Skill MCP operations
 ├── slashcommand/     # Slash command dispatch
-├── call-omo-agent/   # Direct agent invocation
-└── background-task/  # background_output, background_cancel
+├── supermemory/      # Persistent memory system tools
+├── syncthing/        # Local Syncthing service tools
+├── system-notify/    # Desktop notifications
+├── task/             # Structured todo management tool
+├── ticket/           # Ticket workflow tools
+├── unified-model-search/ # Unified model catalog search
+├── webfetch/         # URL fetch + markdown conversion
+├── worktree/         # Git worktree management tools
+└── zread/            # GitHub repository analysis tools
 ```
 
 ## TOOL CATEGORIES
@@ -56,7 +75,7 @@ All 6 non-orchestration profiles are registered globally via `ALL_PROFILES` in `
 
 | Profile | Count | Purpose | Orchestrator Access |
 |---------|-------|---------|---------------------|
-| core | 24 | LSP, grep, glob, hashline_edit, session, tickets - always loaded | ✅ |
+| core | 28 | LSP, grep, glob, hashline_edit, session, tickets, worktree - always loaded | ✅ |
 | research | 9 | Exa, Context7, grep_app, zread - web/docs search | ❌ Denied |
 | browser | 18 | Playwright browser automation | ❌ Denied |
 | native-search | 2 | AST-Grep search/replace | ❌ Denied |

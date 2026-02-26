@@ -78,11 +78,18 @@ kenzo-* skills are prioritized in all skill scanning and delegation.
 
 ## FILE STRUCTURE
 
-Current `src/agents/*.ts` files:
+Current `src/agents/*.ts` files and the `atlas/` module:
 
 ```
 agents/
-├── atlas.ts
+├── atlas/
+│   ├── agent.ts
+│   ├── default.ts
+│   ├── gemini.ts
+│   ├── gpt.ts
+│   ├── index.ts
+│   └── prompt-section-builder.ts
+├── dynamic-agent-prompt-builder.ts
 ├── explore.ts
 ├── index.ts
 ├── librarian.ts
@@ -197,7 +204,7 @@ Key exports from `src/tools/tool-profiles.ts`:
 
 - **Factory pattern**: `createXXXAgent(modelOrContext): AgentConfig`.
 - **Source registry**: `agentSources` is the single built-in agent map.
-- **Prompt metadata**: `AgentPromptMetadata` powers dynamic Sisyphus/Atlas prompt sections including delegation table and skill specializations.
+- **Prompt metadata**: `AgentPromptMetadata` powers dynamic Musashi/boulder prompt sections including delegation table and skill specializations.
 - **Model routing**: `resolveModelWithFallback` + `AGENT_MODEL_REQUIREMENTS`.
 - **Builder factories**: T4 uses `createFrontendBuilderAgent`, D5 uses `createBackendBuilderAgent` — each with domain-specific prompts and full write access.
 - **Category composition**: `CATEGORY_AGENTS` picks executor, `CATEGORY_SKILLS` injects domain guidance.
