@@ -86,7 +86,7 @@ import { BackgroundManager } from "./features/background-agent";
 import { McpClientManager } from "./features/skill-mcp-manager";
 import { initTaskToastManager } from "./features/task-toast-manager";
 import { type HookName } from "./config";
-import { log, detectExternalNotificationPlugin, getNotificationConflictWarning, resetMessageCursor, includesCaseInsensitive, createStartupTimer, logToolRegistrySnapshot } from "./shared";
+import { log, detectExternalNotificationPlugin, getNotificationConflictWarning, resetMessageCursor, includesCaseInsensitive, createStartupTimer, logToolRegistrySnapshot, normalizeSessionIdleEvent } from "./shared";
 import { loadPluginConfig } from "./plugin-config";
 import { createModelCacheState, getModelLimit } from "./plugin-state";
 import { createConfigHandler } from "./plugin-handlers";
@@ -531,26 +531,36 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     config: configHandler,
 
     event: async (input) => {
-      await autoUpdateChecker?.event(input);
-      await claudeCodeHooks.event(input);
-      await backgroundNotificationHook?.event(input);
-      await sessionNotification?.(input);
-      await todoContinuationEnforcer?.handler(input);
-      await contextWindowMonitor?.event(input);
-      await directoryAgentsInjector?.event(input);
-      await directoryReadmeInjector?.event(input);
-      await rulesInjector?.event(input);
-      await thinkMode?.event(input);
-      await anthropicContextWindowLimitRecovery?.event(input);
-      await agentUsageReminder?.event(input);
-      await interactiveBashSession?.event(input);
-      await ralphLoop?.event(input);
-      await atlasHook?.handler(input);
-      await memoryPersistence?.event(input);
-      await unstableAgentBabysitter?.event(input);
-      await runtimeFallback?.event(input);
+      const normalizedEvent = normalizeSessionIdleEvent(input.event);
+      if (!normalizedEvent) {
+        return;
+      }
 
-      const { event } = input;
+      const normalizedInput =
+        normalizedEvent === input.event
+          ? input
+          : { ...input, event: normalizedEvent };
+
+      await autoUpdateChecker?.event(normalizedInput);
+      await claudeCodeHooks.event(normalizedInput);
+      await backgroundNotificationHook?.event(normalizedInput);
+      await sessionNotification?.(normalizedInput);
+      await todoContinuationEnforcer?.handler(normalizedInput);
+      await contextWindowMonitor?.event(normalizedInput);
+      await directoryAgentsInjector?.event(normalizedInput);
+      await directoryReadmeInjector?.event(normalizedInput);
+      await rulesInjector?.event(normalizedInput);
+      await thinkMode?.event(normalizedInput);
+      await anthropicContextWindowLimitRecovery?.event(normalizedInput);
+      await agentUsageReminder?.event(normalizedInput);
+      await interactiveBashSession?.event(normalizedInput);
+      await ralphLoop?.event(normalizedInput);
+      await atlasHook?.handler(normalizedInput);
+      await memoryPersistence?.event(normalizedInput);
+      await unstableAgentBabysitter?.event(normalizedInput);
+      await runtimeFallback?.event(normalizedInput);
+
+      const { event } = normalizedInput;
       const props = event.properties as Record<string, unknown> | undefined;
 
       if (event.type === "session.created") {
