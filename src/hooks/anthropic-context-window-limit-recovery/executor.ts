@@ -3,6 +3,7 @@ import type {
   RetryState,
   TruncateState,
 } from "./types";
+import type { PluginInput } from "@opencode-ai/plugin";
 import type { ExperimentalConfig } from "../../config";
 import { RETRY_CONFIG, TRUNCATE_CONFIG } from "./types";
 
@@ -52,6 +53,8 @@ type Client = {
     }) => Promise<unknown>;
   };
 };
+
+type OpencodeClient = PluginInput["client"];
 
 function getOrCreateRetryState(
   autoCompactState: AutoCompactState,
@@ -120,7 +123,7 @@ function formatBytes(bytes: number): string {
 export async function getLastAssistant(
   sessionID: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  client: any,
+  client: Client | OpencodeClient,
   directory: string,
 ): Promise<Record<string, unknown> | null> {
   try {
@@ -258,7 +261,7 @@ export async function executeCompact(
   msg: Record<string, unknown>,
   autoCompactState: AutoCompactState,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  client: any,
+  client: Client | OpencodeClient,
   directory: string,
   experimental?: ExperimentalConfig,
 ): Promise<void> {

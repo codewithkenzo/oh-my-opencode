@@ -42,6 +42,7 @@ import {
   createAnthropicEffortHook,
   createUnstableAgentBabysitterHook,
   createRuntimeFallbackHook,
+  type RuntimeFallbackHook,
 } from "./hooks";
 import {
   contextCollector,
@@ -485,7 +486,10 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
 
       await skillAutoInvoke?.["chat.message"]?.(input, output);
       await keywordDetector?.["chat.message"]?.(input, output);
-      await runtimeFallback?.["chat.message"]?.(input, output as any);
+      await runtimeFallback?.["chat.message"]?.(
+        input,
+        output as Parameters<NonNullable<RuntimeFallbackHook["chat.message"]>>[1],
+      );
       await claudeCodeHooks["chat.message"]?.(input, output);
       await autoSlashCommand?.["chat.message"]?.(input, output);
       await startWork?.["chat.message"]?.(input, output);

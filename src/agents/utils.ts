@@ -197,7 +197,7 @@ export async function createBuiltinAgents(
   categories?: CategoriesConfig,
   gitMasterConfig?: GitMasterConfig,
   discoveredSkills: LoadedSkill[] = [],
-  client?: any
+  client?: unknown
 ): Promise<Record<string, AgentConfig>> {
   if (!systemDefaultModel) {
     throw new Error("createBuiltinAgents requires systemDefaultModel")

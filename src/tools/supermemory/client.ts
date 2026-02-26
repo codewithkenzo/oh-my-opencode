@@ -123,10 +123,40 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   })
 }
 
-export class SupermemoryClient {
-  private sdkClient: any = null
+interface SupermemorySdkClient {
+  settings: {
+    update: (options: { shouldLLMFilter: boolean; filterPrompt: string }) => unknown
+  }
+  search: {
+    memories: (options: {
+      q: string
+      containerTag: string
+      threshold: number
+      limit: number
+      searchMode: "hybrid"
+    }) => Promise<unknown>
+  }
+  profile: (options: { containerTag: string; q?: string }) => Promise<unknown>
+  memories: {
+    add: (options: {
+      content: string
+      containerTag: string
+      metadata?: Record<string, string | number | boolean | string[]>
+    }) => Promise<unknown>
+    delete: (memoryId: string) => Promise<unknown>
+    list: (options: {
+      containerTags: string[]
+      limit: number
+      order: "desc"
+      sort: "createdAt"
+    }) => Promise<unknown>
+  }
+}
 
-  private async getClient(): Promise<any> {
+export class SupermemoryClient {
+  private sdkClient: unknown = null
+
+  private async getClient(): Promise<unknown> {
     if (this.sdkClient) return this.sdkClient
     
     const apiKey = getApiKey()
@@ -140,12 +170,13 @@ export class SupermemoryClient {
       this.sdkClient = new Supermemory({ apiKey })
       
       const config = getConfig()
-      this.sdkClient.settings.update({
+      const client = this.sdkClient as SupermemorySdkClient
+      client.settings.update({
         shouldLLMFilter: true,
         filterPrompt: config.filterPrompt,
       })
-      
-      return this.sdkClient
+
+      return client
     } catch (err) {
       log("[supermemory] failed to initialize SDK", { error: String(err) })
       throw err
@@ -155,7 +186,7 @@ export class SupermemoryClient {
   async searchMemories(query: string, containerTag: string): Promise<MemoriesResponse> {
     log("[supermemory] searchMemories", { containerTag })
     try {
-      const client = await this.getClient()
+      const client = (await this.getClient()) as SupermemorySdkClient
       const config = getConfig()
       const result = await withTimeout(
         client.search.memories({
@@ -178,7 +209,7 @@ export class SupermemoryClient {
   async getProfile(containerTag: string, query?: string): Promise<ProfileResponse | null> {
     log("[supermemory] getProfile", { containerTag })
     try {
-      const client = await this.getClient()
+      const client = (await this.getClient()) as SupermemorySdkClient
       const result = await withTimeout(
         client.profile({
           containerTag,
@@ -201,7 +232,7 @@ export class SupermemoryClient {
   ): Promise<AddMemoryResponse | null> {
     log("[supermemory] addMemory", { containerTag })
     try {
-      const client = await this.getClient()
+      const client = (await this.getClient()) as SupermemorySdkClient
       const result = await withTimeout(
         client.memories.add({
           content,
@@ -224,7 +255,7 @@ export class SupermemoryClient {
       throw new Error("memoryId is required for delete operation")
     }
     try {
-      const client = await this.getClient()
+      const client = (await this.getClient()) as SupermemorySdkClient
       // Use hard delete - the forget API is unreliable
       await withTimeout(
         client.memories.delete(memoryId),
@@ -242,7 +273,7 @@ export class SupermemoryClient {
   async listMemories(containerTag: string, limit = 20): Promise<ListMemoriesResponse> {
     log("[supermemory] listMemories", { containerTag, limit })
     try {
-      const client = await this.getClient()
+      const client = (await this.getClient()) as SupermemorySdkClient
       const result = await withTimeout(
         client.memories.list({
           containerTags: [containerTag],

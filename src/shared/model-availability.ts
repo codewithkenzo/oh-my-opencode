@@ -99,7 +99,7 @@ function getOpenCodeCacheDir(): string {
 	return join(homedir(), ".cache", "opencode")
 }
 
-export async function fetchAvailableModels(_client?: any): Promise<Set<string>> {
+export async function fetchAvailableModels(_client?: unknown): Promise<Set<string>> {
 	log("[fetchAvailableModels] CALLED")
 	
 	if (cachedModels !== null) {

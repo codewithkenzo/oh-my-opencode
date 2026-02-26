@@ -54,6 +54,18 @@ interface QueueItem {
   input: LaunchInput
 }
 
+interface SessionMessagePart {
+  type: string
+  text?: string
+  content?: string | unknown[]
+  state?: { output?: string }
+}
+
+interface SessionMessage {
+  info?: { role?: string }
+  parts?: SessionMessagePart[]
+}
+
 export class BackgroundManager {
   private static cleanupManagers = new Set<BackgroundManager>()
   private static cleanupRegistered = false
@@ -693,7 +705,7 @@ export class BackgroundManager {
         path: { id: sessionID },
       })
 
-      const messages = response.data ?? []
+      const messages = (response.data ?? []) as SessionMessage[]
       
       // Check for at least one assistant or tool message
       const hasAssistantOrToolMessage = messages.some(
@@ -712,22 +724,23 @@ export class BackgroundManager {
       // - "tool" with .state.output property (tool call results)
       // - "text" with .text property (final text output)
       // - "step-start"/"step-finish" (metadata, no content)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const hasContent = messages.some((m: any) => {
+      const hasContent = messages.some((m: SessionMessage) => {
         if (m.info?.role !== "assistant" && m.info?.role !== "tool") return false
         const parts = m.parts ?? []
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return parts.some((p: any) => 
-        // Text content (final output)
-        (p.type === "text" && p.text && p.text.trim().length > 0) ||
-        // Reasoning content (thinking blocks)
-        (p.type === "reasoning" && p.text && p.text.trim().length > 0) ||
-        // Tool calls (indicates work was done)
-        p.type === "tool" ||
-        // Tool results (output from executed tools) - important for tool-only tasks
-        (p.type === "tool_result" && p.content && 
-          (typeof p.content === "string" ? p.content.trim().length > 0 : p.content.length > 0))
-      )
+        return parts.some((p: SessionMessagePart) =>
+          // Text content (final output)
+          (p.type === "text" && p.text && p.text.trim().length > 0) ||
+          // Reasoning content (thinking blocks)
+          (p.type === "reasoning" && p.text && p.text.trim().length > 0) ||
+          // Tool calls (indicates work was done)
+          p.type === "tool" ||
+          // Tool results (output from executed tools) - important for tool-only tasks
+          (p.type === "tool_result" &&
+            p.content &&
+            (typeof p.content === "string"
+              ? p.content.trim().length > 0
+              : (p.content as unknown[]).length > 0))
+        )
       })
 
       if (!hasContent) {

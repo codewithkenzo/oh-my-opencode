@@ -284,8 +284,9 @@ async function executeSync(
   // Include both assistant messages AND tool messages
   // Tool results (grep, glob, bash output) come from role "tool"
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const relevantMessages = messages.filter(
-    (m: any) => m.info?.role === "assistant" || m.info?.role === "tool"
+  const sessionMessages = messages as Message[]
+  const relevantMessages = sessionMessages.filter(
+    (m: Message) => m.info?.role === "assistant" || m.info?.role === "tool"
   )
 
   if (relevantMessages.length === 0) {
@@ -298,7 +299,7 @@ async function executeSync(
 
   // Sort by time ascending (oldest first) to process messages in order
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sortedMessages = [...relevantMessages].sort((a: any, b: any) => {
+  const sortedMessages = [...relevantMessages].sort((a: Message, b: Message) => {
     const timeA = a.info?.time?.created ?? 0
     const timeB = b.info?.time?.created ?? 0
     return timeA - timeB

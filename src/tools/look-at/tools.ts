@@ -9,6 +9,11 @@ interface LookAtArgsWithAlias extends LookAtArgs {
   path?: string
 }
 
+interface SessionMessage {
+  info: { role: string; time?: { created?: number } }
+  parts: Array<{ type: string; text?: string }>
+}
+
 export function normalizeArgs(args: LookAtArgsWithAlias): LookAtArgs {
   return {
     file_path: args.file_path ?? args.path ?? "",
@@ -149,9 +154,13 @@ If the requested information is not found, clearly state what is missing.`
       log(`[look_at] Got ${messages.length} messages`)
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const lastAssistantMessage = messages
-        .filter((m: any) => m.info.role === "assistant")
-        .sort((a: any, b: any) => (b.info.time?.created || 0) - (a.info.time?.created || 0))[0]
+      const sessionMessages = messages as SessionMessage[]
+      const lastAssistantMessage = sessionMessages
+        .filter((m: SessionMessage) => m.info.role === "assistant")
+        .sort(
+          (a: SessionMessage, b: SessionMessage) =>
+            (b.info.time?.created || 0) - (a.info.time?.created || 0),
+        )[0]
 
       if (!lastAssistantMessage) {
         log(`[look_at] No assistant message found`)
@@ -161,9 +170,13 @@ If the requested information is not found, clearly state what is missing.`
       log(`[look_at] Found assistant message with ${lastAssistantMessage.parts.length} parts`)
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const textParts = lastAssistantMessage.parts.filter((p: any) => p.type === "text")
+      const textParts = lastAssistantMessage.parts.filter(
+        (p: { type: string; text?: string }) => p.type === "text",
+      )
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const responseText = textParts.map((p: any) => p.text).join("\n")
+      const responseText = textParts
+        .map((p: { type: string; text?: string }) => p.text ?? "")
+        .join("\n")
 
       log(`[look_at] Got response, length: ${responseText.length}`)
 
