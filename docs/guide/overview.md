@@ -80,7 +80,7 @@ Execution orchestration is designed to run plans created by Musashi - plan. Star
 ```
 1. Press Tab → Enter Musashi - plan mode
 2. Describe work → Musashi - plan interviews you
-3. Confirm plan → Review `.sisyphus/plans/*.md`
+3. Confirm plan → Review `.musashi/plans/*.md`
 4. Run `/start-work` → Musashi - boulder executes
 ```
 

@@ -132,7 +132,7 @@ Just like you can assign a task to a capable team member and trust them to handl
 This means:
 - Clear acceptance criteria, verified independently
 - Self-correcting behavior when something goes wrong
-- Escalation (to Oracle, to user) only when truly needed
+- Escalation (to K9 advisor, to user) only when truly needed
 - Complete work, not "mostly done"
 
 ---
@@ -151,8 +151,8 @@ Everything in Oh My OpenCode is designed to make this loop work:
 | Feature | Purpose |
 |---------|---------|
 | Prometheus | Extract intent through intelligent interview |
-| Metis | Catch ambiguities before they become bugs |
-| Momus | Verify plans are complete before execution |
+| Musashi - plan | Catch ambiguities before they become bugs |
+| Musashi - plan | Verify plans are complete before execution |
 | Orchestrator | Coordinate work without human micromanagement |
 | Todo Continuation | Force completion, prevent "I'm done" lies |
 | Category System | Route to optimal model without human decision |

@@ -46,7 +46,7 @@ flowchart TB
     Consultant --> Plan
     Plan -->|"High-accuracy review"| Reviewer
     Reviewer --> Plan
-    Plan -->|"Generate plan"| PlanFile[".sisyphus/plans/*.md"]
+    Plan -->|"Generate plan"| PlanFile[".musashi/plans/*.md"]
 
     User -->|"/start-work"| Boulder
     PlanFile -->|"Read"| Boulder
@@ -114,7 +114,7 @@ Consultant mode and review mode are now internal Musashi - plan passes:
 
 - **Consultant mode**: catches ambiguity, hidden requirements, over-engineering risk
 - **Review mode**: validates clarity, acceptance criteria, references, and rollout safety
-- **Outcome**: a plan file in `.sisyphus/plans/` that can be executed without guesswork
+- **Outcome**: a plan file in `.musashi/plans/` that can be executed without guesswork
 
 ---
 
@@ -156,7 +156,7 @@ flowchart LR
 Every delegation cycle appends operational memory:
 
 ```text
-.sisyphus/notepads/{plan-name}/
+.musashi/notepads/{plan-name}/
 ├── learnings.md
 ├── decisions.md
 ├── issues.md
@@ -203,11 +203,11 @@ sequenceDiagram
     participant Plan as Musashi - plan
     participant Boulder as Musashi - boulder
     participant Worker as Routed Agent (T4/D5 or Named)
-    participant Notepad as .sisyphus/notepads/
+    participant Notepad as .musashi/notepads/
 
     User->>Plan: planning request
     Plan->>Plan: interview + consultant/review passes
-    Plan->>User: plan ready in .sisyphus/plans/*.md
+    Plan->>User: plan ready in .musashi/plans/*.md
 
     User->>Boulder: /start-work
     Boulder->>Boulder: read plan + build execution map
@@ -250,9 +250,9 @@ sequenceDiagram
 1. **Enter planning mode**: Press **Tab** for Musashi - plan
 2. **Describe the work**: include goals, scope, constraints
 3. **Answer interview prompts**: clarify requirements and trade-offs
-4. **Review plan**: check `.sisyphus/plans/*.md`
+4. **Review plan**: check `.musashi/plans/*.md`
 5. **Run `/start-work`**: let Musashi - boulder orchestrate
-6. **Track progress**: inspect `.sisyphus/notepads/*` artifacts
+6. **Track progress**: inspect `.musashi/notepads/*` artifacts
 7. **Ship**: after verification passes
 
 ---

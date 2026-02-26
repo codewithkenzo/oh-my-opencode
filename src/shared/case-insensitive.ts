@@ -1,6 +1,6 @@
 /**
  * Case-insensitive lookup and comparison utilities for agent/config names.
- * Used throughout the codebase to allow "Oracle", "oracle", "ORACLE" to work the same.
+ * Used throughout the codebase to allow "K9 advisor", "k9 advisor", "K9 ADVISOR" to work the same.
  */
 
 /**

@@ -45,7 +45,7 @@ flowchart TD
         Consultant --> PlanMode
         PlanMode --> Review[Musashi - plan<br>review mode]
         Review --> PlanMode
-        PlanMode --> PlanFile["/.sisyphus/plans/{name}.md"]
+        PlanMode --> PlanFile["/.musashi/plans/{name}.md"]
     end
 
     PlanFile --> StartWork[//start-work/]
@@ -70,7 +70,7 @@ flowchart TD
 - **Model**: `anthropic/claude-opus-4-5`
 - **Role**: Strategic planning, requirements interviews, and work plan creation
 - **Modes**: Consultant mode (gap discovery) and review mode (high-accuracy validation)
-- **Constraint**: Planning-focused. Writes plans under `.sisyphus/` for execution handoff.
+- **Constraint**: Planning-focused. Writes plans under `.musashi/` for execution handoff.
 
 ### 🪨 Musashi - boulder (Execution Layer)
 - **Model**: `anthropic/claude-sonnet-4-5`
@@ -94,13 +94,13 @@ Musashi - plan starts in **interview mode** by default. Instead of immediately c
 
 1. **Intent Identification**: Classifies whether the user's request is Refactoring or New Feature.
 2. **Context Collection**: Investigates codebase and external documentation through `X1 - explorer` and `R2 - researcher` agents.
-3. **Draft Creation**: Continuously records discussion content in `.sisyphus/drafts/`.
+3. **Draft Creation**: Continuously records discussion content in `.musashi/drafts/`.
 
 ### Phase 2: Plan Generation
 When the user requests "Make it a plan", plan generation begins.
 
 1. **Consultant Pass (Musashi - plan)**: Confirms missed requirements and risk factors.
-2. **Plan Creation**: Writes a single plan in `.sisyphus/plans/{name}.md` file.
+2. **Plan Creation**: Writes a single plan in `.musashi/plans/{name}.md` file.
 3. **Handoff**: Once plan creation is complete, guides user to use `/start-work` command.
 
 ### Phase 3: Execution
@@ -121,7 +121,7 @@ Invokes Musashi - plan to start a planning session.
 
 ### `/start-work`
 Executes the generated plan.
-- Function: Finds plan in `.sisyphus/plans/` and enters execution mode.
+- Function: Finds plan in `.musashi/plans/` and enters execution mode.
 - If there's interrupted work, automatically resumes from where it left off.
 
 ---
