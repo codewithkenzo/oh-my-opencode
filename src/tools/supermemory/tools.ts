@@ -1,6 +1,6 @@
 import { tool } from "@opencode-ai/plugin"
 import type { ToolDefinition } from "@opencode-ai/plugin/tool"
-import type { SupermemoryArgs, MemoryType, MemoryScope } from "./types"
+import type { SupermemoryArgs } from "./types"
 import { TOOL_DESCRIPTION, MEMORY_TYPES, MEMORY_SCOPES, MODES } from "./constants"
 import {
   isConfigured,
@@ -8,7 +8,6 @@ import {
   stripPrivateContent,
   isFullyPrivate,
   supermemoryClient,
-  getConfig,
 } from "./client"
 
 function formatSearchResults(

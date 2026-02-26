@@ -46,10 +46,6 @@ function getConfigJsonc(): string {
   return getConfigContext().paths.configJsonc
 }
 
-function getPackageJson(): string {
-  return getConfigContext().paths.packageJson
-}
-
 function getOmoConfig(): string {
   return getConfigContext().paths.omoConfig
 }
@@ -176,11 +172,6 @@ interface ParseConfigResult {
 
 function isEmptyOrWhitespace(content: string): boolean {
   return content.trim().length === 0
-}
-
-function parseConfig(path: string, _isJsonc: boolean): OpenCodeConfig | null {
-  const result = parseConfigWithError(path)
-  return result.config
 }
 
 function parseConfigWithError(path: string): ParseConfigResult {

@@ -7,8 +7,6 @@ import type { ExperimentalConfig } from "../../config";
 import { RETRY_CONFIG, TRUNCATE_CONFIG } from "./types";
 
 import {
-  findLargestToolResult,
-  truncateToolResult,
   truncateUntilTargetTokens,
 } from "./storage";
 import {

@@ -2,17 +2,11 @@ import type { PluginInput } from "@opencode-ai/plugin"
 import type { createOpencodeClient } from "@opencode-ai/sdk"
 import type { ExperimentalConfig } from "../../config"
 import {
-  findEmptyMessages,
-  findEmptyMessageByIndex,
   findMessageByIndexNeedingThinking,
-  findMessagesWithEmptyTextParts,
   findMessagesWithOrphanThinking,
   findMessagesWithThinkingBlocks,
-  findMessagesWithThinkingOnly,
-  injectTextPart,
   prependThinkingPart,
   readParts,
-  replaceEmptyTextParts,
   stripThinkingParts,
 } from "./storage"
 import type { MessageData, ResumeConfig } from "./types"
@@ -251,71 +245,10 @@ async function recoverThinkingDisabledViolation(
   return anySuccess
 }
 
-const PLACEHOLDER_TEXT = "[user interrupted]"
-
-async function recoverEmptyContentMessage(
-  _client: Client,
-  sessionID: string,
-  failedAssistantMsg: MessageData,
-  _directory: string,
-  error: unknown
-): Promise<boolean> {
-  const targetIndex = extractMessageIndex(error)
-  const failedID = failedAssistantMsg.info?.id
-  let anySuccess = false
-
-  const messagesWithEmptyText = findMessagesWithEmptyTextParts(sessionID)
-  for (const messageID of messagesWithEmptyText) {
-    if (replaceEmptyTextParts(messageID, PLACEHOLDER_TEXT)) {
-      anySuccess = true
-    }
-  }
-
-  const thinkingOnlyIDs = findMessagesWithThinkingOnly(sessionID)
-  for (const messageID of thinkingOnlyIDs) {
-    if (injectTextPart(sessionID, messageID, PLACEHOLDER_TEXT)) {
-      anySuccess = true
-    }
-  }
-
-  if (targetIndex !== null) {
-    const targetMessageID = findEmptyMessageByIndex(sessionID, targetIndex)
-    if (targetMessageID) {
-      if (replaceEmptyTextParts(targetMessageID, PLACEHOLDER_TEXT)) {
-        return true
-      }
-      if (injectTextPart(sessionID, targetMessageID, PLACEHOLDER_TEXT)) {
-        return true
-      }
-    }
-  }
-
-  if (failedID) {
-    if (replaceEmptyTextParts(failedID, PLACEHOLDER_TEXT)) {
-      return true
-    }
-    if (injectTextPart(sessionID, failedID, PLACEHOLDER_TEXT)) {
-      return true
-    }
-  }
-
-  const emptyMessageIDs = findEmptyMessages(sessionID)
-  for (const messageID of emptyMessageIDs) {
-    if (replaceEmptyTextParts(messageID, PLACEHOLDER_TEXT)) {
-      anySuccess = true
-    }
-    if (injectTextPart(sessionID, messageID, PLACEHOLDER_TEXT)) {
-      anySuccess = true
-    }
-  }
-
-  return anySuccess
-}
-
 // NOTE: fallbackRevertStrategy was removed (2025-12-08)
 // Reason: Function was defined but never called - no error recovery paths used it.
 // All error types have dedicated recovery functions (recoverToolResultMissing,
-// recoverThinkingBlockOrder, recoverThinkingDisabledViolation, recoverEmptyContentMessage).
+// recoverThinkingBlockOrder, recoverThinkingDisabledViolation).
 
 export interface SessionRecoveryHook {
   handleSessionRecovery: (info: MessageInfo) => Promise<boolean>
