@@ -118,7 +118,7 @@ export function injectGitMasterConfig(template: string, config?: GitMasterConfig
 	if (includeCoAuthoredBy) {
 		sections.push(`${commitFooter ? "2" : "1"}. **Co-authored-by trailer:**`)
 		sections.push("```")
-		sections.push(`Co-authored-by: Musashi <clio-agent@sisyphuslabs.ai>`)
+		sections.push(`Co-authored-by: Musashi <musashi-ai@kenzo.is>`)
 		sections.push("```")
 		sections.push(``)
 	}
@@ -126,7 +126,7 @@ export function injectGitMasterConfig(template: string, config?: GitMasterConfig
 	if (commitFooter && includeCoAuthoredBy) {
 		sections.push(`**Example (both enabled):**`)
 		sections.push("```bash")
-		sections.push(`git commit -m "{Commit Message}" -m "Ultraworked with [Musashi](https://github.com/code-yeongyu/oh-my-opencode)" -m "Co-authored-by: Musashi <clio-agent@sisyphuslabs.ai>"`)
+		sections.push(`git commit -m "{Commit Message}" -m "Ultraworked with [Musashi](https://github.com/code-yeongyu/oh-my-opencode)" -m "Co-authored-by: Musashi <musashi-ai@kenzo.is>"`)
 		sections.push("```")
 	} else if (commitFooter) {
 		sections.push(`**Example:**`)
@@ -136,7 +136,7 @@ export function injectGitMasterConfig(template: string, config?: GitMasterConfig
 	} else if (includeCoAuthoredBy) {
 		sections.push(`**Example:**`)
 		sections.push("```bash")
-		sections.push(`git commit -m "{Commit Message}" -m "Co-authored-by: Musashi <clio-agent@sisyphuslabs.ai>"`)
+		sections.push(`git commit -m "{Commit Message}" -m "Co-authored-by: Musashi <musashi-ai@kenzo.is>"`)
 		sections.push("```")
 	}
 
