@@ -2,7 +2,7 @@
 
 ## OVERVIEW
 
-31 lifecycle hooks intercepting/modifying agent behavior (30 configurable in `HookNameSchema` + 1 internal hook). Events: PreToolUse, PostToolUse, UserPromptSubmit, Stop, onSummarize.
+37 lifecycle hooks intercepting/modifying agent behavior (36 configurable in `HookNameSchema` + 1 internal hook). Events: PreToolUse, PostToolUse, UserPromptSubmit, Stop, onSummarize.
 
 ## STRUCTURE
 
@@ -24,6 +24,12 @@ hooks/
 ├── session-recovery/           # Auto-recovers from crashes
 ├── think-mode/                 # Dynamic thinking budget
 ├── keyword-detector/           # ultrawork/search/analyze modes
+├── hashline-read-enhancer/     # Enhances Read tool with hashline format
+├── hashline-edit-diff-enhancer/ # Shows diffs for hashline Edit tool
+├── write-existing-file-guard/  # Warns when Write overwrites existing files
+├── anthropic-effort/           # Sets effort=max for Anthropic models
+├── unstable-agent-babysitter/  # Monitors hung background agents
+├── runtime-fallback/           # Auto-retry with fallback models on errors (13 files)
 ├── background-notification/    # OS notification on task completion
 └── tool-output-truncator/      # Prevents context bloat
 ```

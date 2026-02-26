@@ -6,7 +6,7 @@
 
 ## OVERVIEW
 
-OpenCode plugin implementing multi-model agent orchestration (Claude Opus 4.5, GPT-5.2, Gemini 3, GLM-4.7). 31 lifecycle hooks, 20+ tools grouped into 7 lazy-loaded profiles, 8 specialized agents, Claude Code compatibility layer. "oh-my-zsh" for OpenCode.
+OpenCode plugin implementing multi-model agent orchestration (Claude Opus 4.5, GPT-5.2, Gemini 3, GLM-4.7). 37 lifecycle hooks, 103 tools grouped into 7 lazy-loaded profiles, 8 specialized agents, Claude Code compatibility layer. "oh-my-zsh" for OpenCode.
 
 ## STRUCTURE
 
@@ -14,8 +14,8 @@ OpenCode plugin implementing multi-model agent orchestration (Claude Opus 4.5, G
 oh-my-opencode/
 ├── src/
 │   ├── agents/        # 8 AI agents (Musashi, K9, X1, R2, T4, D5) - see src/agents/AGENTS.md
-│   ├── hooks/         # 31 lifecycle hooks (PreToolUse, PostToolUse, Stop, etc.) - see src/hooks/AGENTS.md
-│   ├── tools/         # 20+ tools with lazy-loaded profiles and category routing - see src/tools/AGENTS.md
+│   ├── hooks/         # 37 lifecycle hooks (PreToolUse, PostToolUse, Stop, etc.) - see src/hooks/AGENTS.md
+│   ├── tools/         # 103 tools with lazy-loaded profiles and category routing - see src/tools/AGENTS.md
 │   ├── features/      # Background agents, Claude Code compat layer - see src/features/AGENTS.md
 │   ├── shared/        # 43 cross-cutting utilities - see src/shared/AGENTS.md
 │   ├── cli/           # CLI installer, doctor, run - see src/cli/AGENTS.md
@@ -34,8 +34,10 @@ oh-my-opencode/
 | Add agent | `src/agents/` | Create factory and register in `agentSources` in `src/agents/utils.ts` |
 | Add hook | `src/hooks/` | Create dir with `createXXXHook()`, register in index.ts |
 | Add tool | `src/tools/` | Dir with index/types/constants/tools.ts, add to `builtinTools` |
+| Hashline edit tool | `src/tools/hashline-edit/` | Line-addressed Edit workflow + hashline parsing |
 | Add MCP | `src/mcp/` | Create config, add to index.ts |
 | Add skill | `src/features/builtin-skills/` | Create dir with SKILL.md |
+| `/handoff` command | `src/features/builtin-commands/templates/handoff.ts` | Session continuity summary template |
 | LSP behavior | `src/tools/lsp/` | client.ts (connection), tools.ts (handlers) |
 | AST-Grep | `src/tools/ast-grep/` | napi.ts for @ast-grep/napi binding |
 | Config schema | `src/config/schema.ts` | Zod schema, run `bun run build:schema` after changes |
@@ -69,7 +71,7 @@ oh-my-opencode/
 - **Build**: `bun build` (ESM) + `tsc --emitDeclarationOnly`
 - **Exports**: Barrel pattern in index.ts; explicit named exports
 - **Naming**: kebab-case directories, `createXXXHook`/`createXXXTool` factories
-- **Testing**: BDD comments `#given/#when/#then`, 83 test files
+- **Testing**: BDD comments `#given/#when/#then`, 118 test files
 - **Temperature**: 0.1 for code agents, max 0.3
 
 ## ANTI-PATTERNS (THIS PROJECT)
@@ -121,7 +123,7 @@ bun run typecheck      # Type check
 bun run build          # ESM + declarations + schema
 bun run rebuild        # Clean + Build
 bun run build:schema   # Schema only
-bun test               # Run tests (83 test files)
+bun test               # Run tests (118 test files, 1585 tests)
 ```
 
 ## TOOL PROFILES
@@ -177,6 +179,7 @@ Config: `src/tools/delegate-task/constants.ts` (`CATEGORY_AGENTS`, `CATEGORY_SKI
 | `src/agents/prometheus-prompt.ts` | 1196 | Planning agent, interview mode, Momus loop |
 | `src/features/background-agent/manager.ts` | 1359 | Task lifecycle, concurrency, notification batching |
 | `src/hooks/atlas/index.ts` | 773 | Atlas orchestration hook implementation |
+| `src/hooks/runtime-fallback/` | 3528 (13 files) | Model fallback/retry orchestration with error classification |
 | `src/tools/delegate-task/tools.ts` | 788 | Category-based task delegation |
 | `src/cli/config-manager.ts` | 617 | JSONC parsing, multi-level config |
 | `src/agents/sisyphus.ts` | 450 | Main Musashi agent prompt |
@@ -199,10 +202,11 @@ Three-tier MCP system:
 
 ## NOTES
 
-- **Testing**: Bun native test (`bun test`), BDD-style, 83 test files
+- **Testing**: Bun native test (`bun test`), BDD-style, 118 test files (last run: 1566 pass, 1 skip, 18 fail; 1585 total)
 - **OpenCode**: Requires >= 1.0.150
 - **Multi-lang docs**: README.md (EN), README.ko.md (KO), README.ja.md (JA), README.zh-cn.md (ZH-CN)
 - **Config**: `~/.config/opencode/oh-my-opencode.json` (user) or `.opencode/oh-my-opencode.json` (project)
 - **Trusted deps**: @ast-grep/cli, @ast-grep/napi, @code-yeongyu/comment-checker
 - **Claude Code Compat**: Full compatibility layer for settings.json hooks, commands, skills, agents, MCPs
+- **Recent additions**: hashline-edit tool, `/handoff` command, runtime fallback hook stack, background session cascade cancel
 - **Flaky tests**: 2 known flaky tests (ralph-loop CI timeout, session-state parallel pollution)
