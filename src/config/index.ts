@@ -10,6 +10,8 @@ export {
   RuntimeFallbackConfigSchema,
   ExperimentalConfigSchema,
   RalphLoopConfigSchema,
+  TmuxConfigSchema,
+  TmuxLayoutSchema,
 } from "./schema"
 
 export type {
@@ -25,4 +27,6 @@ export type {
   ExperimentalConfig,
   DynamicContextPruningConfig,
   RalphLoopConfig,
+  TmuxConfig,
+  TmuxLayout,
 } from "./schema"

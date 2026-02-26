@@ -378,6 +378,22 @@ export const NotificationConfigSchema = z.object({
   force_enable: z.boolean().optional(),
 })
 
+export const TmuxLayoutSchema = z.enum([
+  "main-horizontal",
+  "main-vertical",
+  "tiled",
+  "even-horizontal",
+  "even-vertical",
+])
+
+export const TmuxConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  layout: TmuxLayoutSchema.default("main-vertical"),
+  main_pane_size: z.number().min(20).max(80).default(60),
+  main_pane_min_width: z.number().min(40).default(120),
+  agent_pane_min_width: z.number().min(20).default(40),
+})
+
 export const GitMasterConfigSchema = z.object({
   /** Add "Ultraworked with Sisyphus" footer to commit messages (default: true) */
   commit_footer: z.boolean().default(true),
@@ -440,6 +456,7 @@ export const OhMyOpenCodeConfigSchema = z.object({
   lazy_loading: LazyLoadingConfigSchema.optional(),
   browser_automation_engine: BrowserAutomationConfigSchema.optional(),
   memory_persistence: MemoryPersistenceConfigSchema.optional(),
+  tmux: TmuxConfigSchema.optional(),
 })
 
 export type OhMyOpenCodeConfig = z.infer<typeof OhMyOpenCodeConfigSchema>
@@ -466,6 +483,8 @@ export type LazyLoadingConfig = z.infer<typeof LazyLoadingConfigSchema>
 export type BrowserAutomationProvider = z.infer<typeof BrowserAutomationProviderSchema>
 export type BrowserAutomationConfig = z.infer<typeof BrowserAutomationConfigSchema>
 export type MemoryPersistenceConfig = z.infer<typeof MemoryPersistenceConfigSchema>
+export type TmuxConfig = z.infer<typeof TmuxConfigSchema>
+export type TmuxLayout = z.infer<typeof TmuxLayoutSchema>
 export type CategorySkillsConfig = z.infer<typeof CategorySkillsConfigSchema>
 export type ToolRouteOverride = z.infer<typeof ToolRouteOverrideSchema>
 export type ToolRoutingConfig = z.infer<typeof ToolRoutingConfigSchema>
