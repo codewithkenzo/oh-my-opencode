@@ -71,7 +71,7 @@ oh-my-opencode/
 - **Build**: `bun build` (ESM) + `tsc --emitDeclarationOnly`
 - **Exports**: Barrel pattern in index.ts; explicit named exports
 - **Naming**: kebab-case directories, `createXXXHook`/`createXXXTool` factories
-- **Testing**: BDD comments `#given/#when/#then`, 118 test files
+- **Testing**: BDD comments `#given/#when/#then`, 126 test files
 - **Temperature**: 0.1 for code agents, max 0.3
 
 ## ANTI-PATTERNS (THIS PROJECT)
@@ -116,6 +116,8 @@ oh-my-opencode/
 | T4 - frontend builder | (user config) | Frontend implementation (UI, components, styles, client logic) |
 | D5 - backend builder | (user config) | Backend implementation (APIs, data layers, tooling, server logic) |
 
+Agent metadata skills are resolved at boot and prepended to each agent's system prompt. See `src/agents/AGENTS.md` for the full skill assignment table.
+
 ## COMMANDS
 
 ```bash
@@ -123,7 +125,7 @@ bun run typecheck      # Type check
 bun run build          # ESM + declarations + schema
 bun run rebuild        # Clean + Build
 bun run build:schema   # Schema only
-bun test               # Run tests (118 test files, 1585 tests)
+bun test               # Run tests (126 test files, ~1604 tests)
 ```
 
 ## TOOL PROFILES
@@ -202,7 +204,7 @@ Three-tier MCP system:
 
 ## NOTES
 
-- **Testing**: Bun native test (`bun test`), BDD-style, 118 test files (last run: 1566 pass, 1 skip, 18 fail; 1585 total)
+- **Testing**: Bun native test (`bun test`), BDD-style, 126 test files (last run: ~1580 pass, 1 skip, ~23 fail; ~1604 total)
 - **OpenCode**: Requires >= 1.0.150
 - **Multi-lang docs**: README.md (EN), README.ko.md (KO), README.ja.md (JA), README.zh-cn.md (ZH-CN)
 - **Config**: `~/.config/opencode/oh-my-opencode.json` (user) or `.opencode/oh-my-opencode.json` (project)
