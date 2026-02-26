@@ -2,7 +2,7 @@ import { describe, test, expect } from "bun:test"
 import { createBuiltinAgents } from "./utils"
 import type { AgentConfig } from "@opencode-ai/sdk"
 
-const TEST_DEFAULT_MODEL = "anthropic/claude-opus-4-5"
+const TEST_DEFAULT_MODEL = "anthropic/claude-opus-4-6"
 
 describe("createBuiltinAgents with model overrides", () => {
   test("Sisyphus with default model has thinking config", async () => {
@@ -12,7 +12,7 @@ describe("createBuiltinAgents with model overrides", () => {
     const agents = await createBuiltinAgents([], {}, undefined, TEST_DEFAULT_MODEL)
 
     // #then
-    expect(agents.Musashi.model).toBe("anthropic/claude-opus-4-5")
+    expect(agents.Musashi.model).toBe("anthropic/claude-opus-4-6")
     expect(agents.Musashi.thinking).toEqual({ type: "enabled", budgetTokens: 32000 })
     expect(agents.Musashi.reasoningEffort).toBeUndefined()
   })
@@ -34,13 +34,13 @@ describe("createBuiltinAgents with model overrides", () => {
 
   test("Sisyphus uses system default when no availableModels provided", async () => {
     // #given
-    const systemDefaultModel = "anthropic/claude-opus-4-5"
+    const systemDefaultModel = "anthropic/claude-opus-4-6"
 
     // #when
     const agents = await createBuiltinAgents([], {}, undefined, systemDefaultModel)
 
     // #then - falls back to system default when no availability match
-    expect(agents.Musashi.model).toBe("anthropic/claude-opus-4-5")
+    expect(agents.Musashi.model).toBe("anthropic/claude-opus-4-6")
     expect(agents.Musashi.thinking).toEqual({ type: "enabled", budgetTokens: 32000 })
     expect(agents.Musashi.reasoningEffort).toBeUndefined()
   })
