@@ -9,8 +9,19 @@ import {
   readBoulderState,
 } from "../../features/boulder-state"
 import type { BoulderState } from "../../features/boulder-state"
+import * as realSessionState from "../../features/claude-code-session-state"
 
 import { MESSAGE_STORAGE } from "../../features/hook-message-injector"
+
+const realGetMainSessionID = realSessionState.getMainSessionID
+
+let useSessionMock = false
+
+mock.module("../../features/claude-code-session-state", () => ({
+  ...realSessionState,
+  getMainSessionID: () => useSessionMock ? "main-session-123" : realGetMainSessionID(),
+  subagentSessions: realSessionState.subagentSessions,
+}))
 
 describe("atlas hook", () => {
    const TEST_DIR = join(tmpdir(), "atlas-test-" + Date.now())
@@ -596,15 +607,13 @@ describe("atlas hook", () => {
   describe("session.idle handler (boulder continuation)", () => {
     const MAIN_SESSION_ID = "main-session-123"
 
-     beforeEach(() => {
-       mock.module("../../features/claude-code-session-state", () => ({
-         getMainSessionID: () => MAIN_SESSION_ID,
-         subagentSessions: new Set<string>(),
-       }))
-       setupMessageStorage(MAIN_SESSION_ID, "Atlas")
-     })
+    beforeEach(() => {
+      useSessionMock = true
+      setupMessageStorage(MAIN_SESSION_ID, "Atlas")
+    })
 
     afterEach(() => {
+      useSessionMock = false
       cleanupMessageStorage(MAIN_SESSION_ID)
     })
 
