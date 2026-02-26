@@ -247,7 +247,7 @@ ${antiPatterns}
 `
 }
 
-export function createSisyphusAgent(
+export function createMusashiAgent(
   model: string,
   availableAgents?: AvailableAgent[],
   availableToolNames?: string[],

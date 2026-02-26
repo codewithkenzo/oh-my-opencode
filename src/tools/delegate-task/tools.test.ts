@@ -6,7 +6,7 @@ import type { CategoryConfig } from "../../config/schema"
 // Test constants - systemDefaultModel is required by resolveCategoryConfig
 const SYSTEM_DEFAULT_MODEL = "anthropic/claude-sonnet-4-5"
 
-describe("sisyphus-task", () => {
+describe("musashi-task", () => {
   describe("DEFAULT_CATEGORIES", () => {
     test("visual-engineering category has temperature config only (model removed)", () => {
       // #given

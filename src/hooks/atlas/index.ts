@@ -16,11 +16,11 @@ import type { BackgroundManager } from "../../features/background-agent"
 export const HOOK_NAME = "atlas"
 
 /**
- * Cross-platform check if a path is inside .sisyphus/ directory.
+ * Cross-platform check if a path is inside .musashi/ directory.
  * Handles both forward slashes (Unix) and backslashes (Windows).
  */
-function isSisyphusPath(filePath: string): boolean {
-  return /\.sisyphus[/\\]/.test(filePath)
+function isMusashiPath(filePath: string): boolean {
+  return /\.musashi[/\\]/.test(filePath)
 }
 
 const WRITE_EDIT_TOOLS = ["Write", "Edit", "write", "edit"]
@@ -31,7 +31,7 @@ const DIRECT_WORK_REMINDER = `
 
 ${createSystemDirective(SystemDirectiveTypes.DELEGATION_REQUIRED)}
 
-You just performed direct file modifications outside \`.sisyphus/\`.
+You just performed direct file modifications outside \`.musashi/\`.
 
 **You are an ORCHESTRATOR, not an IMPLEMENTER.**
 
@@ -41,8 +41,8 @@ As an orchestrator, you should:
 - **COORDINATE** multiple tasks and ensure completion
 
 You should NOT:
-- Write code directly (except for \`.sisyphus/\` files like plans and notepads)
-- Make direct file edits outside \`.sisyphus/\`
+- Write code directly (except for \`.musashi/\` files like plans and notepads)
+- Make direct file edits outside \`.musashi/\`
 - Implement features yourself
 
 **If you need to make changes:**
@@ -60,7 +60,7 @@ You have an active work plan with incomplete tasks. Continue working.
 RULES:
 - Proceed without asking for permission
 - Mark each checkbox [x] in the plan file when done
-- Use the notepad at .sisyphus/notepads/{PLAN_NAME}/ to record learnings
+- Use the notepad at .musashi/notepads/{PLAN_NAME}/ to record learnings
 - Do not stop until all tasks are complete
 - If blocked, document the blocker and move to the next task`
 
@@ -111,7 +111,7 @@ ${createSystemDirective(SystemDirectiveTypes.DELEGATION_REQUIRED)}
 
 **STOP. YOU ARE VIOLATING ORCHESTRATOR PROTOCOL.**
 
-You (Atlas) are attempting to directly modify a file outside \`.sisyphus/\`.
+You (Atlas) are attempting to directly modify a file outside \`.musashi/\`.
 
 **Path attempted:** $FILE_PATH
 
@@ -125,13 +125,13 @@ As an ORCHESTRATOR, you MUST:
 3. **COORDINATE** - you orchestrate, you don't implement
 
 **ALLOWED direct file operations:**
-- Files inside \`.sisyphus/\` (plans, notepads, drafts)
+- Files inside \`.musashi/\` (plans, notepads, drafts)
 - Reading files for verification
 - Running diagnostics/tests
 
 **FORBIDDEN direct file operations:**
 - Writing/editing source code
-- Creating new files outside \`.sisyphus/\`
+- Creating new files outside \`.musashi/\`
 - Any implementation work
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -204,7 +204,7 @@ ${buildVerificationReminder(sessionId)}
 
 RIGHT NOW - Do not delay. Verification passed → Mark IMMEDIATELY.
 
-Update the plan file \`.sisyphus/tasks/${planName}.yaml\`:
+Update the plan file \`.musashi/tasks/${planName}.yaml\`:
 - Change \`[ ]\` to \`[x]\` for the completed task
 - Use \`Edit\` tool to modify the checkbox
 
@@ -357,7 +357,7 @@ function formatFileChanges(stats: GitFileStat[], notepadPath?: string): string {
   }
 
   if (notepadPath) {
-    const notepadStat = stats.find((s) => s.path.includes("notepad") || s.path.includes(".sisyphus"))
+    const notepadStat = stats.find((s) => s.path.includes("notepad") || s.path.includes(".musashi"))
     if (notepadStat) {
       lines.push("[NOTEPAD UPDATED]")
       lines.push(`  ${notepadStat.path}  (+${notepadStat.added})`)
@@ -652,7 +652,7 @@ export function createAtlasHook(
       // Check Write/Edit tools for orchestrator - inject strong warning
       if (WRITE_EDIT_TOOLS.includes(input.tool)) {
         const filePath = (output.args.filePath ?? output.args.path ?? output.args.file) as string | undefined
-        if (filePath && !isSisyphusPath(filePath)) {
+        if (filePath && !isMusashiPath(filePath)) {
           // Store filePath for use in tool.execute.after
           if (input.callID) {
             pendingFilePaths.set(input.callID, filePath)
@@ -696,7 +696,7 @@ export function createAtlasHook(
         if (!filePath) {
           filePath = output.metadata?.filePath as string | undefined
         }
-        if (filePath && !isSisyphusPath(filePath)) {
+        if (filePath && !isMusashiPath(filePath)) {
           output.output = (output.output || "") + DIRECT_WORK_REMINDER
           log(`[${HOOK_NAME}] Direct work reminder appended`, {
             sessionID: input.sessionID,

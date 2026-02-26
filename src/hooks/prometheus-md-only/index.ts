@@ -12,11 +12,11 @@ export * from "./constants"
 /**
  * Cross-platform path validator for Prometheus file writes.
  * Uses path.resolve/relative instead of string matching to handle:
- * - Windows backslashes (e.g., .sisyphus\\plans\\x.md)
- * - Mixed separators (e.g., .sisyphus\\plans/x.md)
+ * - Windows backslashes (e.g., .musashi\\plans\\x.md)
+ * - Mixed separators (e.g., .musashi\\plans/x.md)
  * - Case-insensitive directory/extension matching
  * - Workspace confinement (blocks paths outside root or via traversal)
- * - Nested project paths (e.g., parent/.sisyphus/... when ctx.directory is parent)
+ * - Nested project paths (e.g., parent/.musashi/... when ctx.directory is parent)
  */
 function isAllowedFile(filePath: string, workspaceRoot: string): boolean {
   // 1. Resolve to absolute path
@@ -30,9 +30,9 @@ function isAllowedFile(filePath: string, workspaceRoot: string): boolean {
     return false
   }
 
-  // 4. Check if .sisyphus/ or .sisyphus\ exists anywhere in the path (case-insensitive)
-  // This handles both direct paths (.sisyphus/x.md) and nested paths (project/.sisyphus/x.md)
-  if (!/\.sisyphus[/\\]/i.test(rel)) {
+  // 4. Check if .musashi/ or .musashi\ exists anywhere in the path (case-insensitive)
+  // This handles both direct paths (.musashi/x.md) and nested paths (project/.musashi/x.md)
+  if (!/\.musashi[/\\]/i.test(rel)) {
     return false
   }
 
@@ -111,21 +111,21 @@ export function createPrometheusMdOnlyHook(ctx: PluginInput) {
       }
 
       if (!isAllowedFile(filePath, ctx.directory)) {
-        log(`[${HOOK_NAME}] Blocked: Prometheus can only write to .sisyphus/*.md`, {
+        log(`[${HOOK_NAME}] Blocked: Prometheus can only write to .musashi/*.md`, {
           sessionID: input.sessionID,
           tool: toolName,
           filePath,
           agent: agentName,
         })
         throw new Error(
-          `[${HOOK_NAME}] Prometheus (Planner) can only write/edit .md files inside .sisyphus/ directory. ` +
+          `[${HOOK_NAME}] Prometheus (Planner) can only write/edit .md files inside .musashi/ directory. ` +
           `Attempted to modify: ${filePath}. ` +
           `Prometheus is a READ-ONLY planner. Use /start-work to execute the plan. ` +
           `APOLOGIZE TO THE USER, REMIND OF YOUR PLAN WRITING PROCESSES, TELL USER WHAT YOU WILL GOING TO DO AS THE PROCESS, WRITE THE PLAN`
         )
       }
 
-      log(`[${HOOK_NAME}] Allowed: .sisyphus/*.md write permitted`, {
+      log(`[${HOOK_NAME}] Allowed: .musashi/*.md write permitted`, {
         sessionID: input.sessionID,
         tool: toolName,
         filePath,

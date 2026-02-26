@@ -222,8 +222,18 @@ export function migrateConfigFile(configPath: string, rawConfig: Record<string, 
 
 
   if (rawConfig.omo_agent) {
-    rawConfig.sisyphus_agent = rawConfig.omo_agent
+    if (!rawConfig.musashi_agent) {
+      rawConfig.musashi_agent = rawConfig.omo_agent
+    }
     delete rawConfig.omo_agent
+    needsWrite = true
+  }
+
+  if (rawConfig.sisyphus_agent) {
+    if (!rawConfig.musashi_agent) {
+      rawConfig.musashi_agent = rawConfig.sisyphus_agent
+    }
+    delete rawConfig.sisyphus_agent
     needsWrite = true
   }
 

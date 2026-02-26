@@ -303,7 +303,7 @@ describe("migrateHookNames", () => {
 describe("migrateConfigFile", () => {
   const testConfigPath = "/tmp/nonexistent-path-for-test.json"
 
-  test("migrates omo_agent to sisyphus_agent", () => {
+  test("migrates omo_agent to musashi_agent", () => {
     // #given: Config with legacy omo_agent key
     const rawConfig: Record<string, unknown> = {
       omo_agent: { disabled: false },
@@ -312,9 +312,9 @@ describe("migrateConfigFile", () => {
     // #when: Migrate config file
     const needsWrite = migrateConfigFile(testConfigPath, rawConfig)
 
-    // #then: omo_agent should be migrated to sisyphus_agent (legacy key preserved)
+    // #then: omo_agent should be migrated to musashi_agent (legacy key preserved)
     expect(needsWrite).toBe(true)
-    expect(rawConfig.sisyphus_agent).toEqual({ disabled: false })
+    expect(rawConfig.musashi_agent).toEqual({ disabled: false })
     expect(rawConfig.omo_agent).toBeUndefined()
   })
 
@@ -354,7 +354,7 @@ describe("migrateConfigFile", () => {
   test("does not write if no migration needed", () => {
     // #given: Config with current v4 names
     const rawConfig: Record<string, unknown> = {
-      sisyphus_agent: { disabled: false },
+      musashi_agent: { disabled: false },
       agents: {
         Musashi: { model: "test" },
       },
@@ -384,7 +384,7 @@ describe("migrateConfigFile", () => {
 
     // #then: All legacy items should be migrated to v4 names
     expect(needsWrite).toBe(true)
-    expect(rawConfig.sisyphus_agent).toEqual({ disabled: false })
+    expect(rawConfig.musashi_agent).toEqual({ disabled: false })
     expect(rawConfig.omo_agent).toBeUndefined()
     const agents = rawConfig.agents as Record<string, unknown>
     expect(agents["Musashi"]).toBeDefined()

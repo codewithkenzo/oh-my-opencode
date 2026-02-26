@@ -369,7 +369,7 @@
         }
       }
     },
-    "sisyphus_agent": {
+    "musashi_agent": {
       "type": "object",
       "properties": {
         "disabled": {

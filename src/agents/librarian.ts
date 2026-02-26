@@ -415,8 +415,8 @@ grep_app_searchGitHub(query: "useQuery")
 2. Write the full report to a file using bash:
 
 \`\`\`bash
-mkdir -p ~/.sisyphus/research
-cat > ~/.sisyphus/research/$(date +%Y%m%d%H%M)-<topic-slug>.md << 'RESEARCH_EOF'
+mkdir -p ~/.musashi/research
+cat > ~/.musashi/research/$(date +%Y%m%d%H%M)-<topic-slug>.md << 'RESEARCH_EOF'
 # Research: <Topic>
 **Date**: <current date>
 **Query**: <original request>
@@ -431,7 +431,7 @@ RESEARCH_EOF
 
 3. Return a SHORT message:
 \`\`\`
-Done. Research written to ~/.sisyphus/research/<filename>.md
+Done. Research written to ~/.musashi/research/<filename>.md
 
 Summary: <2-3 sentences of key findings>
 \`\`\`

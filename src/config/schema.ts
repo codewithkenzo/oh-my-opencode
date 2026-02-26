@@ -388,7 +388,7 @@ export const OhMyOpenCodeConfigSchema = z.object({
   categories: CategoriesConfigSchema.optional(),
   category_skills: CategorySkillsConfigSchema.optional(),
   claude_code: ClaudeCodeConfigSchema.optional(),
-  sisyphus_agent: SisyphusAgentConfigSchema.optional(),
+  musashi_agent: SisyphusAgentConfigSchema.optional(),
   comment_checker: CommentCheckerConfigSchema.optional(),
   experimental: ExperimentalConfigSchema.optional(),
   auto_update: z.boolean().optional(),

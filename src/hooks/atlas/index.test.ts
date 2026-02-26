@@ -14,7 +14,7 @@ import { MESSAGE_STORAGE } from "../../features/hook-message-injector"
 
 describe("atlas hook", () => {
    const TEST_DIR = join(tmpdir(), "atlas-test-" + Date.now())
-  const SISYPHUS_DIR = join(TEST_DIR, ".sisyphus")
+  const MUSASHI_DIR = join(TEST_DIR, ".musashi")
 
   function createMockPluginInput(overrides?: { promptMock?: ReturnType<typeof mock> }) {
     const promptMock = overrides?.promptMock ?? mock(() => Promise.resolve())
@@ -52,8 +52,8 @@ describe("atlas hook", () => {
     if (!existsSync(TEST_DIR)) {
       mkdirSync(TEST_DIR, { recursive: true })
     }
-    if (!existsSync(SISYPHUS_DIR)) {
-      mkdirSync(SISYPHUS_DIR, { recursive: true })
+    if (!existsSync(MUSASHI_DIR)) {
+      mkdirSync(MUSASHI_DIR, { recursive: true })
     }
     clearBoulderState(TEST_DIR)
   })
@@ -380,7 +380,7 @@ describe("atlas hook", () => {
         cleanupMessageStorage(ORCHESTRATOR_SESSION)
       })
 
-      test("should append delegation reminder when orchestrator writes outside .sisyphus/", async () => {
+      test("should append delegation reminder when orchestrator writes outside .musashi/", async () => {
         // #given
         const hook = createAtlasHook(createMockPluginInput())
         const output = {
@@ -401,7 +401,7 @@ describe("atlas hook", () => {
         expect(output.output).toContain("delegate_task")
       })
 
-      test("should append delegation reminder when orchestrator edits outside .sisyphus/", async () => {
+      test("should append delegation reminder when orchestrator edits outside .musashi/", async () => {
         // #given
         const hook = createAtlasHook(createMockPluginInput())
         const output = {
@@ -420,14 +420,14 @@ describe("atlas hook", () => {
         expect(output.output).toContain("DELEGATION REQUIRED")
       })
 
-      test("should NOT append reminder when orchestrator writes inside .sisyphus/", async () => {
+      test("should NOT append reminder when orchestrator writes inside .musashi/", async () => {
         // #given
         const hook = createAtlasHook(createMockPluginInput())
         const originalOutput = "File written successfully"
         const output = {
           title: "Write",
           output: originalOutput,
-          metadata: { filePath: "/project/.sisyphus/plans/work-plan.md" },
+          metadata: { filePath: "/project/.musashi/plans/work-plan.md" },
         }
 
         // #when
@@ -441,7 +441,7 @@ describe("atlas hook", () => {
         expect(output.output).not.toContain("DELEGATION REQUIRED")
       })
 
-      test("should NOT append reminder when non-orchestrator writes outside .sisyphus/", async () => {
+      test("should NOT append reminder when non-orchestrator writes outside .musashi/", async () => {
         // #given
         const nonOrchestratorSession = "non-orchestrator-session"
         setupMessageStorage(nonOrchestratorSession, "Sisyphus-Junior")
@@ -508,14 +508,14 @@ describe("atlas hook", () => {
       })
 
       describe("cross-platform path validation (Windows support)", () => {
-        test("should NOT append reminder when orchestrator writes inside .sisyphus\\ (Windows backslash)", async () => {
+        test("should NOT append reminder when orchestrator writes inside .musashi\\ (Windows backslash)", async () => {
           // #given
           const hook = createAtlasHook(createMockPluginInput())
           const originalOutput = "File written successfully"
           const output = {
             title: "Write",
             output: originalOutput,
-            metadata: { filePath: ".sisyphus\\plans\\work-plan.md" },
+            metadata: { filePath: ".musashi\\plans\\work-plan.md" },
           }
 
           // #when
@@ -529,14 +529,14 @@ describe("atlas hook", () => {
           expect(output.output).not.toContain("DELEGATION REQUIRED")
         })
 
-        test("should NOT append reminder when orchestrator writes inside .sisyphus with mixed separators", async () => {
+        test("should NOT append reminder when orchestrator writes inside .musashi with mixed separators", async () => {
           // #given
           const hook = createAtlasHook(createMockPluginInput())
           const originalOutput = "File written successfully"
           const output = {
             title: "Write",
             output: originalOutput,
-            metadata: { filePath: ".sisyphus\\plans/work-plan.md" },
+            metadata: { filePath: ".musashi\\plans/work-plan.md" },
           }
 
           // #when
@@ -550,14 +550,14 @@ describe("atlas hook", () => {
           expect(output.output).not.toContain("DELEGATION REQUIRED")
         })
 
-        test("should NOT append reminder for absolute Windows path inside .sisyphus\\", async () => {
+        test("should NOT append reminder for absolute Windows path inside .musashi\\", async () => {
           // #given
           const hook = createAtlasHook(createMockPluginInput())
           const originalOutput = "File written successfully"
           const output = {
             title: "Write",
             output: originalOutput,
-            metadata: { filePath: "C:\\Users\\test\\project\\.sisyphus\\plans\\x.md" },
+            metadata: { filePath: "C:\\Users\\test\\project\\.musashi\\plans\\x.md" },
           }
 
           // #when
@@ -571,7 +571,7 @@ describe("atlas hook", () => {
           expect(output.output).not.toContain("DELEGATION REQUIRED")
         })
 
-        test("should append reminder for Windows path outside .sisyphus\\", async () => {
+        test("should append reminder for Windows path outside .musashi\\", async () => {
           // #given
           const hook = createAtlasHook(createMockPluginInput())
           const output = {

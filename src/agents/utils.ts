@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { BuiltinAgentName, AgentOverrideConfig, AgentOverrides, AgentFactory, AgentPromptMetadata } from "./types"
 import type { CategoriesConfig, CategoryConfig, GitMasterConfig } from "../config/schema"
-import { createSisyphusAgent } from "./sisyphus"
+import { createMusashiAgent } from "./sisyphus"
 import { createOracleAgent, ORACLE_PROMPT_METADATA } from "./oracle"
 import { createFrontendBuilderAgent, FRONTEND_BUILDER_PROMPT_METADATA } from "./frontend-builder"
 import { createBackendBuilderAgent, BACKEND_BUILDER_PROMPT_METADATA } from "./backend-builder"
@@ -52,7 +52,7 @@ export const LEGACY_TO_MUSASHI_NAME: Record<string, BuiltinAgentName> = {
 type AgentSource = AgentFactory | AgentConfig
 
 const agentSources: Partial<Record<BuiltinAgentName, AgentSource>> = {
-  "Musashi": createSisyphusAgent,
+  "Musashi": createMusashiAgent,
   "Musashi - boulder": createAtlasAgent as unknown as AgentFactory,
   "Musashi - plan": createMetisAgent,  // Prometheus/planning agent
   "K9 - advisor": createOracleAgent,
@@ -280,7 +280,7 @@ export async function createBuiltinAgents(
       systemDefaultModel,
     })
 
-    let sisyphusConfig = createSisyphusAgent(
+    let musashiConfig = createMusashiAgent(
       sisyphusModel,
       availableAgents,
       undefined,
@@ -290,21 +290,21 @@ export async function createBuiltinAgents(
     
     // Apply variant from override or resolved fallback chain
     if (sisyphusOverride?.variant) {
-      sisyphusConfig = { ...sisyphusConfig, variant: sisyphusOverride.variant }
+      musashiConfig = { ...musashiConfig, variant: sisyphusOverride.variant }
     } else if (sisyphusResolvedVariant) {
-      sisyphusConfig = { ...sisyphusConfig, variant: sisyphusResolvedVariant }
+      musashiConfig = { ...musashiConfig, variant: sisyphusResolvedVariant }
     }
 
-    if (directory && sisyphusConfig.prompt) {
+    if (directory && musashiConfig.prompt) {
       const envContext = createEnvContext()
-      sisyphusConfig = { ...sisyphusConfig, prompt: sisyphusConfig.prompt + envContext }
+      musashiConfig = { ...musashiConfig, prompt: musashiConfig.prompt + envContext }
     }
 
     if (sisyphusOverride) {
-      sisyphusConfig = mergeAgentConfig(sisyphusConfig, sisyphusOverride)
+      musashiConfig = mergeAgentConfig(musashiConfig, sisyphusOverride)
     }
 
-     result["Musashi"] = sisyphusConfig
+     result["Musashi"] = musashiConfig
    }
 
    if (!disabledAgents.includes("Musashi - boulder")) {

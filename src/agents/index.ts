@@ -1,7 +1,7 @@
 export * from "./types"
 export { createBuiltinAgents, LEGACY_TO_MUSASHI_NAME } from "./utils"
 export type { AvailableAgent, AvailableCategory, AvailableSkill } from "./sisyphus-prompt-builder"
-export { createSisyphusAgent } from "./sisyphus"
+export { createMusashiAgent } from "./sisyphus"
 export { createOracleAgent, ORACLE_PROMPT_METADATA } from "./oracle"
 export { createFrontendBuilderAgent, FRONTEND_BUILDER_PROMPT_METADATA } from "./frontend-builder"
 export { createBackendBuilderAgent, BACKEND_BUILDER_PROMPT_METADATA } from "./backend-builder"

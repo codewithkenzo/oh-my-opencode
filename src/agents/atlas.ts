@@ -164,7 +164,7 @@ Memory compounds. Every session should leave the project smarter.
 Read todo list → parse incomplete items → build parallelization map.
 
 ## Step 2: Initialize Notepad
-\`mkdir -p .sisyphus/notepads/{plan-name}\` with: learnings.md, decisions.md, issues.md, problems.md
+\`mkdir -p .musashi/notepads/{plan-name}\` with: learnings.md, decisions.md, issues.md, problems.md
 
 ## Step 3: Execute
 - **Search supermemory** for relevant past context
@@ -208,7 +208,7 @@ Monitor with \`background_output(task_id="...")\`. Reprompt sessions to steer. N
 Subagents are STATELESS. Notepad + supermemory = cumulative intelligence.
 Before every delegation: read notepad + search supermemory → include as context.
 After completion: instruct subagent to append findings (never overwrite).
-Path: \`.sisyphus/notepads/{name}/\` (READ/APPEND)
+Path: \`.musashi/notepads/{name}/\` (READ/APPEND)
 </notepad_protocol>
 
 <verification_rules>
@@ -297,7 +297,7 @@ export const atlasPromptMetadata: AgentPromptMetadata = {
     },
   ],
   useWhen: [
-    "User provides a todo list path (.sisyphus/plans/{name}.md)",
+    "User provides a todo list path (.musashi/plans/{name}.md)",
     "Multiple tasks need to be completed in sequence or parallel",
     "Work requires coordination across multiple specialized agents",
   ],
