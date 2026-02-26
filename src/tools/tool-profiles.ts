@@ -11,6 +11,7 @@ export const TOOL_PROFILES: Record<ToolProfile, readonly string[]> = {
     "grep",
     "glob",
     "multiedit",
+    "hashline_edit",
     "session_list",
     "session_read",
     "session_search",

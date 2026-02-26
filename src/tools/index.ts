@@ -55,6 +55,7 @@ import { context7ToolDefs } from "./context7/def"
 import { grepAppToolDefs } from "./grep-app/def"
 import { zreadToolDefs } from "./zread/def"
 import { webfetchToolDefs } from "./webfetch/def"
+import { hashlineEditToolDefs } from "./hashline-edit/def"
 
 import { system_notify } from "./system-notify"
 export { sendSystemNotification } from "./system-notify"
@@ -69,6 +70,7 @@ export type { ToolRoutePolicy, ToolRouteConfig, ToolRoutingMap, HybridToolOption
 export { createCallOmoAgent } from "./call-omo-agent"
 export { createLookAt } from "./look-at"
 export { createDelegateTask, type DelegateTaskToolOptions, DEFAULT_CATEGORIES, CATEGORY_PROMPT_APPENDS } from "./delegate-task"
+export { createHashlineEditTool } from "./hashline-edit"
 export { createLazyTool } from "./lazy-tool-wrapper"
 export type { LazyToolOptions } from "./lazy-tool-wrapper"
 export { TOOL_PROFILES, TOOL_TO_PROFILE, getToolProfile, getToolsForProfile, getToolsForProfiles, ALL_PROFILES, ORCHESTRATOR_DENIED_TOOL_NAMES, RESEARCH_TOOL_NAMES } from "./tool-profiles"
@@ -200,6 +202,13 @@ function buildLazyRegistry(): Record<string, LazyToolEntry> {
     registry[name] = {
       def,
       loader: () => import("./webfetch").then(m => (m as Record<string, ToolDefinition>)[name]),
+    }
+  }
+
+  for (const [name, def] of Object.entries(hashlineEditToolDefs)) {
+    registry[name] = {
+      def,
+      loader: () => import("./hashline-edit/tools").then(m => ({ hashline_edit: m.createHashlineEditTool() } as Record<string, ToolDefinition>)[name]),
     }
   }
 
