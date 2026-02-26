@@ -320,6 +320,137 @@ Session ID: ${task.sessionID}
 ${textContent || "(No text output)"}`
 }
 
+const MAX_MESSAGE_LIMIT = 100
+const THINKING_MAX_CHARS = 2000
+
+function formatMessageTime(time: unknown): string {
+  if (!time) return ""
+  if (typeof time === "object" && time !== null && "created" in time) {
+    const created = (time as { created: number }).created
+    return new Date(created).toISOString()
+  }
+  return String(time)
+}
+
+async function formatFullSession(
+  task: BackgroundTask,
+  client: OpencodeClient,
+  options: {
+    includeThinking: boolean
+    messageLimit?: number
+    sinceMessageId?: string
+    includeToolResults: boolean
+    thinkingMaxChars?: number
+  }
+): Promise<string> {
+  if (!task.sessionID) {
+    return formatTaskStatus(task)
+  }
+
+  const messagesResult = await client.session.messages({
+    path: { id: task.sessionID },
+  })
+
+  if (messagesResult.error) {
+    return `Error fetching messages: ${messagesResult.error}`
+  }
+
+  const rawMessages = ((messagesResult as { data?: Message[] }).data ?? messagesResult) as Message[]
+  if (!Array.isArray(rawMessages)) {
+    return "Error fetching messages: invalid response"
+  }
+
+  const sortedMessages = [...rawMessages].sort((a, b) => {
+    const timeA = String(a.info?.time ?? "")
+    const timeB = String(b.info?.time ?? "")
+    return timeA.localeCompare(timeB)
+  })
+
+  let filteredMessages = sortedMessages
+  if (options.sinceMessageId) {
+    const index = filteredMessages.findIndex((m: Message & { id?: string }) =>
+      (m as { id?: string }).id === options.sinceMessageId
+    )
+    if (index === -1) {
+      return `Error: since_message_id not found: ${options.sinceMessageId}`
+    }
+    filteredMessages = filteredMessages.slice(index + 1)
+  }
+
+  const includeThinking = options.includeThinking
+  const includeToolResults = options.includeToolResults
+  const thinkingMaxChars = options.thinkingMaxChars ?? THINKING_MAX_CHARS
+
+  const normalizedMessages: Message[] = []
+  for (const message of filteredMessages) {
+    const parts = (message.parts ?? []).filter((part) => {
+      if (part.type === "thinking" || part.type === "reasoning") {
+        return includeThinking
+      }
+      if (part.type === "tool_result") {
+        return includeToolResults
+      }
+      return part.type === "text"
+    })
+
+    if (parts.length === 0) continue
+    normalizedMessages.push({ ...message, parts })
+  }
+
+  const limit = typeof options.messageLimit === "number"
+    ? Math.min(options.messageLimit, MAX_MESSAGE_LIMIT)
+    : undefined
+  const hasMore = limit !== undefined && normalizedMessages.length > limit
+  const visibleMessages = limit !== undefined ? normalizedMessages.slice(0, limit) : normalizedMessages
+
+  const lines: string[] = []
+  lines.push("# Full Session Output")
+  lines.push("")
+  lines.push(`Task ID: ${task.id}`)
+  lines.push(`Description: ${task.description}`)
+  lines.push(`Status: ${task.status}`)
+  lines.push(`Session ID: ${task.sessionID}`)
+  lines.push(`Total messages: ${normalizedMessages.length}`)
+  lines.push(`Returned: ${visibleMessages.length}`)
+  lines.push(`Has more: ${hasMore ? "true" : "false"}`)
+  lines.push("")
+  lines.push("## Messages")
+
+  if (visibleMessages.length === 0) {
+    lines.push("")
+    lines.push("(No messages found)")
+    return lines.join("\n")
+  }
+
+  for (const message of visibleMessages) {
+    const role = message.info?.role ?? "unknown"
+    const time = formatMessageTime(message.info?.time)
+    lines.push("")
+    lines.push(`[${role}] ${time}`)
+
+    for (const part of message.parts ?? []) {
+      if (part.type === "text" && part.text) {
+        lines.push(part.text.trim())
+      } else if ((part.type === "thinking" || part.type === "reasoning") && part.text) {
+        lines.push(`[thinking] ${truncateText(part.text, thinkingMaxChars)}`)
+      } else if (part.type === "tool_result") {
+        const toolResult = part as { content?: string | Array<{ type: string; text?: string }> }
+        if (typeof toolResult.content === "string" && toolResult.content) {
+          lines.push(`[tool result] ${toolResult.content}`)
+        } else if (Array.isArray(toolResult.content)) {
+          for (const block of toolResult.content) {
+            if ((block.type === "text" || block.type === "reasoning") && block.text) {
+              lines.push(`[tool result] ${block.text}`)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return lines.join("\n")
+}
+
 export function createBackgroundOutput(manager: BackgroundManager, client: OpencodeClient): ToolDefinition {
   return tool({
     description: BACKGROUND_OUTPUT_DESCRIPTION,
@@ -327,6 +458,12 @@ export function createBackgroundOutput(manager: BackgroundManager, client: Openc
       task_id: tool.schema.string().describe("Task ID to get output from"),
       block: tool.schema.boolean().optional().describe("Wait for completion (default: false). System notifies when done, so blocking is rarely needed."),
       timeout: tool.schema.number().optional().describe("Max wait time in ms (default: 60000, max: 600000)"),
+      full_session: tool.schema.boolean().optional().describe("Return full session messages with filters (default: auto-enabled for running tasks)"),
+      include_thinking: tool.schema.boolean().optional().describe("Include thinking/reasoning parts in full_session output"),
+      message_limit: tool.schema.number().optional().describe("Max messages to return (capped at 100)"),
+      since_message_id: tool.schema.string().optional().describe("Return messages after this message ID (exclusive)"),
+      include_tool_results: tool.schema.boolean().optional().describe("Include tool results in full_session output"),
+      thinking_max_chars: tool.schema.number().optional().describe("Max characters for thinking content (default: 2000)"),
     },
     async execute(args: BackgroundOutputArgs) {
       try {
@@ -338,47 +475,49 @@ export function createBackgroundOutput(manager: BackgroundManager, client: Openc
         const shouldBlock = args.block === true
         const timeoutMs = Math.min(args.timeout ?? 60000, 600000)
 
-        // Already completed: return result immediately (regardless of block flag)
-        if (task.status === "completed") {
-          return await formatTaskResult(task, client)
-        }
+        const isActive = task.status === "pending" || task.status === "running"
+        const fullSession = args.full_session ?? isActive
+        const includeThinking = args.include_thinking ?? isActive
+        const includeToolResults = args.include_tool_results ?? isActive
 
-        // Error or cancelled: return status immediately
-        if (task.status === "error" || task.status === "cancelled") {
-          return formatTaskStatus(task)
-        }
+        let resolvedTask = task
 
-        // Non-blocking and still running: return status
-        if (!shouldBlock) {
-          return formatTaskStatus(task)
-        }
-
-        // Blocking: poll until completion or timeout
-        const startTime = Date.now()
-
-        while (Date.now() - startTime < timeoutMs) {
-          await delay(1000)
-
-          const currentTask = manager.getTask(args.task_id)
-          if (!currentTask) {
-            return `Task was deleted: ${args.task_id}`
+        if (shouldBlock && isActive) {
+          const startTime = Date.now()
+          while (Date.now() - startTime < timeoutMs) {
+            await delay(1000)
+            const currentTask = manager.getTask(args.task_id)
+            if (!currentTask) {
+              return `Task was deleted: ${args.task_id}`
+            }
+            if (currentTask.status !== "pending" && currentTask.status !== "running") {
+              resolvedTask = currentTask
+              break
+            }
           }
-
-          if (currentTask.status === "completed") {
-            return await formatTaskResult(currentTask, client)
-          }
-
-          if (currentTask.status === "error" || currentTask.status === "cancelled") {
-            return formatTaskStatus(currentTask)
-          }
+          const finalCheck = manager.getTask(args.task_id)
+          if (finalCheck) resolvedTask = finalCheck
         }
 
-        // Timeout exceeded: return current status
-        const finalTask = manager.getTask(args.task_id)
-        if (!finalTask) {
-          return `Task was deleted: ${args.task_id}`
+        if (fullSession) {
+          return await formatFullSession(resolvedTask, client, {
+            includeThinking,
+            messageLimit: args.message_limit,
+            sinceMessageId: args.since_message_id,
+            includeToolResults,
+            thinkingMaxChars: args.thinking_max_chars,
+          })
         }
-        return `Timeout exceeded (${timeoutMs}ms). Task still ${finalTask.status}.\n\n${formatTaskStatus(finalTask)}`
+
+        if (resolvedTask.status === "completed") {
+          return await formatTaskResult(resolvedTask, client)
+        }
+
+        if (resolvedTask.status === "error" || resolvedTask.status === "cancelled") {
+          return formatTaskStatus(resolvedTask)
+        }
+
+        return formatTaskStatus(resolvedTask)
       } catch (error) {
         return `Error getting output: ${error instanceof Error ? error.message : String(error)}`
       }
