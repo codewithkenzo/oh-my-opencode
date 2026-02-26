@@ -33,6 +33,12 @@ import {
   createPrometheusMdOnlyHook,
   createMemoryPersistenceHook,
   createQuestionLabelTruncatorHook,
+  createHashlineReadEnhancerHook,
+  createHashlineEditDiffEnhancerHook,
+  createWriteExistingFileGuardHook,
+  createAnthropicEffortHook,
+  createUnstableAgentBabysitterHook,
+  createRuntimeFallbackHook,
 } from "./hooks";
 import {
   contextCollector,
@@ -96,6 +102,22 @@ type ExperimentalMessagesTransformInput = Parameters<ContextInjectorMessagesTran
   Parameters<ThinkingBlockMessagesTransform>[0];
 type ExperimentalMessagesTransformOutput = Parameters<ContextInjectorMessagesTransform>[1] &
   Parameters<ThinkingBlockMessagesTransform>[1];
+type ToolExecuteBeforeInput = { tool: string; sessionID: string; callID: string };
+type ToolExecuteBeforeOutput = { args: Record<string, unknown> };
+type ToolExecuteAfterInput = { tool: string; sessionID: string; callID: string };
+type ToolExecuteAfterOutput = { title: string; output: string; metadata: unknown };
+type ToolExecuteBeforeHook = {
+  "tool.execute.before"?: (
+    input: ToolExecuteBeforeInput,
+    output: ToolExecuteBeforeOutput
+  ) => Promise<void> | void;
+};
+type ToolExecuteBeforeAfterHook = ToolExecuteBeforeHook & {
+  "tool.execute.after"?: (
+    input: ToolExecuteAfterInput,
+    output: ToolExecuteAfterOutput
+  ) => Promise<void> | void;
+};
 
 export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
   const startupTimer = createStartupTimer();
@@ -224,6 +246,10 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
 
   const backgroundManager = new BackgroundManager(ctx, pluginConfig.background_task);
 
+  const unstableAgentBabysitter = isHookEnabled("unstable-agent-babysitter")
+    ? createUnstableAgentBabysitterHook(ctx, { backgroundManager })
+    : null;
+
   const atlasHook = isHookEnabled("atlas")
     ? createAtlasHook(ctx, { directory: ctx.directory, backgroundManager })
     : null;
@@ -237,6 +263,28 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
         config: pluginConfig.memory_persistence,
         contextCollector,
       })
+    : null;
+
+  const hashlineReadEnhancer: ToolExecuteBeforeAfterHook | null = isHookEnabled(
+    "hashline-read-enhancer"
+  )
+    ? createHashlineReadEnhancerHook(ctx, {
+        hashline_edit: pluginConfig.hashline_edit,
+      })
+    : null;
+  const hashlineEditDiffEnhancer = isHookEnabled("hashline-edit-diff-enhancer")
+    ? createHashlineEditDiffEnhancerHook({
+        hashline_edit: pluginConfig.hashline_edit,
+      })
+    : null;
+  const writeExistingFileGuard = isHookEnabled("write-existing-file-guard")
+    ? createWriteExistingFileGuardHook(ctx)
+    : null;
+  const anthropicEffort: ToolExecuteBeforeHook | null = isHookEnabled("anthropic-effort")
+    ? (createAnthropicEffortHook() as ToolExecuteBeforeHook)
+    : null;
+  const runtimeFallback = isHookEnabled("runtime-fallback")
+    ? createRuntimeFallbackHook(ctx, { config: pluginConfig.runtime_fallback })
     : null;
 
   const taskResumeInfo = createTaskResumeInfoHook();
@@ -410,6 +458,7 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       }
 
       await keywordDetector?.["chat.message"]?.(input, output);
+      await runtimeFallback?.["chat.message"]?.(input, output as any);
       await claudeCodeHooks["chat.message"]?.(input, output);
       await autoSlashCommand?.["chat.message"]?.(input, output);
       await startWork?.["chat.message"]?.(input, output);
@@ -498,6 +547,8 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await ralphLoop?.event(input);
       await atlasHook?.handler(input);
       await memoryPersistence?.event(input);
+      await unstableAgentBabysitter?.event(input);
+      await runtimeFallback?.event(input);
 
       const { event } = input;
       const props = event.properties as Record<string, unknown> | undefined;
@@ -572,6 +623,10 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await rulesInjector?.["tool.execute.before"]?.(input, output);
       await prometheusMdOnly?.["tool.execute.before"]?.(input, output);
       await questionLabelTruncator["tool.execute.before"]?.(input, output);
+      await hashlineReadEnhancer?.["tool.execute.before"]?.(input, output);
+      await hashlineEditDiffEnhancer?.["tool.execute.before"]?.(input, output);
+      await writeExistingFileGuard?.["tool.execute.before"]?.(input, output);
+      await anthropicEffort?.["tool.execute.before"]?.(input, output);
       await atlasHook?.["tool.execute.before"]?.(input, output);
 
       if (input.tool === "task") {
@@ -652,9 +707,11 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await emptyTaskResponseDetector?.["tool.execute.after"](input, output);
       await agentUsageReminder?.["tool.execute.after"](input, output);
       await interactiveBashSession?.["tool.execute.after"](input, output);
-await editErrorRecovery?.["tool.execute.after"](input, output);
+ await editErrorRecovery?.["tool.execute.after"](input, output);
         await delegateTaskRetry?.["tool.execute.after"](input, output);
         await atlasHook?.["tool.execute.after"]?.(input, output);
+      await hashlineReadEnhancer?.["tool.execute.after"]?.(input, output);
+      await hashlineEditDiffEnhancer?.["tool.execute.after"]?.(input, output);
       await taskResumeInfo["tool.execute.after"](input, output);
     },
   };

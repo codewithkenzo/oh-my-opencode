@@ -7,6 +7,7 @@ export {
   HookNameSchema,
   BuiltinCommandNameSchema,
   SisyphusAgentConfigSchema,
+  RuntimeFallbackConfigSchema,
   ExperimentalConfigSchema,
   RalphLoopConfigSchema,
 } from "./schema"
@@ -20,6 +21,7 @@ export type {
   HookName,
   BuiltinCommandName,
   SisyphusAgentConfig,
+  RuntimeFallbackConfig,
   ExperimentalConfig,
   DynamicContextPruningConfig,
   RalphLoopConfig,
