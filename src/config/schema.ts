@@ -135,6 +135,7 @@ export const HookNameSchema = z.enum([
 export const BuiltinCommandNameSchema = z.enum([
   "init-deep",
   "start-work",
+  "handoff",
 ])
 
 export const AgentOverrideConfigSchema = z.object({

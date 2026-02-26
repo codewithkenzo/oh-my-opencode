@@ -109,7 +109,8 @@
         "type": "string",
         "enum": [
           "init-deep",
-          "start-work"
+          "start-work",
+          "handoff"
         ]
       }
     },

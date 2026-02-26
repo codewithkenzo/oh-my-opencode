@@ -4,6 +4,7 @@ import { INIT_DEEP_TEMPLATE } from "./templates/init-deep"
 import { RALPH_LOOP_TEMPLATE, CANCEL_RALPH_TEMPLATE } from "./templates/ralph-loop"
 import { REFACTOR_TEMPLATE } from "./templates/refactor"
 import { START_WORK_TEMPLATE } from "./templates/start-work"
+import { HANDOFF_TEMPLATE } from "./templates/handoff"
 
 const BUILTIN_COMMAND_DEFINITIONS: Record<BuiltinCommandName, Omit<CommandDefinition, "name">> = {
   "init-deep": {
@@ -138,6 +139,21 @@ This command helps recall:
 $ARGUMENTS
 </search-query>`,
     argumentHint: '"search query" [--scope=<project|user|global>] [--limit=N]',
+  },
+  handoff: {
+    description: "(builtin) Create context handoff summary for session continuity",
+    template: `<command-instruction>
+${HANDOFF_TEMPLATE}
+</command-instruction>
+
+<session-context>
+Session ID: ses_36881ab2effewfY62PQ2mNlUFT
+Timestamp: 2026-02-26T01:09:24.943Z
+</session-context>
+
+<user-request>
+$ARGUMENTS
+</user-request>`,
   },
 }
 
