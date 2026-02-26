@@ -34,6 +34,7 @@ import {
   createHashlineReadEnhancerHook,
   createHashlineEditDiffEnhancerHook,
   createWriteExistingFileGuardHook,
+  createRmToTrashHook,
   createAnthropicEffortHook,
   createUnstableAgentBabysitterHook,
   createRuntimeFallbackHook,
@@ -274,6 +275,9 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     : null;
   const writeExistingFileGuard = isHookEnabled("write-existing-file-guard")
     ? createWriteExistingFileGuardHook(ctx)
+    : null;
+  const rmToTrash = isHookEnabled("rm-to-trash")
+    ? createRmToTrashHook({ enforcement: pluginConfig?.enforcement?.rm_safety ?? "warn" })
     : null;
   const anthropicEffort: ToolExecuteBeforeHook | null = isHookEnabled("anthropic-effort")
     ? (createAnthropicEffortHook() as ToolExecuteBeforeHook)
@@ -631,6 +635,7 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await hashlineReadEnhancer?.["tool.execute.before"]?.(input, output);
       await hashlineEditDiffEnhancer?.["tool.execute.before"]?.(input, output);
       await writeExistingFileGuard?.["tool.execute.before"]?.(input, output);
+      await rmToTrash?.["tool.execute.before"]?.(input, output);
       await anthropicEffort?.["tool.execute.before"]?.(input, output);
       await atlasHook?.["tool.execute.before"]?.(input, output);
 

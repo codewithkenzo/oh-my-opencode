@@ -38,3 +38,4 @@ export { createWriteExistingFileGuardHook } from "./write-existing-file-guard";
 export { createAnthropicEffortHook } from "./anthropic-effort";
 export { createUnstableAgentBabysitterHook } from "./unstable-agent-babysitter";
 export { createRuntimeFallbackHook, type RuntimeFallbackHook, type RuntimeFallbackOptions } from "./runtime-fallback";
+export { createRmToTrashHook } from "./rm-to-trash";
