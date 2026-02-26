@@ -8,7 +8,7 @@ import { createBackendBuilderAgent, BACKEND_BUILDER_PROMPT_METADATA } from "./ba
 import { createLibrarianAgent, LIBRARIAN_PROMPT_METADATA } from "./librarian"
 import { createExploreAgent, EXPLORE_PROMPT_METADATA } from "./explore"
 import { createMetisAgent } from "./metis"
-import { createAtlasAgent } from "./atlas"
+import { createAtlasAgent } from "./atlas/index"
 import type { AvailableAgent, AvailableCategory, AvailableSkill } from "./sisyphus-prompt-builder"
 import { deepMerge, fetchAvailableModels, resolveModelWithFallback, AGENT_MODEL_REQUIREMENTS, findCaseInsensitive, includesCaseInsensitive } from "../shared"
 import { DEFAULT_CATEGORIES, CATEGORY_DESCRIPTIONS } from "../tools/delegate-task/constants"
