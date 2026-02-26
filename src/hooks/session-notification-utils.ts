@@ -128,13 +128,13 @@ export async function getAplayPath(): Promise<string | null> {
 
 export function startBackgroundCheck(platform: Platform): void {
   if (platform === "darwin") {
-    getOsascriptPath().catch(() => {})
-    getAfplayPath().catch(() => {})
+    getOsascriptPath().catch(() => { /* prevent unhandled rejection during path warmup */ })
+    getAfplayPath().catch(() => { /* prevent unhandled rejection during path warmup */ })
   } else if (platform === "linux") {
-    getNotifySendPath().catch(() => {})
-    getPaplayPath().catch(() => {})
-    getAplayPath().catch(() => {})
+    getNotifySendPath().catch(() => { /* prevent unhandled rejection during path warmup */ })
+    getPaplayPath().catch(() => { /* prevent unhandled rejection during path warmup */ })
+    getAplayPath().catch(() => { /* prevent unhandled rejection during path warmup */ })
   } else if (platform === "win32") {
-    getPowershellPath().catch(() => {})
+    getPowershellPath().catch(() => { /* prevent unhandled rejection during path warmup */ })
   }
 }

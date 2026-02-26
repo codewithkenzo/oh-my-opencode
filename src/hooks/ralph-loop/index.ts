@@ -268,7 +268,7 @@ export function createRalphLoopHook(
               duration: 5000,
             },
           })
-          .catch(() => {})
+          .catch(() => { /* fire-and-forget: loop completion toast is non-critical UI feedback */ })
 
         return
       }
@@ -290,7 +290,7 @@ export function createRalphLoopHook(
               duration: 5000,
             },
           })
-          .catch(() => {})
+          .catch(() => { /* fire-and-forget: loop warning toast is non-critical UI feedback */ })
 
         return
       }
@@ -325,7 +325,7 @@ export function createRalphLoopHook(
             duration: 2000,
           },
         })
-        .catch(() => {})
+        .catch(() => { /* fire-and-forget: loop progress toast is non-critical UI feedback */ })
 
       try {
         let agent: string | undefined

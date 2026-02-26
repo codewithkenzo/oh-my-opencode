@@ -173,7 +173,7 @@ export function createEventHandler(
             duration: 5000,
           },
         })
-        .catch(() => {})
+        .catch(() => { /* fire-and-forget: fallback toast is non-critical UI feedback */ })
     }
 
     if (result.success && result.newModel) {

@@ -157,7 +157,7 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     
     if (externalNotifier.detected && !forceEnable) {
       // External notification plugin detected - skip our notification to avoid conflicts
-      console.warn(getNotificationConflictWarning(externalNotifier.pluginName!));
+      log(getNotificationConflictWarning(externalNotifier.pluginName!));
       log("session-notification disabled due to external notifier conflict", {
         detected: externalNotifier.pluginName,
         allPlugins: externalNotifier.allPlugins,
@@ -649,7 +649,7 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
                 body: { parts: [{ type: "text", text: "continue" }] },
                 query: { directory: ctx.directory },
               })
-              .catch(() => {});
+              .catch(() => { /* best-effort recovery: session may already be closed */ });
           }
         }
       }

@@ -52,14 +52,14 @@ export function createAutoUpdateCheckerHook(
 
         if (localDevVersion) {
           if (showStartupToast) {
-            showLocalDevToast(ctx, displayVersion, isMusashiEnabled).catch(() => {})
+            showLocalDevToast(ctx, displayVersion, isMusashiEnabled).catch(() => { /* non-critical: local-dev version toast feedback */ })
           }
           log("[auto-update-checker] Local development mode")
           return
         }
 
         if (showStartupToast) {
-          showVersionToast(ctx, displayVersion, getToastMessage(false)).catch(() => {})
+          showVersionToast(ctx, displayVersion, getToastMessage(false)).catch(() => { /* non-critical: startup version toast feedback */ })
         }
 
         runBackgroundUpdateCheck(ctx, autoUpdate, getToastMessage).catch(err => {
@@ -155,7 +155,7 @@ async function showConfigErrorsIfAny(ctx: PluginInput): Promise<void> {
         duration: 10000,
       },
     })
-    .catch(() => {})
+    .catch(() => { /* non-critical: config error toast feedback */ })
 
   log(`[auto-update-checker] Config load errors shown: ${errors.length} error(s)`)
   clearConfigLoadErrors()
@@ -183,7 +183,7 @@ async function showSpinnerToast(ctx: PluginInput, version: string, message: stri
           duration: frameInterval + 50,
         },
       })
-      .catch(() => { })
+      .catch(() => { /* non-critical: spinner frame toast feedback */ })
     await new Promise(resolve => setTimeout(resolve, frameInterval))
   }
 }
@@ -202,7 +202,7 @@ async function showUpdateAvailableToast(
         duration: 8000,
       },
     })
-    .catch(() => {})
+    .catch(() => { /* non-critical: update-available toast feedback */ })
   log(`[auto-update-checker] Update available toast shown: v${latestVersion}`)
 }
 
@@ -216,7 +216,7 @@ async function showAutoUpdatedToast(ctx: PluginInput, oldVersion: string, newVer
         duration: 8000,
       },
     })
-    .catch(() => {})
+    .catch(() => { /* non-critical: auto-updated toast feedback */ })
   log(`[auto-update-checker] Auto-updated toast shown: v${oldVersion} → v${newVersion}`)
 }
 

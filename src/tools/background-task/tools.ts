@@ -558,7 +558,7 @@ export function createBackgroundCancel(manager: BackgroundManager, client: Openc
               // Running task: abort session
               client.session.abort({
                 path: { id: task.sessionID },
-              }).catch(() => {})
+              }).catch(() => { /* best-effort cleanup: task session may already be gone */ })
 
               task.status = "cancelled"
               task.completedAt = new Date()
@@ -601,7 +601,7 @@ Status: ${task.status}`
         if (task.sessionID) {
           client.session.abort({
             path: { id: task.sessionID },
-          }).catch(() => {})
+          }).catch(() => { /* best-effort cleanup: task session may already be gone */ })
         }
 
         task.status = "cancelled"

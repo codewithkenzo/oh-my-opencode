@@ -1170,7 +1170,7 @@ Use \`background_output(task_id="${task.id}")\` to retrieve this result when rea
 
       this.client.session.abort({
         path: { id: sessionID },
-      }).catch(() => {})
+      }).catch(() => { /* best-effort cleanup: stale task session may already be closed */ })
 
       log(`[background-agent] Task ${task.id} interrupted: stale timeout`)
 

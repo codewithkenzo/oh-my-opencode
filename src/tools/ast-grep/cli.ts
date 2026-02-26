@@ -57,7 +57,7 @@ export async function getAstGrepPath(): Promise<string | null> {
 export function startBackgroundInit(): void {
   if (!initPromise) {
     initPromise = getAstGrepPath()
-    initPromise.catch(() => {})
+    initPromise.catch(() => { /* prevent unhandled rejection on lazy ast-grep init */ })
   }
 }
 

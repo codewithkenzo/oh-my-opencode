@@ -157,7 +157,7 @@ export function createTodoContinuationEnforcerHook(
         variant: "warning" as const,
         duration: TOAST_DURATION_MS,
       },
-    }).catch(() => {})
+    }).catch(() => { /* fire-and-forget: countdown toast is non-critical UI feedback */ })
   }
 
   interface ResolvedMessageInfo {

@@ -217,7 +217,7 @@ async function fixEmptyMessages(
             duration: 5000,
           },
         })
-        .catch(() => {});
+        .catch(() => { /* fire-and-forget: recovery toast is non-critical UI feedback */ });
       return false;
     }
 
@@ -250,7 +250,7 @@ async function fixEmptyMessages(
           duration: 3000,
         },
       })
-      .catch(() => {});
+      .catch(() => { /* fire-and-forget: recovery toast is non-critical UI feedback */ });
   }
 
   return fixed;
@@ -276,7 +276,7 @@ export async function executeCompact(
           duration: 5000,
         },
       })
-      .catch(() => {});
+      .catch(() => { /* fire-and-forget: recovery toast is non-critical UI feedback */ });
     return;
   }
   autoCompactState.compactionInProgress.add(sessionID);
@@ -330,7 +330,7 @@ export async function executeCompact(
               duration: 4000,
             },
           })
-          .catch(() => {});
+          .catch(() => { /* fire-and-forget: truncation toast is non-critical UI feedback */ });
 
         log("[auto-compact] aggressive truncation completed", aggressiveResult);
 
@@ -397,7 +397,7 @@ export async function executeCompact(
               duration: 10000,
             },
           })
-          .catch(() => {});
+          .catch(() => { /* fire-and-forget: summarize toast is non-critical UI feedback */ });
         return;
       }
     }
@@ -427,7 +427,7 @@ export async function executeCompact(
                 duration: 3000,
               },
             })
-            .catch(() => {});
+            .catch(() => { /* fire-and-forget: summarize toast is non-critical UI feedback */ });
 
           const summarizeBody = { providerID, modelID, auto: true }
           await (client as Client).session.summarize({
@@ -464,7 +464,7 @@ export async function executeCompact(
               duration: 3000,
             },
           })
-          .catch(() => {});
+          .catch(() => { /* fire-and-forget: summarize warning toast is non-critical UI feedback */ });
       }
     }
 
@@ -479,7 +479,7 @@ export async function executeCompact(
           duration: 5000,
         },
       })
-      .catch(() => {});
+      .catch(() => { /* fire-and-forget: failure toast is non-critical UI feedback */ });
   } finally {
     autoCompactState.compactionInProgress.delete(sessionID);
   }

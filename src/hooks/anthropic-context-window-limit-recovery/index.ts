@@ -68,7 +68,7 @@ export function createAnthropicContextWindowLimitRecoveryHook(ctx: PluginInput, 
               duration: 3000,
             },
           })
-          .catch(() => {})
+          .catch(() => { /* fire-and-forget: context-limit toast is non-critical UI feedback */ })
 
         setTimeout(() => {
           executeCompact(
@@ -128,7 +128,7 @@ export function createAnthropicContextWindowLimitRecoveryHook(ctx: PluginInput, 
             duration: 3000,
           },
         })
-        .catch(() => {})
+        .catch(() => { /* fire-and-forget: auto-compact toast is non-critical UI feedback */ })
 
       await executeCompact(
         sessionID,

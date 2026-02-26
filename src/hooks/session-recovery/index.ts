@@ -10,6 +10,7 @@ import {
   stripThinkingParts,
 } from "./storage"
 import type { MessageData, ResumeConfig } from "./types"
+import { log } from "../../shared/logger"
 
 export interface SessionRecoveryOptions {
   experimental?: ExperimentalConfig
@@ -293,7 +294,7 @@ export function createSessionRecoveryHook(ctx: PluginInput, options?: SessionRec
         onAbortCallback(sessionID)  // Mark recovering BEFORE abort
       }
 
-      await ctx.client.session.abort({ path: { id: sessionID } }).catch(() => {})
+      await ctx.client.session.abort({ path: { id: sessionID } }).catch(() => { /* best-effort cleanup: session may already be stopped */ })
 
       const messagesResp = await ctx.client.session.messages({
         path: { id: sessionID },
@@ -326,7 +327,7 @@ export function createSessionRecoveryHook(ctx: PluginInput, options?: SessionRec
             duration: 3000,
           },
         })
-        .catch(() => {})
+        .catch(() => { /* fire-and-forget: recovery toast is non-critical UI feedback */ })
 
       let success = false
 
@@ -350,7 +351,7 @@ export function createSessionRecoveryHook(ctx: PluginInput, options?: SessionRec
 
       return success
   } catch (err) {
-    console.error("[session-recovery] Recovery failed:", err)
+    log("[session-recovery] Recovery failed:", err)
     return false
   } finally {
     processingErrors.delete(assistantMsgID)
