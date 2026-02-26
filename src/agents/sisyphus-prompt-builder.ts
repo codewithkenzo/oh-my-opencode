@@ -195,6 +195,23 @@ export function buildDelegationTable(agents: AvailableAgent[]): string {
     }
   }
 
+  const skillsRows = agents
+    .filter((agent) => (agent.metadata.skills?.length ?? 0) > 0)
+    .map((agent) => `| ${agent.name} | ${agent.metadata.skills?.join(", ") ?? ""} |`)
+
+  if (skillsRows.length > 0) {
+    rows.push("")
+    rows.push("## Agent Skill Specializations")
+    rows.push("")
+    rows.push("Each agent carries domain-specific skills that are auto-loaded into their context:")
+    rows.push("")
+    rows.push("| Agent | Skills |")
+    rows.push("|-------|--------|")
+    rows.push(...skillsRows)
+    rows.push("")
+    rows.push("Use this to make better delegation decisions - delegate to the agent whose skills match the task domain.")
+  }
+
   return rows.join("\n")
 }
 
