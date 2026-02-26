@@ -73,4 +73,17 @@ describe("task_get tool", () => {
     //#then
     expect(result.task).toBeNull()
   })
+
+  test("#given malformed json in task file #when get by id #then returns null task", async () => {
+    //#given
+    const taskId = "T-bad-json"
+    writeFileSync(join(TEST_DIR, `${taskId}.json`), "{not-valid-json", "utf-8")
+
+    //#when
+    const tool = createTaskGetTool(TEST_CONFIG)
+    const result = JSON.parse(await tool.execute({ id: taskId }, testContext as never))
+
+    //#then
+    expect(result.task).toBeNull()
+  })
 })

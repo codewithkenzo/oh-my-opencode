@@ -79,4 +79,23 @@ describe("comment-checker apply_patch integration", () => {
     // then
     expect(processApplyPatchEditsWithCli).toHaveBeenCalledTimes(0)
   })
+
+  it("skips when apply_patch metadata.files entries are malformed", async () => {
+    // given
+    const hooks = createCommentCheckerHooks()
+    const input = { tool: "apply_patch", sessionID: "ses_test", callID: "call_test" }
+    const output = {
+      title: "ok",
+      output: "ok",
+      metadata: {
+        files: [{ filePath: "/repo/src/a.ts", type: "update" }],
+      },
+    }
+
+    // when
+    await hooks["tool.execute.after"](input, output)
+
+    // then
+    expect(processApplyPatchEditsWithCli).toHaveBeenCalledTimes(0)
+  })
 })

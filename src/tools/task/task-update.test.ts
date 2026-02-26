@@ -67,4 +67,26 @@ describe("task_update tool", () => {
     expect(result.task.blocks).toEqual(["T-a"])
     expect(result.task.blockedBy).toEqual(["T-b"])
   })
+
+  test("#given missing task file #when update #then returns task_not_found", async () => {
+    //#given
+    const tool = createTaskUpdateTool(TEST_CONFIG)
+
+    //#when
+    const result = JSON.parse(await tool.execute({ id: "T-missing-1", subject: "Noop" }, testContext as never))
+
+    //#then
+    expect(result.error).toBe("task_not_found")
+  })
+
+  test("#given malformed task id #when update #then rejects with invalid_task_id", async () => {
+    //#given
+    const tool = createTaskUpdateTool(TEST_CONFIG)
+
+    //#when
+    const result = JSON.parse(await tool.execute({ id: "bad-id", subject: "Noop" }, testContext as never))
+
+    //#then
+    expect(result.error).toBe("invalid_task_id")
+  })
 })

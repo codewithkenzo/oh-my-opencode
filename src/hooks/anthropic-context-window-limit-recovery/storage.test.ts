@@ -74,4 +74,24 @@ describe("truncateUntilTargetTokens", () => {
     expect(result.totalBytesRemoved).toBe(200)
     expect(result.sufficient).toBe(false)
   })
+
+  test("returns failure when truncation attempts fail for all candidates", () => {
+    const { findToolResultsBySize, truncateToolResult } = require("./storage")
+
+    // #given: Candidates exist but truncation fails for each
+    findToolResultsBySize.mockReturnValue([
+      { partPath: "path1", partId: "id1", messageID: "m1", toolName: "tool1", outputSize: 1000 },
+      { partPath: "path2", partId: "id2", messageID: "m2", toolName: "tool2", outputSize: 900 },
+    ])
+    truncateToolResult.mockReturnValue({ success: false })
+
+    // #when
+    const result = truncateUntilTargetTokens(sessionID, 1200, 1000, 0.5, 1)
+
+    // #then
+    expect(result.success).toBe(false)
+    expect(result.truncatedCount).toBe(0)
+    expect(result.totalBytesRemoved).toBe(0)
+    expect(result.sufficient).toBe(false)
+  })
 })

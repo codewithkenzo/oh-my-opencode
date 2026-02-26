@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test"
-import { existsSync, mkdirSync, rmSync } from "node:fs"
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import type { OhMyOpenCodeConfig } from "../../config/schema"
 import { createTaskCreateTool } from "./task-create"
@@ -54,5 +54,31 @@ describe("task_create tool", () => {
     expect(existsSync(taskPath)).toBe(true)
     const task = await Bun.file(taskPath).json()
     expect((task as { threadID: string }).threadID).toBe("session-1")
+  })
+
+  test("#given missing subject #when create task #then returns validation error", async () => {
+    //#given
+    const tool = createTaskCreateTool(TEST_CONFIG)
+
+    //#when
+    const result = JSON.parse(await tool.execute({}, testContext as never))
+
+    //#then
+    expect(result.error).toBe("internal_error")
+  })
+
+  test("#given invalid storage target #when create task #then returns internal error", async () => {
+    //#given
+    if (existsSync(TEST_DIR)) {
+      rmSync(TEST_DIR, { recursive: true, force: true })
+    }
+    writeFileSync(TEST_DIR, "not-a-directory", "utf-8")
+    const tool = createTaskCreateTool(TEST_CONFIG)
+
+    //#when
+    const result = JSON.parse(await tool.execute({ subject: "Will fail" }, testContext as never))
+
+    //#then
+    expect(result.error).toBe("internal_error")
   })
 })

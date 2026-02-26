@@ -67,4 +67,49 @@ describe("task_list tool", () => {
     expect(result.tasks).toHaveLength(1)
     expect(result.tasks[0].id).toBe("T-1")
   })
+
+  test("#given empty task store #when list #then returns empty tasks array", async () => {
+    //#given
+    const tool = createTaskList(TEST_CONFIG)
+
+    //#when
+    const result = JSON.parse(await tool.execute({}, testContext as never))
+
+    //#then
+    expect(result.tasks).toEqual([])
+  })
+
+  test("#given completed blockers #when list #then blockedBy only includes unresolved blockers", async () => {
+    //#given
+    const baseTask = {
+      description: "",
+      blocks: [],
+      blockedBy: [],
+      threadID: "session-1",
+    }
+    writeFileSync(
+      join(TEST_DIR, "T-blocked.json"),
+      JSON.stringify({ ...baseTask, id: "T-blocked", subject: "Blocked task", status: "pending", blockedBy: ["T-done", "T-open"] }),
+      "utf-8",
+    )
+    writeFileSync(
+      join(TEST_DIR, "T-done.json"),
+      JSON.stringify({ ...baseTask, id: "T-done", subject: "Done blocker", status: "completed" }),
+      "utf-8",
+    )
+    writeFileSync(
+      join(TEST_DIR, "T-open.json"),
+      JSON.stringify({ ...baseTask, id: "T-open", subject: "Open blocker", status: "pending" }),
+      "utf-8",
+    )
+
+    //#when
+    const tool = createTaskList(TEST_CONFIG)
+    const result = JSON.parse(await tool.execute({}, testContext as never))
+
+    //#then
+    const blockedTask = (result.tasks as Array<{ id: string; blockedBy: string[] }>).find((task) => task.id === "T-blocked")
+    expect(blockedTask).toBeDefined()
+    expect(blockedTask?.blockedBy).toEqual(["T-open"])
+  })
 })
