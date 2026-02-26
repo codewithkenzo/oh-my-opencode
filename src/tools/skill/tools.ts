@@ -248,6 +248,50 @@ export function createSkillTool(options: SkillLoadOptions = {}): ToolDefinition 
       const skill = skills.find(s => s.name === args.name)
 
       if (!skill) {
+        const { discoverCommandsSync } = await import("../../tools/slashcommand/tools")
+        const commands = discoverCommandsSync()
+        const commandName = args.name.replace(/^\//, "").toLowerCase()
+        const command = commands.find(c => c.name.toLowerCase() === commandName)
+
+        if (command) {
+          const sections: string[] = []
+          sections.push(`# /${command.name} Command\n`)
+
+          if (command.metadata.description) {
+            sections.push(`**Description**: ${command.metadata.description}\n`)
+          }
+          if (command.metadata.argumentHint) {
+            sections.push(`**Usage**: /${command.name} ${command.metadata.argumentHint}\n`)
+          }
+          if (command.metadata.model) {
+            sections.push(`**Model**: ${command.metadata.model}\n`)
+          }
+          if (command.metadata.agent) {
+            sections.push(`**Agent**: ${command.metadata.agent}\n`)
+          }
+          if (command.metadata.subtask) {
+            sections.push("**Subtask**: true\n")
+          }
+
+          sections.push(`**Scope**: ${command.scope}\n`)
+          sections.push("---\n")
+          sections.push("## Command Instructions\n")
+
+          let content = command.content || ""
+          if (!content && command.lazyContentLoader) {
+            content = await command.lazyContentLoader.load()
+          }
+
+          const { dirname } = await import("node:path")
+          const { resolveCommandsInText, resolveFileReferencesInText } = await import("../../shared")
+          const commandDir = command.path ? dirname(command.path) : process.cwd()
+          const withFileRefs = await resolveFileReferencesInText(content, commandDir)
+          const resolvedContent = await resolveCommandsInText(withFileRefs)
+          sections.push(resolvedContent.trim())
+
+          return sections.join("\n")
+        }
+
         const available = skills.map(s => s.name).join(", ")
         throw new Error(`Skill "${args.name}" not found. Available skills: ${available || "none"}`)
       }
