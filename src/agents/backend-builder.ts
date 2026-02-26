@@ -12,6 +12,12 @@ export const BACKEND_BUILDER_PROMPT_METADATA: AgentPromptMetadata = {
     { domain: "Data layer", trigger: "Drizzle schemas, migrations, queries, vector search" },
     { domain: "Integrations", trigger: "Auth, payments, background jobs, external services" },
   ],
+  skills: [
+    "kenzo-blueprint-architect",
+    "kenzo-effect-ts",
+    "kenzo-zod-patterns",
+    "kenzo-testing-stack",
+  ],
   useWhen: [
     "Building or modifying API endpoints or server functions",
     "Working with database schemas, queries, or migrations",

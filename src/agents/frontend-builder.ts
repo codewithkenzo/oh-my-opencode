@@ -11,6 +11,12 @@ export const FRONTEND_BUILDER_PROMPT_METADATA: AgentPromptMetadata = {
     { domain: "Frontend UI/UX", trigger: "Visual changes, components, pages, client logic" },
     { domain: "Styling & animation", trigger: "Tailwind, Motion, design tokens, responsive layout" },
   ],
+  skills: [
+    "kenzo-frontend-stack",
+    "kenzo-component-stack",
+    "kenzo-tailwind",
+    "kenzo-motion-system",
+  ],
   useWhen: [
     "Building or modifying React components, pages, or layouts",
     "Implementing animations or transitions",

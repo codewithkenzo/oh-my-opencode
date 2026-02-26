@@ -10,7 +10,15 @@ export const LIBRARIAN_PROMPT_METADATA: AgentPromptMetadata = {
   triggers: [
     { domain: "Research", trigger: "Unfamiliar packages / libraries, struggles at weird behaviour (to find existing implementation of opensource)" },
   ],
-  skills: ["research-tools", "context7", "docs-seeker", "exa", "zread"],
+  skills: [
+    "research-tools",
+    "context7",
+    "docs-seeker",
+    "exa",
+    "zread",
+    "kenzo-research-tools",
+    "kenzo-seo-geo",
+  ],
   useWhen: [
     "How do I use [library]?",
     "What's the best practice for [framework feature]?",
