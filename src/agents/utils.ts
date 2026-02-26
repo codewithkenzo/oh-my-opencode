@@ -258,6 +258,15 @@ export async function createBuiltinAgents(
     })
 
     let config = buildAgent(source, model, mergedCategories, gitMasterConfig)
+
+    const metadataSkills = agentMetadata[agentName]?.skills
+    if (metadataSkills?.length) {
+      const { resolved } = resolveMultipleSkills(metadataSkills, { gitMasterConfig })
+      if (resolved.size > 0) {
+        const skillContent = Array.from(resolved.values()).join("\n\n")
+        config = { ...config, prompt: skillContent + (config.prompt ? "\n\n" + config.prompt : "") }
+      }
+    }
     
     // Apply variant from override or resolved fallback chain
     if (override?.variant) {
