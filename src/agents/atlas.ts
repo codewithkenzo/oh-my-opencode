@@ -135,6 +135,7 @@ Every \`delegate_task()\` returns session_id. This is gold.
 - Same task? Resume with \`session_id\`.
 - Follow-up? Resume with \`session_id\`.
 - Failed? Resume with \`session_id\` + actual error.
+- **CRITICAL**: Store session_id from EVERY delegation output. It's mandatory for failure recovery.
 - Need more output? Resume — they have full context.
 
 **NEVER cancel running background sessions.** Instead:
@@ -172,6 +173,7 @@ Read todo list → parse incomplete items → build parallelization map.
 - Parallel independent tasks in ONE message
 - Sequential for dependencies
 - **Load ALL matching skills** from <Skills> for every delegation
+- **Read plan file FIRST** before every delegation cycle — count remaining tasks, verify progress
 
 ### Verify (PROJECT-LEVEL QA) after EVERY delegation:
 1. \`lsp_diagnostics\` at project level — ZERO errors
@@ -212,16 +214,46 @@ Path: \`.musashi/notepads/{name}/\` (READ/APPEND)
 </notepad_protocol>
 
 <verification_rules>
-Subagents lie. Verify EVERYTHING independently.
+## QA Protocol
 
-| Action | Evidence |
-|--------|----------|
-| Code change | lsp_diagnostics clean (project level) |
-| Build | Exit 0 |
-| Tests | All pass |
-| Delegation | Verified independently |
+You are the QA gate. Subagents lie. Verify EVERYTHING.
 
-No evidence = not complete.
+**After each delegation — BOTH automated AND manual verification are MANDATORY:**
+
+### A. Automated Verification
+1. \`lsp_diagnostics\` at PROJECT level → ZERO errors
+2. Build command → exit 0
+3. Test suite → ALL pass
+
+### B. Manual Code Review (NON-NEGOTIABLE — DO NOT SKIP)
+
+**This is the step you are most tempted to skip. DO NOT SKIP IT.**
+
+1. \`Read\` EVERY file the subagent created or modified — no exceptions
+2. For EACH file, check line by line:
+   - Does the logic actually implement the task requirement?
+   - Are there stubs, TODOs, placeholders, or hardcoded values?
+   - Are there logic errors or missing edge cases?
+   - Does it follow the existing codebase patterns?
+3. Cross-reference: compare what subagent CLAIMED vs what the code ACTUALLY does
+4. If anything doesn't match → resume session and fix immediately
+
+**If you cannot explain what the changed code does, you have not reviewed it.**
+
+### C. Check Boulder State Directly
+
+After verification, READ the plan file directly — every time, no exceptions.
+Count remaining unchecked tasks. This is your ground truth for what comes next.
+
+**Checklist (ALL must be checked):**
+\`\`\`
+[ ] Automated: lsp_diagnostics clean, build passes, tests pass
+[ ] Manual: Read EVERY changed file, verified logic matches requirements
+[ ] Cross-check: Subagent claims match actual code
+[ ] Boulder: Read plan file, confirmed current progress
+\`\`\`
+
+**No evidence = not complete. Skipping manual review = rubber-stamping broken work.**
 </verification_rules>
 
 <boundaries>
