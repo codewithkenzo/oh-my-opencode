@@ -130,6 +130,11 @@ export const HookNameSchema = z.enum([
   "anthropic-effort",
   "unstable-agent-babysitter",
   "runtime-fallback",
+  "ticket-enforcement",
+  "rm-to-trash",
+  "verification-before-completion",
+  "skill-auto-invoke",
+  "todo-ticket-bridge",
 ])
 
 export const BuiltinCommandNameSchema = z.enum([
@@ -430,6 +435,34 @@ export const MemoryPersistenceConfigSchema = z.object({
 
 export const CategorySkillsConfigSchema = z.record(z.string(), z.array(z.string()))
 
+export const EnforcementLevelSchema = z.enum(["off", "warn", "block"])
+
+export const EnforcementConfigSchema = z.object({
+  /** Require active ticket before code changes (default: "warn") */
+  ticket_tracking: EnforcementLevelSchema.default("warn"),
+  /** Intercept rm commands and suggest trash alternatives (default: "warn") */
+  rm_safety: EnforcementLevelSchema.default("warn"),
+  /** Require verification evidence before completion (default: "warn") */
+  verification_gate: EnforcementLevelSchema.default("warn"),
+  /** Remind to check available skills at session start (default: "warn") */
+  skill_auto_invoke: z.enum(["off", "warn"]).default("warn"),
+  /** Warn when overwriting existing files without reading first (default: "warn") */
+  write_file_guard: EnforcementLevelSchema.default("warn"),
+})
+
+export const WorktreeConfigSchema = z.object({
+  /** Enable git worktree integration (default: true) */
+  enabled: z.boolean().default(true),
+  /** Base directory for worktrees, relative to project root (default: "..") */
+  base_dir: z.string().default(".."),
+  /** Auto-create worktree on /start-work (default: true) */
+  auto_create_on_start_work: z.boolean().default(true),
+  /** Auto-cleanup worktree on /finish (default: true) */
+  auto_cleanup_on_finish: z.boolean().default(true),
+  /** Branch prefix for worktree branches (default: "feat/") */
+  branch_prefix: z.string().default("feat/"),
+})
+
 export const OhMyOpenCodeConfigSchema = z.object({
   $schema: z.string().optional(),
   disabled_mcps: z.array(AnyMcpNameSchema).optional(),
@@ -457,6 +490,8 @@ export const OhMyOpenCodeConfigSchema = z.object({
   browser_automation_engine: BrowserAutomationConfigSchema.optional(),
   memory_persistence: MemoryPersistenceConfigSchema.optional(),
   tmux: TmuxConfigSchema.optional(),
+  enforcement: EnforcementConfigSchema.optional(),
+  worktree: WorktreeConfigSchema.optional(),
 })
 
 export type OhMyOpenCodeConfig = z.infer<typeof OhMyOpenCodeConfigSchema>
@@ -488,5 +523,8 @@ export type TmuxLayout = z.infer<typeof TmuxLayoutSchema>
 export type CategorySkillsConfig = z.infer<typeof CategorySkillsConfigSchema>
 export type ToolRouteOverride = z.infer<typeof ToolRouteOverrideSchema>
 export type ToolRoutingConfig = z.infer<typeof ToolRoutingConfigSchema>
+export type EnforcementLevel = z.infer<typeof EnforcementLevelSchema>
+export type EnforcementConfig = z.infer<typeof EnforcementConfigSchema>
+export type WorktreeConfig = z.infer<typeof WorktreeConfigSchema>
 
 export { AnyMcpNameSchema, type AnyMcpName, McpNameSchema, type McpName } from "../mcp/types"

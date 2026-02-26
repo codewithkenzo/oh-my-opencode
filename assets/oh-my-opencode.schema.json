@@ -99,7 +99,12 @@
           "write-existing-file-guard",
           "anthropic-effort",
           "unstable-agent-babysitter",
-          "runtime-fallback"
+          "runtime-fallback",
+          "ticket-enforcement",
+          "rm-to-trash",
+          "verification-before-completion",
+          "skill-auto-invoke",
+          "todo-ticket-bridge"
         ]
       }
     },
@@ -885,6 +890,80 @@
           "default": 40,
           "type": "number",
           "minimum": 20
+        }
+      }
+    },
+    "enforcement": {
+      "type": "object",
+      "properties": {
+        "ticket_tracking": {
+          "default": "warn",
+          "type": "string",
+          "enum": [
+            "off",
+            "warn",
+            "block"
+          ]
+        },
+        "rm_safety": {
+          "default": "warn",
+          "type": "string",
+          "enum": [
+            "off",
+            "warn",
+            "block"
+          ]
+        },
+        "verification_gate": {
+          "default": "warn",
+          "type": "string",
+          "enum": [
+            "off",
+            "warn",
+            "block"
+          ]
+        },
+        "skill_auto_invoke": {
+          "default": "warn",
+          "type": "string",
+          "enum": [
+            "off",
+            "warn"
+          ]
+        },
+        "write_file_guard": {
+          "default": "warn",
+          "type": "string",
+          "enum": [
+            "off",
+            "warn",
+            "block"
+          ]
+        }
+      }
+    },
+    "worktree": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "type": "boolean"
+        },
+        "base_dir": {
+          "default": "..",
+          "type": "string"
+        },
+        "auto_create_on_start_work": {
+          "default": true,
+          "type": "boolean"
+        },
+        "auto_cleanup_on_finish": {
+          "default": true,
+          "type": "boolean"
+        },
+        "branch_prefix": {
+          "default": "feat/",
+          "type": "string"
         }
       }
     }
