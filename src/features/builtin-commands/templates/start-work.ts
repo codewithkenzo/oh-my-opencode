@@ -1,4 +1,4 @@
-export const START_WORK_TEMPLATE = `You are starting a Sisyphus work session.
+export const START_WORK_TEMPLATE = `You are starting a Musashi work session.
 
 ## WHAT TO DO
 
@@ -21,11 +21,25 @@ export const START_WORK_TEMPLATE = `You are starting a Sisyphus work session.
      "active_plan": "/absolute/path/to/plan.md",
      "started_at": "ISO_TIMESTAMP",
      "session_ids": ["session_id_1", "session_id_2"],
-     "plan_name": "plan-name"
+      "plan_name": "plan-name",
+      "worktree_path": "/absolute/path/to/worktree"
    }
    \`\`\`
 
-5. **Read the plan file** and start executing tasks according to Orchestrator Sisyphus workflow
+4.5 **Worktree setup (runtime config-gated)**:
+   - Check if plugin config has \`worktree.auto_create_on_start_work\` set to true
+   - If worktree config is disabled, not present, or false: skip this step entirely
+   - If enabled and this is a NEW plan:
+     - Build branch name using worktree config prefix + selected plan name: \`{branch_prefix}{plan_name}\`
+     - Call \`worktree_create\` with that branch name and the configured worktree base directory
+     - Store returned \`path\` into \`.musashi/boulder.json\` as \`worktree_path\`
+   - If enabled and this is a RESUMED plan with existing \`worktree_path\`:
+     - Call \`worktree_status\` with \`path: worktree_path\` to verify the worktree still exists
+     - If valid, continue using the existing \`worktree_path\`
+     - If missing or invalid, recreate via \`worktree_create\` and update \`worktree_path\` in \`.musashi/boulder.json\`
+   - When \`worktree_path\` is set, treat it as the canonical working directory for this work session
+
+5. **Read the plan file** and start executing tasks according to Musashi - boulder workflow
 
 ## OUTPUT FORMAT
 
@@ -69,4 +83,6 @@ Reading plan and beginning execution...
 - The session_id is injected by the hook - use it directly
 - Always update boulder.json BEFORE starting work
 - Read the FULL plan file before delegating any tasks
-- Follow Orchestrator Sisyphus delegation protocols (7-section format)`
+- When \`worktree_path\` is set in boulder state, ALL \`delegate_task\` calls MUST include that worktree directory as working context
+- When delegating tasks, explicitly instruct subagents: "Work in the worktree directory: {worktree_path}"
+- Follow Musashi delegation protocols (7-section format)`

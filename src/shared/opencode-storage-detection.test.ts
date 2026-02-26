@@ -2,18 +2,23 @@ import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test"
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import * as realOpencodeVersion from "./opencode-version"
+
+const realIsOpenCodeVersionAtLeast = realOpencodeVersion.isOpenCodeVersionAtLeast
 
 let versionOk = true
 let versionCheckCalls = 0
 let tempDataDir = ""
+let useVersionMock = false
 
 mock.module("./data-path", () => ({
   getDataDir: () => tempDataDir,
 }))
 
 mock.module("./opencode-version", () => ({
-  OPENCODE_SQLITE_VERSION: "1.1.53",
-  isOpenCodeVersionAtLeast: () => {
+  ...realOpencodeVersion,
+  isOpenCodeVersionAtLeast: (...args: [string]) => {
+    if (!useVersionMock) return realIsOpenCodeVersionAtLeast(...args)
     versionCheckCalls += 1
     return versionOk
   },
@@ -38,6 +43,7 @@ function setDatabaseExists(exists: boolean): void {
 describe("opencode-storage-detection", () => {
   beforeEach(() => {
     // #given a fresh cache and default checks
+    useVersionMock = true
     resetSqliteBackendCache()
     tempDataDir = mkdtempSync(join(tmpdir(), "omo-storage-detection-"))
     versionOk = true
@@ -46,6 +52,7 @@ describe("opencode-storage-detection", () => {
   })
 
   afterEach(() => {
+    useVersionMock = false
     rmSync(tempDataDir, { recursive: true, force: true })
     tempDataDir = ""
   })

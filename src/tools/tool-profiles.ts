@@ -26,6 +26,10 @@ export const TOOL_PROFILES: Record<ToolProfile, readonly string[]> = {
     "ticket_dep",
     "ticket_undep",
     "ticket_blocked",
+    "worktree_create",
+    "worktree_list",
+    "worktree_remove",
+    "worktree_status",
   ],
   research: [
     "exa_websearch",

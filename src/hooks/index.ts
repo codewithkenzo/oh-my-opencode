@@ -18,6 +18,7 @@ export { createAutoUpdateCheckerHook } from "./auto-update-checker";
 
 export { createAgentUsageReminderHook } from "./agent-usage-reminder";
 export { createKeywordDetectorHook } from "./keyword-detector";
+export { createSkillAutoInvokeHook } from "./skill-auto-invoke";
 export { createNonInteractiveEnvHook } from "./non-interactive-env";
 export { createInteractiveBashSessionHook } from "./interactive-bash-session";
 
@@ -38,3 +39,7 @@ export { createWriteExistingFileGuardHook } from "./write-existing-file-guard";
 export { createAnthropicEffortHook } from "./anthropic-effort";
 export { createUnstableAgentBabysitterHook } from "./unstable-agent-babysitter";
 export { createRuntimeFallbackHook, type RuntimeFallbackHook, type RuntimeFallbackOptions } from "./runtime-fallback";
+export { createRmToTrashHook } from "./rm-to-trash";
+export { createTodoTicketBridgeHook } from "./todo-ticket-bridge";
+export { createVerificationBeforeCompletionHook } from "./verification-before-completion";
+export { createTicketEnforcementHook } from "./ticket-enforcement";

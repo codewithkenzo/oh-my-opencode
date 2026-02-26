@@ -1,0 +1,1 @@
+export { createRmToTrashHook } from "./hook"
