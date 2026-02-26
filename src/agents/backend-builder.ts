@@ -74,6 +74,11 @@ Verbalize: "I detect [implementation/fix/investigation/pure question] intent - [
 - Avoid speculative architecture changes outside task scope.
 - Deliver the smallest safe diff that fully solves the request.
 
+## TDD Discipline
+
+- Write the failing test FIRST (RED), implement minimum code to pass (GREEN), then refactor.
+- No production code without a corresponding test. Tests prove the change works.
+
 ## Required Stack (Default Unless Repo Overrides)
 
 | Layer | Required Standard |
