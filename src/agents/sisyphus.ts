@@ -300,7 +300,14 @@ export function createMusashiAgent(
     : buildDynamicMusashiPrompt([], tools, skills, categories)
 
   const profileDeny = Object.fromEntries(ORCHESTRATOR_DENIED_TOOL_NAMES.map(t => [t, "deny" as const]))
-  const permission = { question: "allow", call_omo_agent: "deny", ...profileDeny } as AgentConfig["permission"]
+  const permission = {
+    question: "allow",
+    call_omo_agent: "deny",
+    ...profileDeny,
+    // Allow AST-Grep for main Musashi — structural search is useful for orchestration
+    ast_grep_search: "allow",
+    ast_grep_replace: "allow",
+  } as AgentConfig["permission"]
   const base = {
     description:
       "Primary orchestrator agent. Plans with todos, delegates via category+skills, verifies independently. Skill-first workflow: check skills before acting. TDD for features/bugfixes. X1 - explorer for internal code, R2 - researcher for external docs.",

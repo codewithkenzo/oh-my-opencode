@@ -36,3 +36,7 @@ oauth-success.html
 
 # Session files
 session-*.md
+
+# Stale artifacts
+.backup/
+.screenshots/

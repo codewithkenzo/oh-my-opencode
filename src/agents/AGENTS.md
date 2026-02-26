@@ -180,13 +180,13 @@ Backward compatibility map from `LEGACY_TO_MUSASHI_NAME` in `src/agents/utils.ts
 
 ## TOOL RESTRICTIONS
 
-All 6 non-core tool profiles are registered globally via `ALL_PROFILES` in `src/index.ts`. Orchestrator agents deny non-core tools via `ORCHESTRATOR_DENIED_TOOL_NAMES` (67 tools from research, browser, native-search, external-api, local-service profiles). Subagents (T4, D5, K9, X1, R2) retain full access to all profiles.
+All 6 non-core tool profiles are registered globally via `ALL_PROFILES` in `src/index.ts`. Orchestrator agents deny non-core tools via `ORCHESTRATOR_DENIED_TOOL_NAMES` (67 tools from research, browser, native-search, external-api, local-service profiles). Main Musashi overrides native-search to allow AST-Grep (`ast_grep_search`, `ast_grep_replace`). Subagents (T4, D5, K9, X1, R2) retain full access to all profiles.
 
 Derived from each agent factory permission config:
 
 | Agent | Restricted Tools |
 |-------|------------------|
-| `Musashi` | `call_omo_agent` denied + 67 non-core/non-orchestration tools denied via `ORCHESTRATOR_DENIED_TOOL_NAMES` |
+| `Musashi` | `call_omo_agent` denied + 65 non-core/non-orchestration tools denied via `ORCHESTRATOR_DENIED_TOOL_NAMES` (native-search overridden to allow) |
 | `Musashi - boulder` | `task`, `call_omo_agent` denied + 67 non-core/non-orchestration tools denied via `ORCHESTRATOR_DENIED_TOOL_NAMES` |
 | `Musashi - plan` | `write`, `edit`, `task`, `delegate_task` denied |
 | `K9 - advisor` | `write`, `edit`, `task`, `delegate_task` denied |

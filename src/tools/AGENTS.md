@@ -78,7 +78,7 @@ All 6 non-orchestration profiles are registered globally via `ALL_PROFILES` in `
 | core | 28 | LSP, grep, glob, hashline_edit, session, tickets, worktree - always loaded | ✅ |
 | research | 9 | Exa, Context7, grep_app, zread - web/docs search | ❌ Denied |
 | browser | 18 | Playwright browser automation | ❌ Denied |
-| native-search | 2 | AST-Grep search/replace | ❌ Denied |
+| native-search | 2 | AST-Grep search/replace | ✅ Main Musashi, ❌ Boulder/Plan |
 | external-api | 23 | Runware, Civitai, Ripple - external APIs | ❌ Denied |
 | local-service | 15 | Syncthing - local service integration | ❌ Denied |
 | orchestration | 12 | delegate_task, background, skills, interactive_bash | Separate wiring |
