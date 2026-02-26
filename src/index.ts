@@ -16,6 +16,7 @@ import {
   createBackgroundNotificationHook,
   createAutoUpdateCheckerHook,
   createKeywordDetectorHook,
+  createSkillAutoInvokeHook,
   createAgentUsageReminderHook,
   createNonInteractiveEnvHook,
   createInteractiveBashSessionHook,
@@ -35,6 +36,9 @@ import {
   createHashlineEditDiffEnhancerHook,
   createWriteExistingFileGuardHook,
   createRmToTrashHook,
+  createTodoTicketBridgeHook,
+  createVerificationBeforeCompletionHook,
+  createTicketEnforcementHook,
   createAnthropicEffortHook,
   createUnstableAgentBabysitterHook,
   createRuntimeFallbackHook,
@@ -104,7 +108,12 @@ type ExperimentalMessagesTransformOutput = Parameters<ContextInjectorMessagesTra
 type ToolExecuteBeforeInput = { tool: string; sessionID: string; callID: string };
 type ToolExecuteBeforeOutput = { args: Record<string, unknown> };
 type ToolExecuteAfterInput = { tool: string; sessionID: string; callID: string };
-type ToolExecuteAfterOutput = { title: string; output: string; metadata: unknown };
+type ToolExecuteAfterOutput = {
+  title: string
+  output: string
+  metadata: unknown
+  args?: Record<string, unknown>
+};
 type ToolExecuteBeforeHook = {
   "tool.execute.before"?: (
     input: ToolExecuteBeforeInput,
@@ -203,6 +212,9 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
   const keywordDetector = isHookEnabled("keyword-detector")
     ? createKeywordDetectorHook(ctx, contextCollector)
     : null;
+  const skillAutoInvoke = isHookEnabled("skill-auto-invoke")
+    ? createSkillAutoInvokeHook({ enforcement: pluginConfig?.enforcement?.skill_auto_invoke ?? "warn" })
+    : null;
   const contextInjectorMessagesTransform =
     createContextInjectorMessagesTransformHook(contextCollector);
   const agentUsageReminder = isHookEnabled("agent-usage-reminder")
@@ -278,6 +290,21 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     : null;
   const rmToTrash = isHookEnabled("rm-to-trash")
     ? createRmToTrashHook({ enforcement: pluginConfig?.enforcement?.rm_safety ?? "warn" })
+    : null;
+  const verificationBeforeCompletion = isHookEnabled("verification-before-completion")
+    ? createVerificationBeforeCompletionHook({
+        enforcement: pluginConfig?.enforcement?.verification_gate ?? "warn",
+      })
+    : null;
+  const ticketEnforcement = isHookEnabled("ticket-enforcement")
+    ? createTicketEnforcementHook({
+        enforcement: pluginConfig?.enforcement?.ticket_tracking ?? "warn",
+      })
+    : null;
+  const todoTicketBridge = isHookEnabled("todo-ticket-bridge")
+    ? createTodoTicketBridgeHook({
+        enforcement: pluginConfig?.enforcement?.ticket_tracking ?? "warn",
+      })
     : null;
   const anthropicEffort: ToolExecuteBeforeHook | null = isHookEnabled("anthropic-effort")
     ? (createAnthropicEffortHook() as ToolExecuteBeforeHook)
@@ -456,6 +483,7 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
         applyAgentVariant(pluginConfig, input.agent, message)
       }
 
+      await skillAutoInvoke?.["chat.message"]?.(input, output);
       await keywordDetector?.["chat.message"]?.(input, output);
       await runtimeFallback?.["chat.message"]?.(input, output as any);
       await claudeCodeHooks["chat.message"]?.(input, output);
@@ -636,6 +664,7 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await hashlineEditDiffEnhancer?.["tool.execute.before"]?.(input, output);
       await writeExistingFileGuard?.["tool.execute.before"]?.(input, output);
       await rmToTrash?.["tool.execute.before"]?.(input, output);
+      await ticketEnforcement?.["tool.execute.before"]?.(input, output);
       await anthropicEffort?.["tool.execute.before"]?.(input, output);
       await atlasHook?.["tool.execute.before"]?.(input, output);
 
@@ -723,6 +752,9 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await hashlineReadEnhancer?.["tool.execute.after"]?.(input, output);
       await hashlineEditDiffEnhancer?.["tool.execute.after"]?.(input, output);
       await taskResumeInfo["tool.execute.after"](input, output);
+      await todoTicketBridge?.["tool.execute.after"]?.(input, output);
+      await verificationBeforeCompletion?.["tool.execute.after"]?.(input, output);
+      await ticketEnforcement?.["tool.execute.after"]?.(input, output);
     },
   };
 };
