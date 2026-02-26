@@ -38,10 +38,6 @@ function cleanupStaleEntries(): void {
   }
 }
 
-/**
- * Store metadata to be restored after fromPlugin() overwrites it.
- * Called from tool execute() functions alongside ctx.metadata().
- */
 export function storeToolMetadata(
   sessionID: string,
   callID: string,
@@ -51,10 +47,6 @@ export function storeToolMetadata(
   pendingStore.set(makeKey(sessionID, callID), { ...data, storedAt: Date.now() })
 }
 
-/**
- * Consume stored metadata (one-time read, removes from store).
- * Called from tool.execute.after hook.
- */
 export function consumeToolMetadata(
   sessionID: string,
   callID: string
@@ -69,16 +61,10 @@ export function consumeToolMetadata(
   return undefined
 }
 
-/**
- * Get current store size (for testing/debugging).
- */
 export function getPendingStoreSize(): number {
   return pendingStore.size
 }
 
-/**
- * Clear all pending metadata (for testing).
- */
 export function clearPendingStore(): void {
   pendingStore.clear()
 }
