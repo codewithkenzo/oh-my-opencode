@@ -400,9 +400,9 @@ export const TmuxConfigSchema = z.object({
 })
 
 export const GitMasterConfigSchema = z.object({
-  /** Add "Ultraworked with Sisyphus" footer to commit messages (default: true) */
+  /** Add "Ultraworked with Musashi" footer to commit messages (default: true) */
   commit_footer: z.boolean().default(true),
-  /** Add "Co-authored-by: Sisyphus" trailer to commit messages (default: true) */
+  /** Add "Co-authored-by: Musashi" trailer to commit messages (default: true) */
   include_co_authored_by: z.boolean().default(true),
 })
 
