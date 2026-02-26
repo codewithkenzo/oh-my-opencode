@@ -2,6 +2,7 @@ import { spawn } from "node:child_process"
 import { readFileSync } from "node:fs"
 import { platform } from "node:os"
 import type { Platform } from "./types"
+import { log } from "../../shared/logger"
 
 const TIMEOUT_MS = 10000
 
@@ -15,7 +16,7 @@ export function detectPlatform(): Platform {
       if (release.toLowerCase().includes("microsoft")) return "wsl"
     } catch (err) {
       // /proc/version may not exist on all Linux systems
-      console.debug('[system-notify] Could not read /proc/version:', err)
+      log("[system-notify] Could not read /proc/version:", err)
     }
     return "linux"
   }

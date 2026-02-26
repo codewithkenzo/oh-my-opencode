@@ -1,6 +1,7 @@
 import type { PluginInput } from "@opencode-ai/plugin"
 import type { TrackedTask, TaskStatus, ModelFallbackInfo } from "./types"
 import type { ConcurrencyManager } from "../background-agent/concurrency"
+import { log } from "../../shared/logger"
 
 type OpencodeClient = PluginInput["client"]
 
@@ -173,7 +174,7 @@ export class TaskToastManager {
         variant: "info",
         duration: running.length + queued.length > 2 ? 5000 : 3000,
       },
-    }).catch((err) => console.error('Task toast error:', err))
+    }).catch((err) => log("Task toast error:", err))
   }
 
   /**
@@ -200,7 +201,7 @@ export class TaskToastManager {
         variant: "success",
         duration: 5000,
       },
-    }).catch((err) => console.error('Task toast error:', err))
+    }).catch((err) => log("Task toast error:", err))
   }
 }
 

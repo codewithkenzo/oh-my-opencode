@@ -1,5 +1,6 @@
 import { describe, test, expect, spyOn } from "bun:test"
 import { substituteSkillVariables } from "./substitution"
+import * as logger from "../../shared/logger"
 
 describe("substituteSkillVariables", () => {
 	test("replaces ${CLAUDE_SESSION_ID} with session ID", () => {
@@ -27,17 +28,17 @@ describe("substituteSkillVariables", () => {
 	})
 
 	test("missing session context substitutes empty string and warns", () => {
-		const warnSpy = spyOn(console, "warn").mockImplementation(() => {})
+		const logSpy = spyOn(logger, "log").mockImplementation(() => undefined)
 
 		const content = "Session: ${CLAUDE_SESSION_ID}"
 		const result = substituteSkillVariables(content, {})
 
 		expect(result).toBe("Session: ")
-		expect(warnSpy).toHaveBeenCalledWith(
+		expect(logSpy).toHaveBeenCalledWith(
 			"[skill-loader] ${CLAUDE_SESSION_ID} used but no session available",
 		)
 
-		warnSpy.mockRestore()
+		logSpy.mockRestore()
 	})
 
 	test("content without variables is returned unchanged", () => {

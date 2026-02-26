@@ -1,3 +1,5 @@
+import { log } from "../../shared/logger"
+
 /**
  * Context for skill variable substitution at invocation time.
  */
@@ -34,13 +36,13 @@ export function substituteSkillVariables(
 	} else {
 		// Substitute empty string + warn
 		if (result.includes("${CLAUDE_SESSION_ID}")) {
-			console.warn(
+			log(
 				"[skill-loader] ${CLAUDE_SESSION_ID} used but no session available",
 			)
 			result = result.replace(/\$\{CLAUDE_SESSION_ID\}/g, "")
 		}
 		if (result.match(/\$OPENCODE_SESSION_ID|\$\{OPENCODE_SESSION_ID\}/)) {
-			console.warn(
+			log(
 				"[skill-loader] $OPENCODE_SESSION_ID used but no session available",
 			)
 			result = result.replace(/\$OPENCODE_SESSION_ID|\$\{OPENCODE_SESSION_ID\}/g, "")

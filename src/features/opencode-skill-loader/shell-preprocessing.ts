@@ -1,4 +1,5 @@
 import { spawn } from "child_process"
+import { log } from "../../shared/logger"
 
 const ALLOWED_COMMANDS = new Set([
   'echo', 'cat', 'ls', 'find', 'grep', 'wc', 'head', 'tail',
@@ -111,7 +112,7 @@ export async function preprocessShellCommands(
   
   if (matches.length === 0) return content
   if (matches.length > SHELL_SECURITY.MAX_COMMANDS_PER_SKILL) {
-    console.warn(`[skill-loader] Too many shell commands (${matches.length} > ${SHELL_SECURITY.MAX_COMMANDS_PER_SKILL}), only processing first ${SHELL_SECURITY.MAX_COMMANDS_PER_SKILL}`)
+    log(`[skill-loader] Too many shell commands (${matches.length} > ${SHELL_SECURITY.MAX_COMMANDS_PER_SKILL}), only processing first ${SHELL_SECURITY.MAX_COMMANDS_PER_SKILL}`)
   }
   
   const processLimit = Math.min(matches.length, SHELL_SECURITY.MAX_COMMANDS_PER_SKILL)
@@ -159,7 +160,7 @@ export async function executeShellBlock(
   const entries = Object.entries(shellConfig)
   
   if (entries.length > SHELL_SECURITY.MAX_COMMANDS_PER_SKILL) {
-    console.warn(`[skill-loader] Shell block has too many commands (${entries.length} > ${SHELL_SECURITY.MAX_COMMANDS_PER_SKILL}), only processing first ${SHELL_SECURITY.MAX_COMMANDS_PER_SKILL}`)
+    log(`[skill-loader] Shell block has too many commands (${entries.length} > ${SHELL_SECURITY.MAX_COMMANDS_PER_SKILL}), only processing first ${SHELL_SECURITY.MAX_COMMANDS_PER_SKILL}`)
   }
   
   const processLimit = Math.min(entries.length, SHELL_SECURITY.MAX_COMMANDS_PER_SKILL)

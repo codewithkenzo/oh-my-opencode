@@ -4,6 +4,7 @@ import { extname, resolve } from "path"
 import { pathToFileURL } from "node:url"
 import { getLanguageId } from "./config"
 import type { Diagnostic, ResolvedServer } from "./types"
+import { log } from "../../shared/logger"
 
 interface ManagedClient {
   client: LSPClient
@@ -295,7 +296,7 @@ export class LSPClient {
           }
         }
       } catch (err) {
-        console.error('[LSP] stderr read error:', err)
+        log("[LSP] stderr read error:", err)
       }
     }
     read()
@@ -368,7 +369,7 @@ export class LSPClient {
           }
         }
       } catch (err) {
-        console.error('[LSP] JSON parse error:', err)
+        log("[LSP] JSON parse error:", err)
       }
     }
   }

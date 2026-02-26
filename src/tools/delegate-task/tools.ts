@@ -223,7 +223,7 @@ export function createDelegateTask(options: DelegateTaskToolOptions): ToolDefini
       if (mergedSkills.length > 0) {
         const { resolved, notFound } = await resolveMultipleSkillsAsync(mergedSkills, { gitMasterConfig })
         if (notFound.length > 0) {
-          console.warn(`[delegate_task] Skills not found (skipping): ${notFound.join(", ")}`)
+          log(`[delegate_task] Skills not found (skipping): ${notFound.join(", ")}`)
         }
         skillContent = Array.from(resolved.values()).join("\n\n")
       }
