@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test"
-import { AgentOverrideConfigSchema, BuiltinCategoryNameSchema, CategoryConfigSchema, OhMyOpenCodeConfigSchema } from "./schema"
+import {
+  AgentOverrideConfigSchema,
+  BuiltinCategoryNameSchema,
+  CategoryConfigSchema,
+  ExperimentalConfigSchema,
+  OhMyOpenCodeConfigSchema,
+} from "./schema"
 
 describe("disabled_mcps schema", () => {
   test("should accept built-in MCP names", () => {
@@ -505,6 +511,62 @@ describe("Sisyphus-Junior agent override", () => {
     if (result.success) {
       expect(result.data.agents?.["Musashi - plan"]?.category).toBe("ultrabrain")
       expect(result.data.agents?.["K9 - advisor"]?.category).toBe("quick")
+    }
+  })
+})
+
+describe("ExperimentalConfigSchema feature flags", () => {
+  test("accepts plugin_load_timeout_ms as number", () => {
+    //#given
+    const config = { plugin_load_timeout_ms: 5000 }
+
+    //#when
+    const result = ExperimentalConfigSchema.safeParse(config)
+
+    //#then
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.plugin_load_timeout_ms).toBe(5000)
+    }
+  })
+
+  test("rejects plugin_load_timeout_ms below 1000", () => {
+    //#given
+    const config = { plugin_load_timeout_ms: 500 }
+
+    //#when
+    const result = ExperimentalConfigSchema.safeParse(config)
+
+    //#then
+    expect(result.success).toBe(false)
+  })
+
+  test("accepts safe_hook_creation as boolean", () => {
+    //#given
+    const config = { safe_hook_creation: false }
+
+    //#when
+    const result = ExperimentalConfigSchema.safeParse(config)
+
+    //#then
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.safe_hook_creation).toBe(false)
+    }
+  })
+
+  test("both fields are optional", () => {
+    //#given
+    const config = {}
+
+    //#when
+    const result = ExperimentalConfigSchema.safeParse(config)
+
+    //#then
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.plugin_load_timeout_ms).toBeUndefined()
+      expect(result.data.safe_hook_creation).toBeUndefined()
     }
   })
 })

@@ -1,15 +1,14 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { BuiltinAgentName, AgentOverrideConfig, AgentOverrides, AgentFactory, AgentPromptMetadata } from "./types"
 import type { CategoriesConfig, CategoryConfig, GitMasterConfig } from "../config/schema"
-import { createSisyphusAgent } from "./sisyphus"
+import { createMusashiAgent } from "./sisyphus"
 import { createOracleAgent, ORACLE_PROMPT_METADATA } from "./oracle"
 import { createFrontendBuilderAgent, FRONTEND_BUILDER_PROMPT_METADATA } from "./frontend-builder"
 import { createBackendBuilderAgent, BACKEND_BUILDER_PROMPT_METADATA } from "./backend-builder"
 import { createLibrarianAgent, LIBRARIAN_PROMPT_METADATA } from "./librarian"
 import { createExploreAgent, EXPLORE_PROMPT_METADATA } from "./explore"
 import { createMetisAgent } from "./metis"
-import { createAtlasAgent } from "./atlas"
-import { createMomusAgent } from "./momus"
+import { createAtlasAgent } from "./atlas/index"
 import type { AvailableAgent, AvailableCategory, AvailableSkill } from "./sisyphus-prompt-builder"
 import { deepMerge, fetchAvailableModels, resolveModelWithFallback, AGENT_MODEL_REQUIREMENTS, findCaseInsensitive, includesCaseInsensitive } from "../shared"
 import { DEFAULT_CATEGORIES, CATEGORY_DESCRIPTIONS } from "../tools/delegate-task/constants"
@@ -49,10 +48,30 @@ export const LEGACY_TO_MUSASHI_NAME: Record<string, BuiltinAgentName> = {
   "Tsunagi - networker": "Musashi",
 }
 
+/**
+ * Human-readable display names for user-facing output (notifications, task labels, session info).
+ * Unlike promptAlias (internal identity), these are for the human operator.
+ */
+export const AGENT_DISPLAY_NAMES: Record<string, string> = {
+  "Musashi": "Ultraworker",
+  "Musashi - boulder": "Plan Executor",
+  "Musashi - plan": "Planner",
+  "K9 - advisor": "Strategic Advisor",
+  "X1 - explorer": "Code Explorer",
+  "R2 - researcher": "Research Agent",
+  "T4 - frontend builder": "Frontend Engineer",
+  "D5 - backend builder": "Backend Engineer",
+}
+
+/** Get human-readable display name for an agent, falling back to the agent name itself */
+export function getAgentDisplayName(agentName: string): string {
+  return AGENT_DISPLAY_NAMES[agentName] ?? agentName
+}
+
 type AgentSource = AgentFactory | AgentConfig
 
 const agentSources: Partial<Record<BuiltinAgentName, AgentSource>> = {
-  "Musashi": createSisyphusAgent,
+  "Musashi": createMusashiAgent,
   "Musashi - boulder": createAtlasAgent as unknown as AgentFactory,
   "Musashi - plan": createMetisAgent,  // Prometheus/planning agent
   "K9 - advisor": createOracleAgent,
@@ -239,6 +258,15 @@ export async function createBuiltinAgents(
     })
 
     let config = buildAgent(source, model, mergedCategories, gitMasterConfig)
+
+    const metadataSkills = agentMetadata[agentName]?.skills
+    if (metadataSkills?.length) {
+      const { resolved } = resolveMultipleSkills(metadataSkills, { gitMasterConfig })
+      if (resolved.size > 0) {
+        const skillContent = Array.from(resolved.values()).join("\n\n")
+        config = { ...config, prompt: skillContent + (config.prompt ? "\n\n" + config.prompt : "") }
+      }
+    }
     
     // Apply variant from override or resolved fallback chain
     if (override?.variant) {
@@ -280,7 +308,7 @@ export async function createBuiltinAgents(
       systemDefaultModel,
     })
 
-    let sisyphusConfig = createSisyphusAgent(
+    let musashiConfig = createMusashiAgent(
       sisyphusModel,
       availableAgents,
       undefined,
@@ -290,21 +318,21 @@ export async function createBuiltinAgents(
     
     // Apply variant from override or resolved fallback chain
     if (sisyphusOverride?.variant) {
-      sisyphusConfig = { ...sisyphusConfig, variant: sisyphusOverride.variant }
+      musashiConfig = { ...musashiConfig, variant: sisyphusOverride.variant }
     } else if (sisyphusResolvedVariant) {
-      sisyphusConfig = { ...sisyphusConfig, variant: sisyphusResolvedVariant }
+      musashiConfig = { ...musashiConfig, variant: sisyphusResolvedVariant }
     }
 
-    if (directory && sisyphusConfig.prompt) {
+    if (directory && musashiConfig.prompt) {
       const envContext = createEnvContext()
-      sisyphusConfig = { ...sisyphusConfig, prompt: sisyphusConfig.prompt + envContext }
+      musashiConfig = { ...musashiConfig, prompt: musashiConfig.prompt + envContext }
     }
 
     if (sisyphusOverride) {
-      sisyphusConfig = mergeAgentConfig(sisyphusConfig, sisyphusOverride)
+      musashiConfig = mergeAgentConfig(musashiConfig, sisyphusOverride)
     }
 
-     result["Musashi"] = sisyphusConfig
+     result["Musashi"] = musashiConfig
    }
 
    if (!disabledAgents.includes("Musashi - boulder")) {

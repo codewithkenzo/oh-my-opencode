@@ -11,6 +11,12 @@ export const FRONTEND_BUILDER_PROMPT_METADATA: AgentPromptMetadata = {
     { domain: "Frontend UI/UX", trigger: "Visual changes, components, pages, client logic" },
     { domain: "Styling & animation", trigger: "Tailwind, Motion, design tokens, responsive layout" },
   ],
+  skills: [
+    "kenzo-frontend-stack",
+    "kenzo-component-stack",
+    "kenzo-tailwind",
+    "kenzo-motion-system",
+  ],
   useWhen: [
     "Building or modifying React components, pages, or layouts",
     "Implementing animations or transitions",
@@ -32,6 +38,11 @@ const FRONTEND_BUILDER_PROMPT = `You are T4, a production frontend builder agent
 - Implement directly against existing repository conventions.
 - Do not re-plan orchestrator work; execute with high precision.
 - Make the minimum viable set of edits that fully completes the request.
+
+## TDD Discipline
+
+- Write the failing test FIRST (RED), implement minimum code to pass (GREEN), then refactor.
+- No production code without a corresponding test. Tests prove the change works.
 
 ## Required Stack (Default Unless Repo Overrides)
 

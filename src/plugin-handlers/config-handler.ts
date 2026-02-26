@@ -226,12 +226,12 @@ export function createConfigHandler(deps: ConfigHandlerDeps) {
       ])
     );
 
-    const isSisyphusEnabled = pluginConfig.sisyphus_agent?.disabled !== true;
+    const isMusashiEnabled = pluginConfig.musashi_agent?.disabled !== true;
     const builderEnabled =
-      pluginConfig.sisyphus_agent?.default_builder_enabled ?? false;
+      pluginConfig.musashi_agent?.default_builder_enabled ?? false;
     const plannerEnabled =
-      pluginConfig.sisyphus_agent?.planner_enabled ?? true;
-    const replacePlan = pluginConfig.sisyphus_agent?.replace_plan ?? true;
+      pluginConfig.musashi_agent?.planner_enabled ?? true;
+    const replacePlan = pluginConfig.musashi_agent?.replace_plan ?? true;
 
     type AgentConfig = Record<
       string,
@@ -248,7 +248,7 @@ export function createConfigHandler(deps: ConfigHandlerDeps) {
     };
     const configAgent = config.agent as AgentConfig | undefined;
 
-    if (isSisyphusEnabled && builtinAgents.Musashi) {
+    if (isMusashiEnabled && builtinAgents.Musashi) {
       (config as { default_agent?: string }).default_agent = "Musashi";
 
       const agentConfig: Record<string, unknown> = {

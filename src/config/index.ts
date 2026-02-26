@@ -7,8 +7,11 @@ export {
   HookNameSchema,
   BuiltinCommandNameSchema,
   SisyphusAgentConfigSchema,
+  RuntimeFallbackConfigSchema,
   ExperimentalConfigSchema,
   RalphLoopConfigSchema,
+  TmuxConfigSchema,
+  TmuxLayoutSchema,
 } from "./schema"
 
 export type {
@@ -20,7 +23,10 @@ export type {
   HookName,
   BuiltinCommandName,
   SisyphusAgentConfig,
+  RuntimeFallbackConfig,
   ExperimentalConfig,
   DynamicContextPruningConfig,
   RalphLoopConfig,
+  TmuxConfig,
+  TmuxLayout,
 } from "./schema"

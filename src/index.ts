@@ -12,12 +12,11 @@ import {
   createThinkModeHook,
   createClaudeCodeHooksHook,
   createAnthropicContextWindowLimitRecoveryHook,
-
-  createCompactionContextInjector,
   createRulesInjectorHook,
   createBackgroundNotificationHook,
   createAutoUpdateCheckerHook,
   createKeywordDetectorHook,
+  createSkillAutoInvokeHook,
   createAgentUsageReminderHook,
   createNonInteractiveEnvHook,
   createInteractiveBashSessionHook,
@@ -33,6 +32,16 @@ import {
   createPrometheusMdOnlyHook,
   createMemoryPersistenceHook,
   createQuestionLabelTruncatorHook,
+  createHashlineReadEnhancerHook,
+  createHashlineEditDiffEnhancerHook,
+  createWriteExistingFileGuardHook,
+  createRmToTrashHook,
+  createTodoTicketBridgeHook,
+  createVerificationBeforeCompletionHook,
+  createTicketEnforcementHook,
+  createAnthropicEffortHook,
+  createUnstableAgentBabysitterHook,
+  createRuntimeFallbackHook,
 } from "./hooks";
 import {
   contextCollector,
@@ -80,9 +89,9 @@ import { BackgroundManager } from "./features/background-agent";
 import { McpClientManager } from "./features/skill-mcp-manager";
 import { initTaskToastManager } from "./features/task-toast-manager";
 import { type HookName } from "./config";
-import { log, detectExternalNotificationPlugin, getNotificationConflictWarning, resetMessageCursor, includesCaseInsensitive, createStartupTimer, logToolRegistrySnapshot } from "./shared";
+import { log, detectExternalNotificationPlugin, getNotificationConflictWarning, resetMessageCursor, includesCaseInsensitive, createStartupTimer, logToolRegistrySnapshot, normalizeSessionIdleEvent } from "./shared";
 import { loadPluginConfig } from "./plugin-config";
-import { createModelCacheState, getModelLimit } from "./plugin-state";
+import { createModelCacheState } from "./plugin-state";
 import { createConfigHandler } from "./plugin-handlers";
 import { loadAllPluginComponents } from "./features/claude-code-plugin-loader";
 
@@ -96,6 +105,27 @@ type ExperimentalMessagesTransformInput = Parameters<ContextInjectorMessagesTran
   Parameters<ThinkingBlockMessagesTransform>[0];
 type ExperimentalMessagesTransformOutput = Parameters<ContextInjectorMessagesTransform>[1] &
   Parameters<ThinkingBlockMessagesTransform>[1];
+type ToolExecuteBeforeInput = { tool: string; sessionID: string; callID: string };
+type ToolExecuteBeforeOutput = { args: Record<string, unknown> };
+type ToolExecuteAfterInput = { tool: string; sessionID: string; callID: string };
+type ToolExecuteAfterOutput = {
+  title: string
+  output: string
+  metadata: unknown
+  args?: Record<string, unknown>
+};
+type ToolExecuteBeforeHook = {
+  "tool.execute.before"?: (
+    input: ToolExecuteBeforeInput,
+    output: ToolExecuteBeforeOutput
+  ) => Promise<void> | void;
+};
+type ToolExecuteBeforeAfterHook = ToolExecuteBeforeHook & {
+  "tool.execute.after"?: (
+    input: ToolExecuteAfterInput,
+    output: ToolExecuteAfterOutput
+  ) => Promise<void> | void;
+};
 
 export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
   const startupTimer = createStartupTimer();
@@ -169,21 +199,21 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
         experimental: pluginConfig.experimental,
       })
     : null;
-  const compactionContextInjector = isHookEnabled("compaction-context-injector")
-    ? createCompactionContextInjector()
-    : undefined;
   const rulesInjector = isHookEnabled("rules-injector")
     ? createRulesInjectorHook(ctx)
     : null;
   const autoUpdateChecker = isHookEnabled("auto-update-checker")
     ? createAutoUpdateCheckerHook(ctx, {
         showStartupToast: isHookEnabled("startup-toast"),
-        isSisyphusEnabled: pluginConfig.sisyphus_agent?.disabled !== true,
+        isMusashiEnabled: pluginConfig.musashi_agent?.disabled !== true,
         autoUpdate: pluginConfig.auto_update ?? true,
       })
     : null;
   const keywordDetector = isHookEnabled("keyword-detector")
     ? createKeywordDetectorHook(ctx, contextCollector)
+    : null;
+  const skillAutoInvoke = isHookEnabled("skill-auto-invoke")
+    ? createSkillAutoInvokeHook({ enforcement: pluginConfig?.enforcement?.skill_auto_invoke ?? "warn" })
     : null;
   const contextInjectorMessagesTransform =
     createContextInjectorMessagesTransformHook(contextCollector);
@@ -224,6 +254,10 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
 
   const backgroundManager = new BackgroundManager(ctx, pluginConfig.background_task);
 
+  const unstableAgentBabysitter = isHookEnabled("unstable-agent-babysitter")
+    ? createUnstableAgentBabysitterHook(ctx, { backgroundManager })
+    : null;
+
   const atlasHook = isHookEnabled("atlas")
     ? createAtlasHook(ctx, { directory: ctx.directory, backgroundManager })
     : null;
@@ -237,6 +271,46 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
         config: pluginConfig.memory_persistence,
         contextCollector,
       })
+    : null;
+
+  const hashlineReadEnhancer: ToolExecuteBeforeAfterHook | null = isHookEnabled(
+    "hashline-read-enhancer"
+  )
+    ? createHashlineReadEnhancerHook(ctx, {
+        hashline_edit: pluginConfig.hashline_edit,
+      })
+    : null;
+  const hashlineEditDiffEnhancer = isHookEnabled("hashline-edit-diff-enhancer")
+    ? createHashlineEditDiffEnhancerHook({
+        hashline_edit: pluginConfig.hashline_edit,
+      })
+    : null;
+  const writeExistingFileGuard = isHookEnabled("write-existing-file-guard")
+    ? createWriteExistingFileGuardHook(ctx)
+    : null;
+  const rmToTrash = isHookEnabled("rm-to-trash")
+    ? createRmToTrashHook({ enforcement: pluginConfig?.enforcement?.rm_safety ?? "warn" })
+    : null;
+  const verificationBeforeCompletion = isHookEnabled("verification-before-completion")
+    ? createVerificationBeforeCompletionHook({
+        enforcement: pluginConfig?.enforcement?.verification_gate ?? "warn",
+      })
+    : null;
+  const ticketEnforcement = isHookEnabled("ticket-enforcement")
+    ? createTicketEnforcementHook({
+        enforcement: pluginConfig?.enforcement?.ticket_tracking ?? "warn",
+      })
+    : null;
+  const todoTicketBridge = isHookEnabled("todo-ticket-bridge")
+    ? createTodoTicketBridgeHook({
+        enforcement: pluginConfig?.enforcement?.ticket_tracking ?? "warn",
+      })
+    : null;
+  const anthropicEffort: ToolExecuteBeforeHook | null = isHookEnabled("anthropic-effort")
+    ? (createAnthropicEffortHook() as ToolExecuteBeforeHook)
+    : null;
+  const runtimeFallback = isHookEnabled("runtime-fallback")
+    ? createRuntimeFallbackHook(ctx, { config: pluginConfig.runtime_fallback })
     : null;
 
   const taskResumeInfo = createTaskResumeInfoHook();
@@ -409,7 +483,9 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
         applyAgentVariant(pluginConfig, input.agent, message)
       }
 
+      await skillAutoInvoke?.["chat.message"]?.(input, output);
       await keywordDetector?.["chat.message"]?.(input, output);
+      await runtimeFallback?.["chat.message"]?.(input, output as any);
       await claudeCodeHooks["chat.message"]?.(input, output);
       await autoSlashCommand?.["chat.message"]?.(input, output);
       await startWork?.["chat.message"]?.(input, output);
@@ -482,24 +558,36 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     config: configHandler,
 
     event: async (input) => {
-      await autoUpdateChecker?.event(input);
-      await claudeCodeHooks.event(input);
-      await backgroundNotificationHook?.event(input);
-      await sessionNotification?.(input);
-      await todoContinuationEnforcer?.handler(input);
-      await contextWindowMonitor?.event(input);
-      await directoryAgentsInjector?.event(input);
-      await directoryReadmeInjector?.event(input);
-      await rulesInjector?.event(input);
-      await thinkMode?.event(input);
-      await anthropicContextWindowLimitRecovery?.event(input);
-      await agentUsageReminder?.event(input);
-      await interactiveBashSession?.event(input);
-      await ralphLoop?.event(input);
-      await atlasHook?.handler(input);
-      await memoryPersistence?.event(input);
+      const normalizedEvent = normalizeSessionIdleEvent(input.event);
+      if (!normalizedEvent) {
+        return;
+      }
 
-      const { event } = input;
+      const normalizedInput =
+        normalizedEvent === input.event
+          ? input
+          : { ...input, event: normalizedEvent };
+
+      await autoUpdateChecker?.event(normalizedInput);
+      await claudeCodeHooks.event(normalizedInput);
+      await backgroundNotificationHook?.event(normalizedInput);
+      await sessionNotification?.(normalizedInput);
+      await todoContinuationEnforcer?.handler(normalizedInput);
+      await contextWindowMonitor?.event(normalizedInput);
+      await directoryAgentsInjector?.event(normalizedInput);
+      await directoryReadmeInjector?.event(normalizedInput);
+      await rulesInjector?.event(normalizedInput);
+      await thinkMode?.event(normalizedInput);
+      await anthropicContextWindowLimitRecovery?.event(normalizedInput);
+      await agentUsageReminder?.event(normalizedInput);
+      await interactiveBashSession?.event(normalizedInput);
+      await ralphLoop?.event(normalizedInput);
+      await atlasHook?.handler(normalizedInput);
+      await memoryPersistence?.event(normalizedInput);
+      await unstableAgentBabysitter?.event(normalizedInput);
+      await runtimeFallback?.event(normalizedInput);
+
+      const { event } = normalizedInput;
       const props = event.properties as Record<string, unknown> | undefined;
 
       if (event.type === "session.created") {
@@ -572,6 +660,12 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await rulesInjector?.["tool.execute.before"]?.(input, output);
       await prometheusMdOnly?.["tool.execute.before"]?.(input, output);
       await questionLabelTruncator["tool.execute.before"]?.(input, output);
+      await hashlineReadEnhancer?.["tool.execute.before"]?.(input, output);
+      await hashlineEditDiffEnhancer?.["tool.execute.before"]?.(input, output);
+      await writeExistingFileGuard?.["tool.execute.before"]?.(input, output);
+      await rmToTrash?.["tool.execute.before"]?.(input, output);
+      await ticketEnforcement?.["tool.execute.before"]?.(input, output);
+      await anthropicEffort?.["tool.execute.before"]?.(input, output);
       await atlasHook?.["tool.execute.before"]?.(input, output);
 
       if (input.tool === "task") {
@@ -652,10 +746,15 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
       await emptyTaskResponseDetector?.["tool.execute.after"](input, output);
       await agentUsageReminder?.["tool.execute.after"](input, output);
       await interactiveBashSession?.["tool.execute.after"](input, output);
-await editErrorRecovery?.["tool.execute.after"](input, output);
+ await editErrorRecovery?.["tool.execute.after"](input, output);
         await delegateTaskRetry?.["tool.execute.after"](input, output);
         await atlasHook?.["tool.execute.after"]?.(input, output);
+      await hashlineReadEnhancer?.["tool.execute.after"]?.(input, output);
+      await hashlineEditDiffEnhancer?.["tool.execute.after"]?.(input, output);
       await taskResumeInfo["tool.execute.after"](input, output);
+      await todoTicketBridge?.["tool.execute.after"]?.(input, output);
+      await verificationBeforeCompletion?.["tool.execute.after"]?.(input, output);
+      await ticketEnforcement?.["tool.execute.after"]?.(input, output);
     },
   };
 };

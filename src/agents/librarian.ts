@@ -10,7 +10,15 @@ export const LIBRARIAN_PROMPT_METADATA: AgentPromptMetadata = {
   triggers: [
     { domain: "Research", trigger: "Unfamiliar packages / libraries, struggles at weird behaviour (to find existing implementation of opensource)" },
   ],
-  skills: ["research-tools", "context7", "docs-seeker", "exa", "zread"],
+  skills: [
+    "research-tools",
+    "context7",
+    "docs-seeker",
+    "exa",
+    "zread",
+    "kenzo-research-tools",
+    "kenzo-seo-geo",
+  ],
   useWhen: [
     "How do I use [library]?",
     "What's the best practice for [framework feature]?",
@@ -415,8 +423,8 @@ grep_app_searchGitHub(query: "useQuery")
 2. Write the full report to a file using bash:
 
 \`\`\`bash
-mkdir -p ~/.sisyphus/research
-cat > ~/.sisyphus/research/$(date +%Y%m%d%H%M)-<topic-slug>.md << 'RESEARCH_EOF'
+mkdir -p ~/.musashi/research
+cat > ~/.musashi/research/$(date +%Y%m%d%H%M)-<topic-slug>.md << 'RESEARCH_EOF'
 # Research: <Topic>
 **Date**: <current date>
 **Query**: <original request>
@@ -431,7 +439,7 @@ RESEARCH_EOF
 
 3. Return a SHORT message:
 \`\`\`
-Done. Research written to ~/.sisyphus/research/<filename>.md
+Done. Research written to ~/.musashi/research/<filename>.md
 
 Summary: <2-3 sentences of key findings>
 \`\`\`

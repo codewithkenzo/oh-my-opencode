@@ -91,6 +91,7 @@ export function buildSkillsReference(skills: AvailableSkill[]): string {
 
 **Skill-first**: Before ANY action, scan this table. If a skill matches → invoke via \`skill\` tool IMMEDIATELY.
 When delegating via \`delegate_task()\`, include ALL matching skills in \`load_skills=[...]\`.
+**kenzo-* skills take priority** when multiple skills match — they encode battle-tested project-specific patterns.
 
 | Skill | Trigger / Domain |
 |-------|------------------|
@@ -192,6 +193,23 @@ export function buildDelegationTable(agents: AvailableAgent[]): string {
     for (const trigger of agent.metadata.triggers) {
       rows.push(`| ${trigger.domain} | \`${agent.name}\` | ${trigger.trigger} |`)
     }
+  }
+
+  const skillsRows = agents
+    .filter((agent) => (agent.metadata.skills?.length ?? 0) > 0)
+    .map((agent) => `| ${agent.name} | ${agent.metadata.skills?.join(", ") ?? ""} |`)
+
+  if (skillsRows.length > 0) {
+    rows.push("")
+    rows.push("## Agent Skill Specializations")
+    rows.push("")
+    rows.push("Each agent carries domain-specific skills that are auto-loaded into their context:")
+    rows.push("")
+    rows.push("| Agent | Skills |")
+    rows.push("|-------|--------|")
+    rows.push(...skillsRows)
+    rows.push("")
+    rows.push("Use this to make better delegation decisions - delegate to the agent whose skills match the task domain.")
   }
 
   return rows.join("\n")
@@ -319,10 +337,11 @@ ${categoryRows.join("\n")}
 #### Skill Selection Protocol
 
 1. **Select category** matching task domain
-2. **Scan <Skills> table** — include ALL matching skills in \`load_skills=[...]\`
+2. **Scan <Skills> table** — include ALL matching skills in \`load_skills=[...]\`. **Prioritize kenzo-* skills** — they encode battle-tested project patterns.
 3. Subagents are STATELESS — missing a skill = suboptimal output
 
 \`\`\`typescript
-delegate_task(category="[name]", load_skills=["skill-1", "skill-2"], prompt="...")
-\`\`\``
+delegate_task(category="[name]", load_skills=["skill-1", "skill-2"], run_in_background=true, prompt="...")
+\`\`\`
+Monitor: \`background_output(task_id)\` → verify result → resume if needed.`
 }

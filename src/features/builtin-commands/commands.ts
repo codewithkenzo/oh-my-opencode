@@ -4,6 +4,13 @@ import { INIT_DEEP_TEMPLATE } from "./templates/init-deep"
 import { RALPH_LOOP_TEMPLATE, CANCEL_RALPH_TEMPLATE } from "./templates/ralph-loop"
 import { REFACTOR_TEMPLATE } from "./templates/refactor"
 import { START_WORK_TEMPLATE } from "./templates/start-work"
+import { HANDOFF_TEMPLATE } from "./templates/handoff"
+import { BRAINSTORM_TEMPLATE } from "./templates/brainstorm"
+import { WORKTREE_TEMPLATE } from "./templates/worktree"
+import { REVIEW_TEMPLATE } from "./templates/review"
+import { DEBUG_TEMPLATE } from "./templates/debug"
+import { VERIFY_TEMPLATE } from "./templates/verify"
+import { FINISH_TEMPLATE } from "./templates/finish"
 
 const BUILTIN_COMMAND_DEFINITIONS: Record<BuiltinCommandName, Omit<CommandDefinition, "name">> = {
   "init-deep": {
@@ -138,6 +145,89 @@ This command helps recall:
 $ARGUMENTS
 </search-query>`,
     argumentHint: '"search query" [--scope=<project|user|global>] [--limit=N]',
+  },
+  handoff: {
+    description: "(builtin) Create context handoff summary for session continuity",
+    template: `<command-instruction>
+${HANDOFF_TEMPLATE}
+</command-instruction>
+
+<session-context>
+Session ID: ses_36881ab2effewfY62PQ2mNlUFT
+Timestamp: 2026-02-26T01:09:24.943Z
+</session-context>
+
+<user-request>
+$ARGUMENTS
+</user-request>`,
+  },
+  brainstorm: {
+    description: "(builtin) Structured brainstorming before implementation",
+    agent: "Musashi - plan",
+    template: `<command-instruction>
+${BRAINSTORM_TEMPLATE}
+</command-instruction>
+
+<user-request>
+$ARGUMENTS
+</user-request>`,
+    argumentHint: "<topic or feature to brainstorm>",
+  },
+  worktree: {
+    description: "(builtin) Manage git worktrees using worktree tools",
+    template: `<command-instruction>
+${WORKTREE_TEMPLATE}
+</command-instruction>
+
+<user-request>
+$ARGUMENTS
+</user-request>`,
+    argumentHint: "create <name> | list | remove <name> | status",
+  },
+  review: {
+    description: "(builtin) Structured read-only code review",
+    agent: "K9 - advisor",
+    template: `<command-instruction>
+${REVIEW_TEMPLATE}
+</command-instruction>
+
+<user-request>
+$ARGUMENTS
+</user-request>`,
+    argumentHint: "[file|directory|branch] [--against=<base-branch>]",
+  },
+  debug: {
+    description: "(builtin) Systematic debugging with root cause analysis",
+    template: `<command-instruction>
+${DEBUG_TEMPLATE}
+</command-instruction>
+
+<user-request>
+$ARGUMENTS
+</user-request>`,
+    argumentHint: "<bug description or error message>",
+  },
+  verify: {
+    description: "(builtin) Verify work with evidence before completion claims",
+    template: `<command-instruction>
+${VERIFY_TEMPLATE}
+</command-instruction>
+
+<user-request>
+$ARGUMENTS
+</user-request>`,
+    argumentHint: "[--plan=<plan-file>] [--ticket=<ticket-id>]",
+  },
+  finish: {
+    description: "(builtin) End-of-feature verification and cleanup workflow",
+    template: `<command-instruction>
+${FINISH_TEMPLATE}
+</command-instruction>
+
+<user-request>
+$ARGUMENTS
+</user-request>`,
+    argumentHint: "[--merge|--pr|--keep] [--ticket=<ticket-id>]",
   },
 }
 

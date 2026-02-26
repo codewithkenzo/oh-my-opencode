@@ -9,6 +9,8 @@ import {
   migrateConfigFile,
   migrateAgentConfigToCategory,
   shouldDeleteAgentConfig,
+  MODEL_VERSION_MAP,
+  migrateModelVersions,
 } from "./migration"
 
 describe("migrateAgentNames", () => {
@@ -303,7 +305,7 @@ describe("migrateHookNames", () => {
 describe("migrateConfigFile", () => {
   const testConfigPath = "/tmp/nonexistent-path-for-test.json"
 
-  test("migrates omo_agent to sisyphus_agent", () => {
+  test("migrates omo_agent to musashi_agent", () => {
     // #given: Config with legacy omo_agent key
     const rawConfig: Record<string, unknown> = {
       omo_agent: { disabled: false },
@@ -312,9 +314,9 @@ describe("migrateConfigFile", () => {
     // #when: Migrate config file
     const needsWrite = migrateConfigFile(testConfigPath, rawConfig)
 
-    // #then: omo_agent should be migrated to sisyphus_agent (legacy key preserved)
+    // #then: omo_agent should be migrated to musashi_agent (legacy key preserved)
     expect(needsWrite).toBe(true)
-    expect(rawConfig.sisyphus_agent).toEqual({ disabled: false })
+    expect(rawConfig.musashi_agent).toEqual({ disabled: false })
     expect(rawConfig.omo_agent).toBeUndefined()
   })
 
@@ -354,7 +356,7 @@ describe("migrateConfigFile", () => {
   test("does not write if no migration needed", () => {
     // #given: Config with current v4 names
     const rawConfig: Record<string, unknown> = {
-      sisyphus_agent: { disabled: false },
+      musashi_agent: { disabled: false },
       agents: {
         Musashi: { model: "test" },
       },
@@ -384,7 +386,7 @@ describe("migrateConfigFile", () => {
 
     // #then: All legacy items should be migrated to v4 names
     expect(needsWrite).toBe(true)
-    expect(rawConfig.sisyphus_agent).toEqual({ disabled: false })
+    expect(rawConfig.musashi_agent).toEqual({ disabled: false })
     expect(rawConfig.omo_agent).toBeUndefined()
     const agents = rawConfig.agents as Record<string, unknown>
     expect(agents["Musashi"]).toBeDefined()
@@ -746,4 +748,94 @@ describe("migrateConfigFile with backup", () => {
    })
 
 
+})
+
+describe("migrateModelVersions", () => {
+  test("migrates old model to new model", () => {
+    //#given
+    const agents: Record<string, unknown> = {
+      myAgent: { model: "anthropic/claude-opus-4-5", temperature: 0.1 },
+    }
+
+    //#when
+    const { migrated, changed, newMigrations } = migrateModelVersions(agents)
+
+    //#then
+    expect(changed).toBe(true)
+    const migratedAgent = migrated.myAgent as Record<string, unknown>
+    expect(migratedAgent.model).toBe("anthropic/claude-opus-4-6")
+    expect(migratedAgent.temperature).toBe(0.1)
+    expect(newMigrations).toHaveLength(1)
+  })
+
+  test("does not change unknown models", () => {
+    //#given
+    const agents: Record<string, unknown> = {
+      myAgent: { model: "openai/gpt-5.2", temperature: 0.3 },
+    }
+
+    //#when
+    const { migrated, changed } = migrateModelVersions(agents)
+
+    //#then
+    expect(changed).toBe(false)
+    const migratedAgent = migrated.myAgent as Record<string, unknown>
+    expect(migratedAgent.model).toBe("openai/gpt-5.2")
+  })
+
+  test("skips already-applied migrations", () => {
+    //#given
+    const agents: Record<string, unknown> = {
+      myAgent: { model: "anthropic/claude-opus-4-5" },
+    }
+    const applied = new Set(["model-version:anthropic/claude-opus-4-5->anthropic/claude-opus-4-6"])
+
+    //#when
+    const { changed, newMigrations } = migrateModelVersions(agents, applied)
+
+    //#then
+    expect(changed).toBe(false)
+    expect(newMigrations).toHaveLength(0)
+  })
+
+  test("handles non-object values gracefully", () => {
+    //#given
+    const agents: Record<string, unknown> = {
+      myAgent: "just-a-string",
+      myOther: null,
+      myArray: [1, 2, 3],
+    }
+
+    //#when
+    const { migrated, changed } = migrateModelVersions(agents)
+
+    //#then
+    expect(changed).toBe(false)
+    expect(migrated.myAgent).toBe("just-a-string")
+  })
+
+  test("migrates multiple agents", () => {
+    //#given
+    const agents: Record<string, unknown> = {
+      agent1: { model: "anthropic/claude-opus-4-5" },
+      agent2: { model: "anthropic/claude-sonnet-4-5" },
+      agent3: { model: "openai/gpt-5.2" },
+    }
+
+    //#when
+    const { migrated, changed, newMigrations } = migrateModelVersions(agents)
+
+    //#then
+    expect(changed).toBe(true)
+    expect((migrated.agent1 as Record<string, unknown>).model).toBe("anthropic/claude-opus-4-6")
+    expect((migrated.agent2 as Record<string, unknown>).model).toBe("anthropic/claude-sonnet-4-6")
+    expect((migrated.agent3 as Record<string, unknown>).model).toBe("openai/gpt-5.2")
+    expect(newMigrations).toHaveLength(2)
+  })
+
+  test("exposes expected model version map entries", () => {
+    //#given/#when/#then
+    expect(MODEL_VERSION_MAP["anthropic/claude-opus-4-5"]).toBe("anthropic/claude-opus-4-6")
+    expect(MODEL_VERSION_MAP["anthropic/claude-sonnet-4-5"]).toBe("anthropic/claude-sonnet-4-6")
+  })
 })

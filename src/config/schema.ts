@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { AnyMcpNameSchema, McpNameSchema } from "../mcp/types"
+import { AnyMcpNameSchema } from "../mcp/types"
 
 const PermissionValue = z.enum(["ask", "allow", "deny"])
 
@@ -124,16 +124,30 @@ export const HookNameSchema = z.enum([
   "start-work",
   "atlas",
   "memory-persistence",
+  "hashline-read-enhancer",
+  "hashline-edit-diff-enhancer",
+  "write-existing-file-guard",
+  "anthropic-effort",
+  "unstable-agent-babysitter",
+  "runtime-fallback",
+  "ticket-enforcement",
+  "rm-to-trash",
+  "verification-before-completion",
+  "skill-auto-invoke",
+  "todo-ticket-bridge",
 ])
 
 export const BuiltinCommandNameSchema = z.enum([
   "init-deep",
   "start-work",
+  "handoff",
 ])
 
 export const AgentOverrideConfigSchema = z.object({
   /** @deprecated Use `category` instead. Model is inherited from category defaults. */
   model: z.string().optional(),
+  /** Fallback models to try when primary model fails (string or string[]) */
+  fallback_models: z.union([z.string(), z.array(z.string())]).optional(),
   variant: z.string().optional(),
   /** Category name to inherit model and other settings from CategoryConfig */
   category: z.string().optional(),
@@ -201,6 +215,8 @@ export const CategoryConfigSchema = z.object({
   /** Human-readable description of the category's purpose. Shown in delegate_task prompt. */
   description: z.string().optional(),
   model: z.string().optional(),
+  /** Fallback models to try when primary model fails (string or string[]) */
+  fallback_models: z.union([z.string(), z.array(z.string())]).optional(),
   variant: z.string().optional(),
   /** Agent to use for this category. Overrides the default CATEGORY_AGENTS mapping. */
   agent: z.string().optional(),
@@ -272,6 +288,28 @@ export const DynamicContextPruningConfigSchema = z.object({
   }).optional(),
 })
 
+export const RuntimeFallbackConfigSchema = z.object({
+  /** Enable runtime fallback (default: false) */
+  enabled: z.boolean().optional(),
+  /** HTTP status codes that trigger fallback (default: [400, 429, 503, 529]) */
+  retry_on_errors: z.array(z.number()).optional(),
+  /** Maximum fallback attempts per session (default: 3) */
+  max_fallback_attempts: z.number().min(1).max(20).optional(),
+  /** Cooldown in seconds before retrying a failed model (default: 60) */
+  cooldown_seconds: z.number().min(0).optional(),
+  /** Session-level timeout in seconds to advance fallback when provider hangs (default: 30). Set to 0 to disable. */
+  timeout_seconds: z.number().min(0).optional(),
+  /** Show toast notification when switching to fallback model (default: true) */
+  notify_on_fallback: z.boolean().optional(),
+})
+
+export const HashlineEditConfigSchema = z.object({
+  /** Enable hashline edit tooling and related hook integrations (default: false) */
+  enabled: z.boolean().default(false),
+})
+
+export type RuntimeFallbackConfig = z.infer<typeof RuntimeFallbackConfigSchema>
+
 export const ExperimentalConfigSchema = z.object({
   aggressive_truncation: z.boolean().optional(),
   auto_resume: z.boolean().optional(),
@@ -279,6 +317,10 @@ export const ExperimentalConfigSchema = z.object({
   truncate_all_tool_outputs: z.boolean().optional(),
   /** Dynamic context pruning configuration */
   dynamic_context_pruning: DynamicContextPruningConfigSchema.optional(),
+  /** Timeout in ms for loadAllPluginComponents during config handler init (default: 10000, min: 1000) */
+  plugin_load_timeout_ms: z.number().min(1000).optional(),
+  /** Wrap hook creation in try/catch to prevent one failing hook from crashing the plugin (default: true at call site) */
+  safe_hook_creation: z.boolean().optional(),
 })
 
 export const SkillSourceSchema = z.union([
@@ -341,6 +383,22 @@ export const NotificationConfigSchema = z.object({
   force_enable: z.boolean().optional(),
 })
 
+export const TmuxLayoutSchema = z.enum([
+  "main-horizontal",
+  "main-vertical",
+  "tiled",
+  "even-horizontal",
+  "even-vertical",
+])
+
+export const TmuxConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  layout: TmuxLayoutSchema.default("main-vertical"),
+  main_pane_size: z.number().min(20).max(80).default(60),
+  main_pane_min_width: z.number().min(40).default(120),
+  agent_pane_min_width: z.number().min(20).default(40),
+})
+
 export const GitMasterConfigSchema = z.object({
   /** Add "Ultraworked with Sisyphus" footer to commit messages (default: true) */
   commit_footer: z.boolean().default(true),
@@ -377,6 +435,34 @@ export const MemoryPersistenceConfigSchema = z.object({
 
 export const CategorySkillsConfigSchema = z.record(z.string(), z.array(z.string()))
 
+export const EnforcementLevelSchema = z.enum(["off", "warn", "block"])
+
+export const EnforcementConfigSchema = z.object({
+  /** Require active ticket before code changes (default: "warn") */
+  ticket_tracking: EnforcementLevelSchema.default("warn"),
+  /** Intercept rm commands and suggest trash alternatives (default: "warn") */
+  rm_safety: EnforcementLevelSchema.default("warn"),
+  /** Require verification evidence before completion (default: "warn") */
+  verification_gate: EnforcementLevelSchema.default("warn"),
+  /** Remind to check available skills at session start (default: "warn") */
+  skill_auto_invoke: z.enum(["off", "warn"]).default("warn"),
+  /** Warn when overwriting existing files without reading first (default: "warn") */
+  write_file_guard: EnforcementLevelSchema.default("warn"),
+})
+
+export const WorktreeConfigSchema = z.object({
+  /** Enable git worktree integration (default: true) */
+  enabled: z.boolean().default(true),
+  /** Base directory for worktrees, relative to project root (default: "..") */
+  base_dir: z.string().default(".."),
+  /** Auto-create worktree on /start-work (default: true) */
+  auto_create_on_start_work: z.boolean().default(true),
+  /** Auto-cleanup worktree on /finish (default: true) */
+  auto_cleanup_on_finish: z.boolean().default(true),
+  /** Branch prefix for worktree branches (default: "feat/") */
+  branch_prefix: z.string().default("feat/"),
+})
+
 export const OhMyOpenCodeConfigSchema = z.object({
   $schema: z.string().optional(),
   disabled_mcps: z.array(AnyMcpNameSchema).optional(),
@@ -388,8 +474,11 @@ export const OhMyOpenCodeConfigSchema = z.object({
   categories: CategoriesConfigSchema.optional(),
   category_skills: CategorySkillsConfigSchema.optional(),
   claude_code: ClaudeCodeConfigSchema.optional(),
-  sisyphus_agent: SisyphusAgentConfigSchema.optional(),
+  musashi_agent: SisyphusAgentConfigSchema.optional(),
   comment_checker: CommentCheckerConfigSchema.optional(),
+  hashline_edit: HashlineEditConfigSchema.optional(),
+  /** Runtime fallback configuration for auto-switching models on errors */
+  runtime_fallback: RuntimeFallbackConfigSchema.optional(),
   experimental: ExperimentalConfigSchema.optional(),
   auto_update: z.boolean().optional(),
   skills: SkillsConfigSchema.optional(),
@@ -400,6 +489,9 @@ export const OhMyOpenCodeConfigSchema = z.object({
   lazy_loading: LazyLoadingConfigSchema.optional(),
   browser_automation_engine: BrowserAutomationConfigSchema.optional(),
   memory_persistence: MemoryPersistenceConfigSchema.optional(),
+  tmux: TmuxConfigSchema.optional(),
+  enforcement: EnforcementConfigSchema.optional(),
+  worktree: WorktreeConfigSchema.optional(),
 })
 
 export type OhMyOpenCodeConfig = z.infer<typeof OhMyOpenCodeConfigSchema>
@@ -426,8 +518,13 @@ export type LazyLoadingConfig = z.infer<typeof LazyLoadingConfigSchema>
 export type BrowserAutomationProvider = z.infer<typeof BrowserAutomationProviderSchema>
 export type BrowserAutomationConfig = z.infer<typeof BrowserAutomationConfigSchema>
 export type MemoryPersistenceConfig = z.infer<typeof MemoryPersistenceConfigSchema>
+export type TmuxConfig = z.infer<typeof TmuxConfigSchema>
+export type TmuxLayout = z.infer<typeof TmuxLayoutSchema>
 export type CategorySkillsConfig = z.infer<typeof CategorySkillsConfigSchema>
 export type ToolRouteOverride = z.infer<typeof ToolRouteOverrideSchema>
 export type ToolRoutingConfig = z.infer<typeof ToolRoutingConfigSchema>
+export type EnforcementLevel = z.infer<typeof EnforcementLevelSchema>
+export type EnforcementConfig = z.infer<typeof EnforcementConfigSchema>
+export type WorktreeConfig = z.infer<typeof WorktreeConfigSchema>
 
 export { AnyMcpNameSchema, type AnyMcpName, McpNameSchema, type McpName } from "../mcp/types"

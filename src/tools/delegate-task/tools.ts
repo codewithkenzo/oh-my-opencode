@@ -7,7 +7,6 @@ import type { CategoryConfig, CategoriesConfig, GitMasterConfig } from "../../co
 import { DELEGATE_TASK_DESCRIPTION, DEFAULT_CATEGORIES, CATEGORY_PROMPT_APPENDS, CATEGORY_SKILLS, CATEGORY_AGENTS } from "./constants"
 import { findNearestMessageWithFields, findFirstMessageWithAgent, MESSAGE_STORAGE } from "../../features/hook-message-injector"
 import { resolveMultipleSkillsAsync } from "../../features/opencode-skill-loader/skill-content"
-import { discoverSkills } from "../../features/opencode-skill-loader"
 import { getTaskToastManager } from "../../features/task-toast-manager"
 import type { ModelFallbackInfo } from "../../features/task-toast-manager/types"
 import { subagentSessions, getSessionAgent } from "../../features/claude-code-session-state"
@@ -224,9 +223,7 @@ export function createDelegateTask(options: DelegateTaskToolOptions): ToolDefini
       if (mergedSkills.length > 0) {
         const { resolved, notFound } = await resolveMultipleSkillsAsync(mergedSkills, { gitMasterConfig })
         if (notFound.length > 0) {
-          const allSkills = await discoverSkills({ includeClaudeCodePaths: true })
-          const available = allSkills.map(s => s.name).join(", ")
-          return `Skills not found: ${notFound.join(", ")}. Available: ${available}`
+          console.warn(`[delegate_task] Skills not found (skipping): ${notFound.join(", ")}`)
         }
         skillContent = Array.from(resolved.values()).join("\n\n")
       }

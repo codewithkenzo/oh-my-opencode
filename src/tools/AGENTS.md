@@ -2,7 +2,7 @@
 
 ## OVERVIEW
 
-102 tools across 7 lazy-loaded profiles: core (23), research (9), browser (18), native-search (2), external-api (23), local-service (15), orchestration (12). High-performance C++ bindings via @ast-grep/napi.
+103 tools across 7 lazy-loaded profiles: core (24), research (9), browser (18), native-search (2), external-api (23), local-service (15), orchestration (12). High-performance C++ bindings via @ast-grep/napi.
 
 ## STRUCTURE
 
@@ -20,6 +20,7 @@ tools/
 ├── session-manager/  # 4 tools: list, read, search, info
 ├── grep/             # Custom grep with timeout/truncation
 ├── glob/             # Custom glob with 60s timeout, 100 file limit
+├── hashline-edit/    # Line-addressed editing with hashline format (27 files)
 ├── interactive-bash/ # Tmux session management
 ├── look-at/          # Multimodal PDF/image analysis
 ├── skill/            # Skill execution
@@ -35,11 +36,17 @@ tools/
 | Category | Tools | Purpose |
 |----------|-------|---------|
 | **LSP** | lsp_goto_definition, lsp_find_references, lsp_symbols, lsp_diagnostics, lsp_prepare_rename, lsp_rename | Semantic code intelligence |
-| **Search** | ast_grep_search, ast_grep_replace, grep, glob | Pattern discovery |
+| **Search** | ast_grep_search, ast_grep_replace, grep, glob, hashline_edit | Pattern discovery |
 | **Session** | session_list, session_read, session_search, session_info | History navigation |
 | **Agent** | delegate_task, call_omo_agent, background_output, background_cancel | Task orchestration |
 | **System** | interactive_bash, look_at | CLI, multimodal |
 | **MCP/Skill** | skill, skill_mcp, mcp_query, slashcommand | Skill execution + custom MCP discovery |
+
+**Note**: `DELEGATE_TASK_DESCRIPTION` mandates `run_in_background=true` as the default for all delegations. Background-first enables monitoring, recalibration, and parallel execution.
+
+**Note**: Skill validation in `delegate_task` is soft — missing/unresolvable skills are skipped with `console.warn`, never blocking delegation.
+
+**Note**: `skill` now also resolves slash commands as a fallback for backward compatibility.
 
 ## TOOL PROFILES
 
@@ -49,7 +56,7 @@ All 6 non-orchestration profiles are registered globally via `ALL_PROFILES` in `
 
 | Profile | Count | Purpose | Orchestrator Access |
 |---------|-------|---------|---------------------|
-| core | 23 | LSP, grep, glob, session, tickets - always loaded | ✅ |
+| core | 24 | LSP, grep, glob, hashline_edit, session, tickets - always loaded | ✅ |
 | research | 9 | Exa, Context7, grep_app, zread - web/docs search | ❌ Denied |
 | browser | 18 | Playwright browser automation | ❌ Denied |
 | native-search | 2 | AST-Grep search/replace | ❌ Denied |

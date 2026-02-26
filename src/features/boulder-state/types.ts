@@ -14,6 +14,8 @@ export interface BoulderState {
   session_ids: string[]
   /** Plan name derived from filename */
   plan_name: string
+  /** Absolute path to active git worktree (set when worktree.auto_create_on_start_work is enabled) */
+  worktree_path?: string
 }
 
 export interface PlanProgress {

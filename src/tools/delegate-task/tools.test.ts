@@ -6,7 +6,7 @@ import type { CategoryConfig } from "../../config/schema"
 // Test constants - systemDefaultModel is required by resolveCategoryConfig
 const SYSTEM_DEFAULT_MODEL = "anthropic/claude-sonnet-4-5"
 
-describe("sisyphus-task", () => {
+describe("musashi-task", () => {
   describe("DEFAULT_CATEGORIES", () => {
     test("visual-engineering category has temperature config only (model removed)", () => {
       // #given
@@ -73,15 +73,15 @@ describe("sisyphus-task", () => {
   })
 
   describe("DELEGATE_TASK_DESCRIPTION", () => {
-    test("documents background parameter as required with default false", () => {
+    test("documents background parameter with default true", () => {
       // #given / #when / #then
       expect(DELEGATE_TASK_DESCRIPTION).toContain("background")
-      expect(DELEGATE_TASK_DESCRIPTION).toContain("Default: false")
+      expect(DELEGATE_TASK_DESCRIPTION).toContain("Default: true")
     })
 
-    test("warns about parallel exploration usage", () => {
+    test("mandates background=true for all delegations", () => {
       // #given / #when / #then
-      expect(DELEGATE_TASK_DESCRIPTION).toContain("5+")
+      expect(DELEGATE_TASK_DESCRIPTION).toContain("ALWAYS use background=true")
     })
   })
 

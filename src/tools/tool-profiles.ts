@@ -11,6 +11,7 @@ export const TOOL_PROFILES: Record<ToolProfile, readonly string[]> = {
     "grep",
     "glob",
     "multiedit",
+    "hashline_edit",
     "session_list",
     "session_read",
     "session_search",
@@ -25,6 +26,10 @@ export const TOOL_PROFILES: Record<ToolProfile, readonly string[]> = {
     "ticket_dep",
     "ticket_undep",
     "ticket_blocked",
+    "worktree_create",
+    "worktree_list",
+    "worktree_remove",
+    "worktree_status",
   ],
   research: [
     "exa_websearch",

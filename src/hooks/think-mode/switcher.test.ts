@@ -157,14 +157,28 @@ describe("think-mode switcher", () => {
         expect(variant).toBe("gpt-5-1-codex-high")
       })
 
-      it("should handle Gemini preview variants", () => {
-        // #given Gemini preview model IDs
-        expect(getHighVariant("gemini-3-pro-preview")).toBe(
-          "gemini-3-pro-preview-high"
-        )
-        expect(getHighVariant("gemini-3-flash-preview")).toBe(
-          "gemini-3-flash-preview-high"
-        )
+      it("should handle gemini-3-pro-preview high variant mapping", () => {
+        // #given gemini-3-pro-preview
+        const variant = getHighVariant("gemini-3-pro-preview")
+
+        // #then should return preview high variant
+        expect(variant).toBe("gemini-3-pro-preview-high")
+      })
+
+      it("should handle gemini-3-flash-preview high variant mapping", () => {
+        // #given gemini-3-flash-preview
+        const variant = getHighVariant("gemini-3-flash-preview")
+
+        // #then should return preview high variant
+        expect(variant).toBe("gemini-3-flash-preview-high")
+      })
+
+      it("should map gemini-3-pro-low to gemini-3-pro-high", () => {
+        // #given gemini-3-pro-low model variant
+        const variant = getHighVariant("gemini-3-pro-low")
+
+        // #then should normalize to gemini-3-pro-high
+        expect(variant).toBe("gemini-3-pro-high")
       })
 
       it("should return null for already-high variants", () => {

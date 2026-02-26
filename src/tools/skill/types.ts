@@ -5,6 +5,7 @@ import type { PluginInput } from "@opencode-ai/plugin"
 import type { SkillCategory } from "./constants"
 
 export interface SkillArgs {
+  /** Skill identifier or slash command name (with or without leading `/`) */
   name: string
 }
 

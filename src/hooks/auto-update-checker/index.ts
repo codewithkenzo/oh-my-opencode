@@ -8,13 +8,13 @@ import { runBunInstall } from "../../cli/config-manager"
 import type { AutoUpdateCheckerOptions } from "./types"
 import { extractChannel, isPrereleaseVersion, isDistTag, isPrereleaseOrDistTag } from "./utils"
 
-const SISYPHUS_SPINNER = ["·", "•", "●", "○", "◌", "◦", " "]
+const MUSASHI_SPINNER = ["·", "•", "●", "○", "◌", "◦", " "]
 
 export function createAutoUpdateCheckerHook(ctx: PluginInput, options: AutoUpdateCheckerOptions = {}) {
-  const { showStartupToast = true, isSisyphusEnabled = false, autoUpdate = true } = options
+  const { showStartupToast = true, isMusashiEnabled = false, autoUpdate = true } = options
 
   const getToastMessage = (isUpdate: boolean, latestVersion?: string): string => {
-    if (isSisyphusEnabled) {
+    if (isMusashiEnabled) {
       return isUpdate
         ? `Sisyphus on steroids is steering OpenCode.\nv${latestVersion} available. Restart to apply.`
         : `Sisyphus on steroids is steering OpenCode.`
@@ -45,7 +45,7 @@ export function createAutoUpdateCheckerHook(ctx: PluginInput, options: AutoUpdat
 
         if (localDevVersion) {
           if (showStartupToast) {
-            showLocalDevToast(ctx, displayVersion, isSisyphusEnabled).catch(() => {})
+            showLocalDevToast(ctx, displayVersion, isMusashiEnabled).catch(() => {})
           }
           log("[auto-update-checker] Local development mode")
           return
@@ -166,7 +166,7 @@ async function showSpinnerToast(ctx: PluginInput, version: string, message: stri
   const totalFrames = Math.floor(totalDuration / frameInterval)
 
   for (let i = 0; i < totalFrames; i++) {
-    const spinner = SISYPHUS_SPINNER[i % SISYPHUS_SPINNER.length]
+    const spinner = MUSASHI_SPINNER[i % MUSASHI_SPINNER.length]
     await ctx.client.tui
       .showToast({
         body: {
@@ -213,9 +213,9 @@ async function showAutoUpdatedToast(ctx: PluginInput, oldVersion: string, newVer
   log(`[auto-update-checker] Auto-updated toast shown: v${oldVersion} → v${newVersion}`)
 }
 
-async function showLocalDevToast(ctx: PluginInput, version: string | null, isSisyphusEnabled: boolean): Promise<void> {
+async function showLocalDevToast(ctx: PluginInput, version: string | null, isMusashiEnabled: boolean): Promise<void> {
   const displayVersion = version ?? "dev"
-  const message = isSisyphusEnabled
+  const message = isMusashiEnabled
     ? "Sisyphus running in local development mode."
     : "Running in local development mode. oMoMoMo..."
   await showSpinnerToast(ctx, `${displayVersion} (dev)`, message)

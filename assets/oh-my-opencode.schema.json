@@ -93,7 +93,18 @@
           "prometheus-md-only",
           "start-work",
           "atlas",
-          "memory-persistence"
+          "memory-persistence",
+          "hashline-read-enhancer",
+          "hashline-edit-diff-enhancer",
+          "write-existing-file-guard",
+          "anthropic-effort",
+          "unstable-agent-babysitter",
+          "runtime-fallback",
+          "ticket-enforcement",
+          "rm-to-trash",
+          "verification-before-completion",
+          "skill-auto-invoke",
+          "todo-ticket-bridge"
         ]
       }
     },
@@ -103,7 +114,8 @@
         "type": "string",
         "enum": [
           "init-deep",
-          "start-work"
+          "start-work",
+          "handoff"
         ]
       }
     },
@@ -117,6 +129,19 @@
         "properties": {
           "model": {
             "type": "string"
+          },
+          "fallback_models": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
           },
           "variant": {
             "type": "string"
@@ -253,6 +278,19 @@
           "model": {
             "type": "string"
           },
+          "fallback_models": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
           "variant": {
             "type": "string"
           },
@@ -369,7 +407,7 @@
         }
       }
     },
-    "sisyphus_agent": {
+    "musashi_agent": {
       "type": "object",
       "properties": {
         "disabled": {
@@ -391,6 +429,45 @@
       "properties": {
         "custom_prompt": {
           "type": "string"
+        }
+      }
+    },
+    "hashline_edit": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "type": "boolean"
+        }
+      }
+    },
+    "runtime_fallback": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "retry_on_errors": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "max_fallback_attempts": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "cooldown_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "timeout_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "notify_on_fallback": {
+          "type": "boolean"
         }
       }
     },
@@ -495,6 +572,13 @@
               }
             }
           }
+        },
+        "plugin_load_timeout_ms": {
+          "type": "number",
+          "minimum": 1000
+        },
+        "safe_hook_creation": {
+          "type": "boolean"
         }
       }
     },
@@ -770,6 +854,116 @@
           "default": 5,
           "type": "number",
           "minimum": 1
+        }
+      }
+    },
+    "tmux": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "type": "boolean"
+        },
+        "layout": {
+          "default": "main-vertical",
+          "type": "string",
+          "enum": [
+            "main-horizontal",
+            "main-vertical",
+            "tiled",
+            "even-horizontal",
+            "even-vertical"
+          ]
+        },
+        "main_pane_size": {
+          "default": 60,
+          "type": "number",
+          "minimum": 20,
+          "maximum": 80
+        },
+        "main_pane_min_width": {
+          "default": 120,
+          "type": "number",
+          "minimum": 40
+        },
+        "agent_pane_min_width": {
+          "default": 40,
+          "type": "number",
+          "minimum": 20
+        }
+      }
+    },
+    "enforcement": {
+      "type": "object",
+      "properties": {
+        "ticket_tracking": {
+          "default": "warn",
+          "type": "string",
+          "enum": [
+            "off",
+            "warn",
+            "block"
+          ]
+        },
+        "rm_safety": {
+          "default": "warn",
+          "type": "string",
+          "enum": [
+            "off",
+            "warn",
+            "block"
+          ]
+        },
+        "verification_gate": {
+          "default": "warn",
+          "type": "string",
+          "enum": [
+            "off",
+            "warn",
+            "block"
+          ]
+        },
+        "skill_auto_invoke": {
+          "default": "warn",
+          "type": "string",
+          "enum": [
+            "off",
+            "warn"
+          ]
+        },
+        "write_file_guard": {
+          "default": "warn",
+          "type": "string",
+          "enum": [
+            "off",
+            "warn",
+            "block"
+          ]
+        }
+      }
+    },
+    "worktree": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "type": "boolean"
+        },
+        "base_dir": {
+          "default": "..",
+          "type": "string"
+        },
+        "auto_create_on_start_work": {
+          "default": true,
+          "type": "boolean"
+        },
+        "auto_cleanup_on_finish": {
+          "default": true,
+          "type": "boolean"
+        },
+        "branch_prefix": {
+          "default": "feat/",
+          "type": "string"
         }
       }
     }

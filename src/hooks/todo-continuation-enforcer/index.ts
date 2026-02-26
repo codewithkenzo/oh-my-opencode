@@ -2,6 +2,7 @@ import type { PluginInput } from "@opencode-ai/plugin"
 import { existsSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 import type { BackgroundManager } from "../../features/background-agent"
+import { readBoulderState } from "../../features/boulder-state/storage"
 import { getMainSessionID, subagentSessions } from "../../features/claude-code-session-state"
 import {
     findNearestMessageWithFields,
@@ -18,6 +19,7 @@ const DEFAULT_SKIP_AGENTS = ["Musashi - plan"]
 export interface TodoContinuationEnforcerOptions {
   backgroundManager?: BackgroundManager
   skipAgents?: string[]
+  countdownSeconds?: number
 }
 
 export interface TodoContinuationEnforcer {
@@ -39,6 +41,7 @@ interface SessionState {
   isRecovering?: boolean
   countdownStartedAt?: number
   abortDetectedAt?: number
+  userCancelled?: boolean
   injectionCount?: number
   lastTodoSnapshot?: string
 }
@@ -99,6 +102,7 @@ export function createTodoContinuationEnforcerHook(
   options: TodoContinuationEnforcerOptions = {}
 ): TodoContinuationEnforcer {
   const { backgroundManager, skipAgents = DEFAULT_SKIP_AGENTS } = options
+  const countdownSeconds = options.countdownSeconds ?? COUNTDOWN_SECONDS
   const sessions = new Map<string, SessionState>()
 
   function getState(sessionID: string): SessionState {
@@ -258,23 +262,25 @@ export function createTodoContinuationEnforcerHook(
     const state = getState(sessionID)
     cancelCountdown(sessionID)
 
-    let secondsRemaining = COUNTDOWN_SECONDS
+    let secondsRemaining = countdownSeconds
     showCountdownToast(secondsRemaining, incompleteCount)
     state.countdownStartedAt = Date.now()
 
-    state.countdownInterval = setInterval(() => {
-      secondsRemaining--
-      if (secondsRemaining > 0) {
-        showCountdownToast(secondsRemaining, incompleteCount)
-      }
-    }, 1000)
+    if (countdownSeconds > 0) {
+      state.countdownInterval = setInterval(() => {
+        secondsRemaining--
+        if (secondsRemaining > 0) {
+          showCountdownToast(secondsRemaining, incompleteCount)
+        }
+      }, 1000)
+    }
 
     state.countdownTimer = setTimeout(() => {
       cancelCountdown(sessionID)
       injectContinuation(sessionID, incompleteCount, total, resolvedInfo)
-    }, COUNTDOWN_SECONDS * 1000)
+    }, countdownSeconds * 1000)
 
-    log(`[${HOOK_NAME}] Countdown started`, { sessionID, seconds: COUNTDOWN_SECONDS, incompleteCount })
+    log(`[${HOOK_NAME}] Countdown started`, { sessionID, seconds: countdownSeconds, incompleteCount })
   }
 
   const handler = async ({ event }: { event: { type: string; properties?: unknown } }): Promise<void> => {
@@ -287,6 +293,7 @@ export function createTodoContinuationEnforcerHook(
       const error = props?.error as { name?: string } | undefined
       if (error?.name === "MessageAbortedError" || error?.name === "AbortError") {
         const state = getState(sessionID)
+        state.userCancelled = true
         state.abortDetectedAt = Date.now()
         log(`[${HOOK_NAME}] Abort detected via session.error`, { sessionID, errorName: error.name })
       }
@@ -311,7 +318,18 @@ export function createTodoContinuationEnforcerHook(
         return
       }
 
+      const boulderState = readBoulderState(ctx.directory)
+      if (!boulderState?.active_plan) {
+        log(`[${HOOK_NAME}] Skipped: no active boulder plan`, { sessionID })
+        return
+      }
+
       const state = getState(sessionID)
+
+      if (state.userCancelled) {
+        log(`[${HOOK_NAME}] Skipped: user cancelled (Esc)`, { sessionID })
+        return
+      }
 
       if (state.isRecovering) {
         log(`[${HOOK_NAME}] Skipped: in recovery`, { sessionID })
@@ -320,14 +338,8 @@ export function createTodoContinuationEnforcerHook(
 
       // Check 1: Event-based abort detection (primary, most reliable)
       if (state.abortDetectedAt) {
-        const timeSinceAbort = Date.now() - state.abortDetectedAt
-        const ABORT_WINDOW_MS = 3000
-        if (timeSinceAbort < ABORT_WINDOW_MS) {
-          log(`[${HOOK_NAME}] Skipped: abort detected via event ${timeSinceAbort}ms ago`, { sessionID })
-          state.abortDetectedAt = undefined
-          return
-        }
-        state.abortDetectedAt = undefined
+        log(`[${HOOK_NAME}] Skipped: abort detected via event`, { sessionID })
+        return
       }
 
       const hasRunningBgTasks = backgroundManager
@@ -450,6 +462,7 @@ export function createTodoContinuationEnforcerHook(
           }
         }
         if (state) {
+          state.userCancelled = undefined
           state.abortDetectedAt = undefined
           state.injectionCount = 0
           state.lastTodoSnapshot = undefined

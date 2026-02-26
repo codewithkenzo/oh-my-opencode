@@ -12,7 +12,7 @@ import * as sessionState from "../../features/claude-code-session-state"
 
 describe("start-work hook", () => {
   const TEST_DIR = join(tmpdir(), "start-work-test-" + Date.now())
-  const SISYPHUS_DIR = join(TEST_DIR, ".sisyphus")
+  const MUSASHI_DIR = join(TEST_DIR, ".musashi")
 
   function createMockPluginInput() {
     return {
@@ -25,8 +25,8 @@ describe("start-work hook", () => {
     if (!existsSync(TEST_DIR)) {
       mkdirSync(TEST_DIR, { recursive: true })
     }
-    if (!existsSync(SISYPHUS_DIR)) {
-      mkdirSync(SISYPHUS_DIR, { recursive: true })
+    if (!existsSync(MUSASHI_DIR)) {
+      mkdirSync(MUSASHI_DIR, { recursive: true })
     }
     clearBoulderState(TEST_DIR)
   })
@@ -155,7 +155,7 @@ describe("start-work hook", () => {
 
     test("should auto-select when only one incomplete plan among multiple plans", async () => {
       // #given - multiple plans but only one incomplete
-      const plansDir = join(TEST_DIR, ".sisyphus", "plans")
+      const plansDir = join(TEST_DIR, ".musashi", "plans")
       mkdirSync(plansDir, { recursive: true })
 
       // Plan 1: complete (all checked)
@@ -185,7 +185,7 @@ describe("start-work hook", () => {
 
     test("should wrap multiple plans message in system-reminder tag", async () => {
       // #given - multiple incomplete plans
-      const plansDir = join(TEST_DIR, ".sisyphus", "plans")
+      const plansDir = join(TEST_DIR, ".musashi", "plans")
       mkdirSync(plansDir, { recursive: true })
 
       const plan1Path = join(plansDir, "plan-a.md")
@@ -213,7 +213,7 @@ describe("start-work hook", () => {
 
     test("should use 'ask user' prompt style for multiple plans", async () => {
       // #given - multiple incomplete plans
-      const plansDir = join(TEST_DIR, ".sisyphus", "plans")
+      const plansDir = join(TEST_DIR, ".musashi", "plans")
       mkdirSync(plansDir, { recursive: true })
 
       const plan1Path = join(plansDir, "plan-x.md")
@@ -240,7 +240,7 @@ describe("start-work hook", () => {
 
     test("should select explicitly specified plan name from user-request, ignoring existing boulder state", async () => {
       // #given - existing boulder state pointing to old plan
-      const plansDir = join(TEST_DIR, ".sisyphus", "plans")
+      const plansDir = join(TEST_DIR, ".musashi", "plans")
       mkdirSync(plansDir, { recursive: true })
 
       // Old plan (in boulder state)
@@ -286,7 +286,7 @@ describe("start-work hook", () => {
 
     test("should strip ultrawork/ulw keywords from plan name argument", async () => {
       // #given - plan with ultrawork keyword in user-request
-      const plansDir = join(TEST_DIR, ".sisyphus", "plans")
+      const plansDir = join(TEST_DIR, ".musashi", "plans")
       mkdirSync(plansDir, { recursive: true })
 
       const planPath = join(plansDir, "my-feature-plan.md")
@@ -317,7 +317,7 @@ describe("start-work hook", () => {
 
     test("should strip ulw keyword from plan name argument", async () => {
       // #given - plan with ulw keyword in user-request
-      const plansDir = join(TEST_DIR, ".sisyphus", "plans")
+      const plansDir = join(TEST_DIR, ".musashi", "plans")
       mkdirSync(plansDir, { recursive: true })
 
       const planPath = join(plansDir, "api-refactor.md")
@@ -348,7 +348,7 @@ describe("start-work hook", () => {
 
     test("should match plan by partial name", async () => {
       // #given - user specifies partial plan name
-      const plansDir = join(TEST_DIR, ".sisyphus", "plans")
+      const plansDir = join(TEST_DIR, ".musashi", "plans")
       mkdirSync(plansDir, { recursive: true })
 
       const planPath = join(plansDir, "2026-01-15-feature-implementation.md")

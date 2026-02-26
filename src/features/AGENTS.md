@@ -17,8 +17,8 @@ features/
 │   └── types.ts                # SkillMcpConfig, transports
 ├── builtin-skills/             # Playwright, git-master, frontend-ui-ux
 │   └── skills.ts               # 1203 lines of skill definitions
-├── builtin-commands/           # ralph-loop, refactor, init-deep
-│   └── templates/              # Command implementations
+├── builtin-commands/           # ralph-loop, refactor, init-deep, start-work, handoff
+│   └── templates/              # Command implementations (5 templates)
 ├── claude-code-agent-loader/   # ~/.claude/agents/*.md
 ├── claude-code-command-loader/ # ~/.claude/commands/*.md
 ├── claude-code-mcp-loader/     # .mcp.json with ${VAR} expansion
@@ -54,6 +54,8 @@ See `src/agents/AGENTS.md` for the full category -> skills mapping.
 - **Concurrency**: Per-provider/model limits (e.g., max 3 Opus, max 10 Gemini)
 - **Notification**: Batched system reminders to parent session
 - **Cleanup**: 30m TTL, 3m stale timeout, signal handlers
+- **Cascade cancel**: `session.deleted` cascades to all descendant tasks
+- **Visibility**: `background_output` auto-enables `full_session` for running tasks
 
 ## SHARED MCP CLIENT MANAGER
 
@@ -68,6 +70,10 @@ See `src/agents/AGENTS.md` for the full category -> skills mapping.
 - **Template source**: `extractSkillTemplate()` prefers assembled templates (merged subdirectory docs + wrappers)
 - **Resolution path**: `resolveMultipleSkillsAsync()` is the primary async resolver for category/agent skill injection
 - **Git-master injection**: `resolveMultipleSkillsAsync()` applies git-master footer/co-author watermark injection via `injectGitMasterConfig()`
+
+## SHARED UTILITIES
+
+- **Session idle dedup**: `normalizeSessionIdleEvent()` in `src/shared/` prevents double idle events
 
 ## CONFIG TOGGLES
 

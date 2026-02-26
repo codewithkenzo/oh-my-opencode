@@ -458,21 +458,21 @@ describe("keyword-detector agent-specific ultrawork messages", () => {
     await hook["chat.message"]({ sessionID: prometheusSessionID, agent: "prometheus" }, prometheusOutput)
 
     // Second session with sisyphus
-    const sisyphusSessionID = "sisyphus-second"
-    const sisyphusOutput = {
+    const musashiSessionID = "sisyphus-second"
+    const musashiOutput = {
       message: {} as Record<string, unknown>,
       parts: [{ type: "text", text: "ultrawork implement" }],
     }
-    await hook["chat.message"]({ sessionID: sisyphusSessionID, agent: "Sisyphus" }, sisyphusOutput)
+    await hook["chat.message"]({ sessionID: musashiSessionID, agent: "Sisyphus" }, musashiOutput)
 
     // #then - each session should have the correct message type
     const prometheusPending = collector.getPending(prometheusSessionID)
     const prometheusEntry = prometheusPending.entries.find((e) => e.id === "keyword-ultrawork")
     expect(prometheusEntry!.content).toContain("YOU ARE A PLANNER, NOT AN IMPLEMENTER")
 
-    const sisyphusPending = collector.getPending(sisyphusSessionID)
-    const sisyphusEntry = sisyphusPending.entries.find((e) => e.id === "keyword-ultrawork")
-    expect(sisyphusEntry!.content).toContain("YOU MUST LEVERAGE ALL AVAILABLE AGENTS")
+    const musashiPending = collector.getPending(musashiSessionID)
+    const musashiEntry = musashiPending.entries.find((e) => e.id === "keyword-ultrawork")
+    expect(musashiEntry!.content).toContain("YOU MUST LEVERAGE ALL AVAILABLE AGENTS")
   })
 
   test("should use session state agent over stale input.agent (bug fix)", async () => {
