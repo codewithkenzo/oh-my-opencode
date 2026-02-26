@@ -72,7 +72,7 @@ export function createBackgroundTask(manager: BackgroundManager): ToolDefinition
       const ctx = toolContext as ToolContextWithMetadata
 
       if (!args.agent || args.agent.trim() === "") {
-        return `❌ Agent parameter is required. Please specify which agent to use (e.g., "explore", "librarian", "build", etc.)`
+        return `❌ Agent parameter is required. Please specify which agent to use (e.g., "X1 explorer", "R2 researcher", "build", etc.)`
       }
 
       try {

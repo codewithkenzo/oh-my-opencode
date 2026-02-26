@@ -35,8 +35,8 @@ Examples:
   $ bunx oh-my-opencode install --no-tui --claude=no --chatgpt=no --gemini=no --copilot=yes
 
 Model Providers:
-  Claude      Required for Sisyphus (main orchestrator) and Librarian agents
-  ChatGPT     Powers the Oracle agent for debugging and architecture
+  Claude      Required for Musashi (main orchestrator) and R2 - researcher agent
+  ChatGPT     Powers the K9 - advisor agent for debugging and architecture
   Gemini      Powers frontend, documentation, and multimodal agents
 `)
   .action(async (options) => {
@@ -55,13 +55,13 @@ Model Providers:
 program
   .command("run <message>")
   .description("Run opencode with todo/background task completion enforcement")
-  .option("-a, --agent <name>", "Agent to use (default: Sisyphus)")
+  .option("-a, --agent <name>", "Agent to use (default: Musashi)")
   .option("-d, --directory <path>", "Working directory")
   .option("-t, --timeout <ms>", "Timeout in milliseconds (default: 30 minutes)", parseInt)
   .addHelpText("after", `
 Examples:
   $ bunx oh-my-opencode run "Fix the bug in index.ts"
-  $ bunx oh-my-opencode run --agent Sisyphus "Implement feature X"
+  $ bunx oh-my-opencode run --agent Musashi "Implement feature X"
   $ bunx oh-my-opencode run --timeout 3600000 "Large refactoring task"
 
 Unlike 'opencode run', this command waits until:

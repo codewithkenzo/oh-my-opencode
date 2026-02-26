@@ -106,7 +106,7 @@ ${ULTRAWORK_PLANNER_SECTION}
 
 1. **THINK DEEPLY** - What is the user's TRUE intent? What problem are they REALLY trying to solve?
 2. **EXPLORE THOROUGHLY** - Fire X1 - explorer/R2 - researcher agents to gather ALL relevant context
-3. **CONSULT ORACLE** - For architecture decisions, complex logic, or when you're stuck
+3. **CONSULT K9** - For architecture decisions, complex logic, or when you're stuck
 4. **ASK THE USER** - If ambiguity remains after exploration, ASK. Don't guess.
 
 **SIGNS YOU ARE NOT READY TO IMPLEMENT:**

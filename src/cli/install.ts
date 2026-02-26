@@ -168,7 +168,7 @@ async function runTuiMode(detected: DetectedConfig): Promise<InstallConfig | nul
     options: [
       { value: "no" as const, label: "No", hint: "Will use opencode/glm-4.7-free as fallback" },
       { value: "yes" as const, label: "Yes (standard)", hint: "Claude Opus 4.5 for orchestration" },
-      { value: "max20" as const, label: "Yes (max20 mode)", hint: "Full power with Claude Sonnet 4.5 for Librarian" },
+      { value: "max20" as const, label: "Yes (max20 mode)", hint: "Full power with Claude Sonnet 4.5 for R2 - researcher" },
     ],
     initialValue: initial.claude,
   })
@@ -181,7 +181,7 @@ async function runTuiMode(detected: DetectedConfig): Promise<InstallConfig | nul
   const chatgpt = await p.select({
     message: "Do you have a ChatGPT Plus/Pro subscription?",
     options: [
-      { value: "no" as const, label: "No", hint: "Oracle will use fallback model" },
+      { value: "no" as const, label: "No", hint: "K9 - advisor will use fallback model" },
       { value: "yes" as const, label: "Yes", hint: "GPT-5.2 for debugging and architecture" },
     ],
     initialValue: initial.chatgpt,

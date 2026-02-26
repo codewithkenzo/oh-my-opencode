@@ -16,8 +16,8 @@ export function createAutoUpdateCheckerHook(ctx: PluginInput, options: AutoUpdat
   const getToastMessage = (isUpdate: boolean, latestVersion?: string): string => {
     if (isMusashiEnabled) {
       return isUpdate
-        ? `Sisyphus on steroids is steering OpenCode.\nv${latestVersion} available. Restart to apply.`
-        : `Sisyphus on steroids is steering OpenCode.`
+        ? `Musashi on steroids is steering OpenCode.\nv${latestVersion} available. Restart to apply.`
+        : `Musashi on steroids is steering OpenCode.`
     }
     return isUpdate
       ? `OpenCode is now on Steroids. oMoMoMoMo...\nv${latestVersion} available. Restart OpenCode to apply.`
@@ -216,7 +216,7 @@ async function showAutoUpdatedToast(ctx: PluginInput, oldVersion: string, newVer
 async function showLocalDevToast(ctx: PluginInput, version: string | null, isMusashiEnabled: boolean): Promise<void> {
   const displayVersion = version ?? "dev"
   const message = isMusashiEnabled
-    ? "Sisyphus running in local development mode."
+    ? "Musashi running in local development mode."
     : "Running in local development mode. oMoMoMo..."
   await showSpinnerToast(ctx, `${displayVersion} (dev)`, message)
   log(`[auto-update-checker] Local dev toast shown: v${displayVersion}`)
