@@ -10,7 +10,14 @@ import { extractChannel, isPrereleaseVersion, isDistTag, isPrereleaseOrDistTag }
 
 const MUSASHI_SPINNER = ["·", "•", "●", "○", "◌", "◦", " "]
 
-export function createAutoUpdateCheckerHook(ctx: PluginInput, options: AutoUpdateCheckerOptions = {}) {
+interface AutoUpdateCheckerHook {
+  event: (input: { event: { type: string; properties?: unknown } }) => void
+}
+
+export function createAutoUpdateCheckerHook(
+  ctx: PluginInput,
+  options: AutoUpdateCheckerOptions = {}
+): AutoUpdateCheckerHook {
   const { showStartupToast = true, isMusashiEnabled = false, autoUpdate = true } = options
 
   const getToastMessage = (isUpdate: boolean, latestVersion?: string): string => {

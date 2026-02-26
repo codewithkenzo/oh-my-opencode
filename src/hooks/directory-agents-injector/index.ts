@@ -37,7 +37,19 @@ interface EventInput {
   };
 }
 
-export function createDirectoryAgentsInjectorHook(ctx: PluginInput) {
+interface DirectoryAgentsInjectorHook {
+  "tool.execute.before": (
+    input: ToolExecuteInput,
+    output: ToolExecuteBeforeOutput,
+  ) => Promise<void>;
+  "tool.execute.after": (
+    input: ToolExecuteInput,
+    output: ToolExecuteOutput,
+  ) => Promise<void>;
+  event: (input: EventInput) => Promise<void>;
+}
+
+export function createDirectoryAgentsInjectorHook(ctx: PluginInput): DirectoryAgentsInjectorHook {
   const sessionCaches = new Map<string, Set<string>>();
   const pendingBatchReads = new Map<string, string[]>();
   const truncator = createDynamicTruncator(ctx);

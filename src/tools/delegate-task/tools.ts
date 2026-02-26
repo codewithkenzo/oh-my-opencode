@@ -522,7 +522,8 @@ ${textContent || "(No text output)"}`
         try {
           const agentsResult = await client.app.agents()
           type AgentInfo = { name: string; mode?: "subagent" | "primary" | "all" }
-          const agents = (agentsResult as { data?: AgentInfo[] }).data ?? agentsResult as unknown as AgentInfo[]
+          const agentsRaw = agentsResult as { data?: AgentInfo[] } | AgentInfo[]
+          const agents = Array.isArray(agentsRaw) ? agentsRaw : (agentsRaw.data ?? [])
 
           const callableAgents = agents.filter((a) => a.mode !== "primary")
           const callableNames = callableAgents.map((a) => a.name)

@@ -128,17 +128,17 @@ function prependThinkingBlock(
   }
 
   // Create synthetic thinking part
-  const thinkingPart = {
-    type: "thinking" as const,
+  const thinkingPart: Part = {
+    type: "reasoning",
     id: `prt_0000000000_synthetic_thinking`,
     sessionID: (message.info as MessageInfo).sessionID || "",
-    messageID: message.info.id,
-    thinking: thinkingContent,
-    synthetic: true,
+    messageID: message.info.id || "",
+    time: { start: Date.now() },
+    text: thinkingContent,
   }
 
   // Prepend to parts array
-  message.parts.unshift(thinkingPart as unknown as Part)
+  message.parts.unshift(thinkingPart)
 }
 
 /**

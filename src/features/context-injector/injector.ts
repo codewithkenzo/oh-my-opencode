@@ -107,7 +107,8 @@ export function createContextInjectorMessagesTransformHook(
 
       const lastUserMessage = messages[lastUserMessageIndex]
       // Try message.info.sessionID first, fallback to mainSessionID
-      const messageSessionID = (lastUserMessage.info as unknown as { sessionID?: string }).sessionID
+      const messageInfo = lastUserMessage.info as Record<string, unknown>
+      const messageSessionID = typeof messageInfo.sessionID === "string" ? messageInfo.sessionID : undefined
       const sessionID = messageSessionID ?? getMainSessionID()
       log("[DEBUG] Extracted sessionID", {
         messageSessionID,

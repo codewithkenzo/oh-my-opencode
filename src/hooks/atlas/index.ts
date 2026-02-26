@@ -414,6 +414,18 @@ export interface AtlasHookOptions {
   backgroundManager?: BackgroundManager
 }
 
+interface AtlasHook {
+  handler: (input: { event: { type: string; properties?: unknown } }) => Promise<void>
+  "tool.execute.before": (
+    input: { tool: string; sessionID?: string; callID?: string },
+    output: { args: Record<string, unknown>; message?: string }
+  ) => Promise<void>
+  "tool.execute.after": (
+    input: ToolExecuteAfterInput,
+    output: ToolExecuteAfterOutput
+  ) => Promise<void>
+}
+
 function isAbortError(error: unknown): boolean {
   if (!error) return false
 
@@ -438,7 +450,7 @@ function isAbortError(error: unknown): boolean {
 export function createAtlasHook(
   ctx: PluginInput,
   options?: AtlasHookOptions
-) {
+): AtlasHook {
   const backgroundManager = options?.backgroundManager
   const sessions = new Map<string, SessionState>()
   const pendingFilePaths = new Map<string, string>()

@@ -1,4 +1,4 @@
-import type { HookDeps } from "./types"
+import type { HookDeps, RuntimeFallbackHook } from "./types"
 import type { AutoRetryHelpers } from "./auto-retry"
 import { HOOK_NAME } from "./constants"
 import { log } from "../../shared/logger"
@@ -7,7 +7,10 @@ import { createFallbackState, prepareFallback } from "./fallback-state"
 import { getFallbackModelsForSession } from "./fallback-models"
 import { SessionCategoryRegistry } from "../../shared/session-category-registry"
 
-export function createEventHandler(deps: HookDeps, helpers: AutoRetryHelpers) {
+export function createEventHandler(
+  deps: HookDeps,
+  helpers: AutoRetryHelpers
+): RuntimeFallbackHook["event"] {
   const { config, pluginConfig, sessionStates, sessionLastAccess, sessionRetryInFlight, sessionAwaitingFallbackResult, sessionFallbackTimeouts } = deps
 
   const handleSessionCreated = (props: Record<string, unknown> | undefined) => {

@@ -25,6 +25,13 @@ interface StartWorkHookOutput {
   parts: Array<{ type: string; text?: string }>
 }
 
+interface StartWorkHook {
+  "chat.message": (
+    input: StartWorkHookInput,
+    output: StartWorkHookOutput
+  ) => Promise<void>
+}
+
 function extractUserRequestPlanName(promptText: string): string | null {
   const userRequestMatch = promptText.match(/<user-request>\s*([\s\S]*?)\s*<\/user-request>/i)
   if (!userRequestMatch) return null
@@ -46,7 +53,7 @@ function findPlanByName(plans: string[], requestedName: string): string | null {
   return partialMatch || null
 }
 
-export function createStartWorkHook(ctx: PluginInput) {
+export function createStartWorkHook(ctx: PluginInput): StartWorkHook {
   return {
     "chat.message": async (
       input: StartWorkHookInput,

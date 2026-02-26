@@ -23,6 +23,14 @@ function truncateLabel(label: string, maxLength: number = MAX_LABEL_LENGTH): str
   return label.substring(0, maxLength - 3) + "...";
 }
 
+function isAskUserQuestionArgs(args: unknown): args is AskUserQuestionArgs {
+  if (!args || typeof args !== "object") {
+    return false;
+  }
+
+  return Array.isArray((args as { questions?: unknown }).questions);
+}
+
 function truncateQuestionLabels(args: AskUserQuestionArgs): AskUserQuestionArgs {
   if (!args.questions || !Array.isArray(args.questions)) {
     return args;
@@ -49,7 +57,7 @@ export function createQuestionLabelTruncatorHook() {
       const toolName = input.tool?.toLowerCase();
 
       if (toolName === "askuserquestion" || toolName === "ask_user_question") {
-        const args = output.args as unknown as AskUserQuestionArgs | undefined;
+        const args = isAskUserQuestionArgs(output.args) ? output.args : undefined;
 
         if (args?.questions) {
           const truncatedArgs = truncateQuestionLabels(args);
