@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { AnyMcpNameSchema, McpNameSchema } from "../mcp/types"
+import { AnyMcpNameSchema } from "../mcp/types"
 
 const PermissionValue = z.enum(["ask", "allow", "deny"])
 

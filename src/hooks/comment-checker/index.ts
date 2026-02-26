@@ -186,7 +186,7 @@ export function createCommentCheckerHooks(config?: CommentCheckerConfig) {
 
         // CLI mode only
         debugLog("using CLI:", cliPath)
-        await processWithCli(input, pendingCall, output, cliPath, config?.custom_prompt)
+        await processWithCli(pendingCall, output, cliPath, config?.custom_prompt)
       } catch (err) {
         debugLog("tool.execute.after failed:", err)
       }
@@ -195,7 +195,6 @@ export function createCommentCheckerHooks(config?: CommentCheckerConfig) {
 }
 
 async function processWithCli(
-  input: { tool: string; sessionID: string; callID: string },
   pendingCall: PendingCall,
   output: { output: string },
   cliPath: string,

@@ -12,8 +12,6 @@ import {
   createThinkModeHook,
   createClaudeCodeHooksHook,
   createAnthropicContextWindowLimitRecoveryHook,
-
-  createCompactionContextInjector,
   createRulesInjectorHook,
   createBackgroundNotificationHook,
   createAutoUpdateCheckerHook,
@@ -88,7 +86,7 @@ import { initTaskToastManager } from "./features/task-toast-manager";
 import { type HookName } from "./config";
 import { log, detectExternalNotificationPlugin, getNotificationConflictWarning, resetMessageCursor, includesCaseInsensitive, createStartupTimer, logToolRegistrySnapshot, normalizeSessionIdleEvent } from "./shared";
 import { loadPluginConfig } from "./plugin-config";
-import { createModelCacheState, getModelLimit } from "./plugin-state";
+import { createModelCacheState } from "./plugin-state";
 import { createConfigHandler } from "./plugin-handlers";
 import { loadAllPluginComponents } from "./features/claude-code-plugin-loader";
 
@@ -191,9 +189,6 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
         experimental: pluginConfig.experimental,
       })
     : null;
-  const compactionContextInjector = isHookEnabled("compaction-context-injector")
-    ? createCompactionContextInjector()
-    : undefined;
   const rulesInjector = isHookEnabled("rules-injector")
     ? createRulesInjectorHook(ctx)
     : null;
