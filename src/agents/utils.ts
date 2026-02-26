@@ -49,6 +49,26 @@ export const LEGACY_TO_MUSASHI_NAME: Record<string, BuiltinAgentName> = {
   "Tsunagi - networker": "Musashi",
 }
 
+/**
+ * Human-readable display names for user-facing output (notifications, task labels, session info).
+ * Unlike promptAlias (internal identity), these are for the human operator.
+ */
+export const AGENT_DISPLAY_NAMES: Record<string, string> = {
+  "Musashi": "Ultraworker",
+  "Musashi - boulder": "Plan Executor",
+  "Musashi - plan": "Planner",
+  "K9 - advisor": "Strategic Advisor",
+  "X1 - explorer": "Code Explorer",
+  "R2 - researcher": "Research Agent",
+  "T4 - frontend builder": "Frontend Engineer",
+  "D5 - backend builder": "Backend Engineer",
+}
+
+/** Get human-readable display name for an agent, falling back to the agent name itself */
+export function getAgentDisplayName(agentName: string): string {
+  return AGENT_DISPLAY_NAMES[agentName] ?? agentName
+}
+
 type AgentSource = AgentFactory | AgentConfig
 
 const agentSources: Partial<Record<BuiltinAgentName, AgentSource>> = {

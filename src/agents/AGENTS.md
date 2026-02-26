@@ -102,6 +102,8 @@ Model resolution is runtime-based (`resolveModelWithFallback`) and configurable 
 | `T4 - frontend builder` | system default unless overridden | `0.1` |
 | `D5 - backend builder` | system default unless overridden | `0.1` |
 
+**Note**: Model version strings (e.g., `claude-opus-4-5`) represent the generation. The `MODEL_VERSION_MAP` in `src/shared/migration.ts` auto-migrates to latest point releases (e.g., 4-5 -> 4-6) when users run config migration. Agent code uses generation names; runtime resolves to latest.
+
 Notes:
 - `T4 - frontend builder` uses `createFrontendBuilderAgent` with a UI/component-focused prompt.
 - `D5 - backend builder` uses `createBackendBuilderAgent` with a server/API-focused prompt.
