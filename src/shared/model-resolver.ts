@@ -31,6 +31,15 @@ function normalizeModel(model?: string): string | undefined {
 	return trimmed || undefined
 }
 
+/**
+ * Normalizes fallback_models config (which can be string or string[]) to string[]
+ */
+export function normalizeFallbackModels(models: string | string[] | undefined): string[] | undefined {
+	if (!models) return undefined
+	if (typeof models === "string") return [models]
+	return models
+}
+
 export function resolveModel(input: ModelResolutionInput): string {
 	return (
 		normalizeModel(input.userModel) ??
