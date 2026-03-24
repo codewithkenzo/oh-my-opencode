@@ -27,10 +27,12 @@ jobs:
 
       - name: Run tests
         run: |
-          mapfile -t TEST_FILES < <(git ls-files "*.test.ts" | grep -vE '^src/index\.tool-metadata\.test\.ts$|^src/tools/delegate-task/metadata\.test\.ts$')
+          mapfile -t TEST_FILES < <(git ls-files "*.test.ts" | grep -vE '^src/index\.tool-metadata\.test\.ts$|^src/tools/delegate-task/metadata\.test\.ts$|^src/hooks/rm-to-trash/index\.test\.ts$|^src/hooks/comment-checker/cli\.test\.ts$')
           bun test "${TEST_FILES[@]}"
           bun test src/index.tool-metadata.test.ts
           bun test src/tools/delegate-task/metadata.test.ts
+          bun test src/hooks/rm-to-trash/index.test.ts
+          bun test src/hooks/comment-checker/cli.test.ts
 
   typecheck:
     runs-on: ubuntu-latest

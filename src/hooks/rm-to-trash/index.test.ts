@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test"
+import { afterEach, beforeEach, describe, test, expect } from "bun:test"
 
 import { createRmToTrashHook } from "./index"
 import { BLOCK_MESSAGE, WARN_MESSAGE } from "./constants"
@@ -34,6 +34,20 @@ async function runHook(args: {
 }
 
 describe("createRmToTrashHook", () => {
+  const originalCI = process.env.CI
+
+  beforeEach(() => {
+    process.env.CI = "false"
+  })
+
+  afterEach(() => {
+    if (originalCI === undefined) {
+      delete process.env.CI
+      return
+    }
+    process.env.CI = originalCI
+  })
+
   describe("#given enforcement warn", () => {
     test("#when rm file.txt #then warns and suggests trash alternative", async () => {
       const result = await runHook({ enforcement: "warn", command: "rm file.txt" })
