@@ -1,13 +1,20 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test"
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test"
 
 import { clearPendingStore, getPendingStoreSize, storeToolMetadata } from "./features/tool-metadata-store"
+import * as sharedActual from "./shared"
+import * as toolsActual from "./tools"
+import * as skillLoaderActual from "./features/opencode-skill-loader"
+import * as sessionStateActual from "./features/claude-code-session-state"
 
 const seenAfterOutputs: Array<{ title: string; metadata: unknown }> = []
 const claudeAfterHook = mock(async (_input: unknown, output: { title: string; metadata: unknown }) => {
   seenAfterOutputs.push({ title: output.title, metadata: output.metadata })
 })
 
-mock.module("./hooks", () => ({
+async function loadPluginWithMocks() {
+  const restores: unknown[] = []
+
+  restores.push(mock.module("./hooks", () => ({
   createTodoContinuationEnforcerHook: () => ({ handler: async () => {} }),
   createContextWindowMonitorHook: () => ({ event: async () => {}, "tool.execute.after": async () => {} }),
   createSessionRecoveryHook: () => ({
@@ -59,119 +66,133 @@ mock.module("./hooks", () => ({
   createAnthropicEffortHook: () => ({ "tool.execute.before": async () => {} }),
   createUnstableAgentBabysitterHook: () => ({ event: async () => {} }),
   createRuntimeFallbackHook: () => ({ event: async () => {}, "chat.message": async () => {} }),
-}))
+  })))
 
-mock.module("./features/context-injector", () => ({
+  restores.push(mock.module("./features/context-injector", () => ({
   contextCollector: {},
   createContextInjectorMessagesTransformHook: () => ({}),
-}))
+  })))
 
-mock.module("./shared/agent-variant", () => ({
-  applyAgentVariant: () => {},
-  resolveAgentVariant: () => undefined,
-}))
+  restores.push(mock.module("./features/opencode-skill-loader", async () => {
+  return {
+    ...skillLoaderActual,
+    discoverUserClaudeSkills: async () => [],
+    discoverProjectClaudeSkills: async () => [],
+    discoverOpencodeGlobalSkills: async () => [],
+    discoverOpencodeProjectSkills: async () => [],
+    mergeSkills: (...groups: unknown[][]) => groups.flat(),
+  }
+  }))
 
-mock.module("./shared/first-message-variant", () => ({
-  createFirstMessageVariantGate: () => ({
-    shouldOverride: () => false,
-    markApplied: () => {},
-    markSessionCreated: () => {},
-    clear: () => {},
-  }),
-}))
-
-mock.module("./features/opencode-skill-loader", () => ({
-  discoverUserClaudeSkills: async () => [],
-  discoverProjectClaudeSkills: async () => [],
-  discoverOpencodeGlobalSkills: async () => [],
-  discoverOpencodeProjectSkills: async () => [],
-  mergeSkills: (...groups: unknown[][]) => groups.flat(),
-}))
-
-mock.module("./features/builtin-skills", () => ({
+  restores.push(mock.module("./features/builtin-skills", () => ({
   createBuiltinSkills: () => [],
-}))
+  })))
 
-mock.module("./features/claude-code-mcp-loader", () => ({
+  restores.push(mock.module("./features/claude-code-mcp-loader", () => ({
   getSystemMcpServerNames: () => new Set<string>(),
-}))
+  })))
 
-mock.module("./features/claude-code-session-state", () => ({
-  setMainSession: () => {},
-  getMainSessionID: () => "",
-  setSessionAgent: () => {},
-  updateSessionAgent: () => {},
-  clearSessionAgent: () => {},
-}))
+  restores.push(mock.module("./features/claude-code-session-state", async () => {
+  return {
+    ...sessionStateActual,
+    setMainSession: () => {},
+    getMainSessionID: () => "",
+    setSessionAgent: () => {},
+    updateSessionAgent: () => {},
+    clearSessionAgent: () => {},
+  }
+  }))
 
-mock.module("./tools", () => ({
-  builtinTools: {},
-  createBuiltinToolsWithLazyLoading: () => ({}),
-  ALL_PROFILES: [],
-  createCallOmoAgent: () => ({}),
-  createBackgroundTools: () => ({}),
-  createLookAt: () => null,
-  createSkillTool: () => ({}),
-  createFindSkillsTool: () => ({}),
-  createSkillMcpTool: () => ({}),
-  createMcpQueryTool: () => ({}),
-  createSlashcommandTool: () => ({}),
-  discoverCommandsSync: () => [],
-  sessionExists: async () => false,
-  createDelegateTask: () => ({}),
-  createSupermemoryTool: () => ({}),
-  interactive_bash: {},
-  startTmuxCheck: () => {},
-  lspManager: { cleanupTempDirectoryClients: async () => {} },
-}))
+  restores.push(mock.module("./tools", async () => {
+  return {
+    ...toolsActual,
+    builtinTools: {},
+    createBuiltinToolsWithLazyLoading: () => ({}),
+    createCallOmoAgent: () => ({}),
+    createBackgroundTools: () => ({}),
+    createLookAt: () => null,
+    createSkillTool: () => ({}),
+    createFindSkillsTool: () => ({}),
+    createSkillMcpTool: () => ({}),
+    createMcpQueryTool: () => ({}),
+    createSlashcommandTool: () => ({}),
+    discoverCommandsSync: () => [],
+    sessionExists: async () => false,
+    createDelegateTask: () => ({}),
+    createSupermemoryTool: () => ({}),
+    interactive_bash: {},
+    startTmuxCheck: () => {},
+    lspManager: { cleanupTempDirectoryClients: async () => {} },
+  }
+  }))
 
-mock.module("./features/background-agent", () => ({
+  restores.push(mock.module("./features/background-agent", () => ({
   BackgroundManager: class BackgroundManager {
     constructor(..._args: unknown[]) {}
   },
-}))
+  })))
 
-mock.module("./features/skill-mcp-manager", () => ({
+  restores.push(mock.module("./features/skill-mcp-manager", () => ({
   McpClientManager: class McpClientManager {
     async disconnectSession(): Promise<void> {}
   },
-}))
+  })))
 
-mock.module("./features/task-toast-manager", () => ({
+  restores.push(mock.module("./features/task-toast-manager", () => ({
   initTaskToastManager: () => {},
-}))
+  })))
 
-mock.module("./shared", () => ({
-  log: () => {},
-  detectExternalNotificationPlugin: () => ({ detected: false, pluginName: undefined, allPlugins: [] }),
-  getNotificationConflictWarning: () => "",
-  resetMessageCursor: () => {},
-  includesCaseInsensitive: (items: string[], value: string) =>
-    items.some((item) => item.toLowerCase() === value.toLowerCase()),
-  createStartupTimer: () => ({ mark: () => {}, report: () => "" }),
-  logToolRegistrySnapshot: () => {},
-  normalizeSessionIdleEvent: (event: unknown) => event,
-}))
+  restores.push(mock.module("./shared", async () => {
+  return {
+    ...sharedActual,
+    log: () => {},
+    detectExternalNotificationPlugin: () => ({ detected: false, pluginName: undefined, allPlugins: [] }),
+    getNotificationConflictWarning: () => "",
+    resetMessageCursor: () => {},
+    includesCaseInsensitive: (items: string[], value: string) =>
+      items.some((item) => item.toLowerCase() === value.toLowerCase()),
+    createStartupTimer: () => ({ mark: () => {}, report: () => "" }),
+    logToolRegistrySnapshot: () => {},
+    normalizeSessionIdleEvent: (event: unknown) => event,
+  }
+  }))
 
-mock.module("./plugin-config", () => ({
+  restores.push(mock.module("./plugin-config", () => ({
   loadPluginConfig: () => ({}),
-}))
+  })))
 
-mock.module("./plugin-state", () => ({
+  restores.push(mock.module("./plugin-state", () => ({
   createModelCacheState: () => ({}),
-}))
+  })))
 
-mock.module("./plugin-handlers", () => ({
+  restores.push(mock.module("./plugin-handlers", () => ({
   createConfigHandler: () => ({}),
-}))
+  })))
 
-mock.module("./features/claude-code-plugin-loader", () => ({
+  restores.push(mock.module("./features/claude-code-plugin-loader", () => ({
   loadAllPluginComponents: async () => ({ mcpServers: {} }),
-}))
+  })))
 
-const { OhMyOpenCodePlugin } = await import("./index")
+  const { OhMyOpenCodePlugin } = await import("./index")
+
+  return {
+    pluginFactory: OhMyOpenCodePlugin,
+    restore() {
+      for (const restore of restores.splice(0)) {
+        if (typeof restore === "function") restore()
+      }
+    },
+  }
+}
 
 describe("OhMyOpenCodePlugin tool metadata restore", () => {
+  let restoreMocks: (() => void) | undefined
+
+  afterEach(() => {
+    restoreMocks?.()
+    restoreMocks = undefined
+  })
+
   beforeEach(() => {
     clearPendingStore()
     seenAfterOutputs.length = 0
@@ -180,7 +201,9 @@ describe("OhMyOpenCodePlugin tool metadata restore", () => {
 
   test("restores stored metadata before downstream tool.execute.after hooks run", async () => {
     // #given
-    const plugin = await OhMyOpenCodePlugin({ directory: "/repo", client: {} } as never)
+    const { pluginFactory, restore } = await loadPluginWithMocks()
+    restoreMocks = restore
+    const plugin = await pluginFactory({ directory: "/repo", client: {} } as never)
     storeToolMetadata("parent-session", "call-restore", {
       title: "child launch title",
       metadata: { sessionId: "child-session-123" },
@@ -210,7 +233,9 @@ describe("OhMyOpenCodePlugin tool metadata restore", () => {
 
   test("restores unresolved launcher metadata without leaking sessionId", async () => {
     // #given
-    const plugin = await OhMyOpenCodePlugin({ directory: "/repo", client: {} } as never)
+    const { pluginFactory, restore } = await loadPluginWithMocks()
+    restoreMocks = restore
+    const plugin = await pluginFactory({ directory: "/repo", client: {} } as never)
     storeToolMetadata("parent-session", "call-pending", {
       title: "launch child",
       metadata: {},
@@ -240,7 +265,9 @@ describe("OhMyOpenCodePlugin tool metadata restore", () => {
 
   test("matches stored metadata by call id so repeated launches do not cross-wire", async () => {
     // #given
-    const plugin = await OhMyOpenCodePlugin({ directory: "/repo", client: {} } as never)
+    const { pluginFactory, restore } = await loadPluginWithMocks()
+    restoreMocks = restore
+    const plugin = await pluginFactory({ directory: "/repo", client: {} } as never)
     storeToolMetadata("parent-session", "call-1", {
       title: "child one",
       metadata: { sessionId: "child-session-1" },
@@ -274,7 +301,9 @@ describe("OhMyOpenCodePlugin tool metadata restore", () => {
 
   test("restores queued launcher metadata when runtime execute had no callID", async () => {
     // #given
-    const plugin = await OhMyOpenCodePlugin({ directory: "/repo", client: {} } as never)
+    const { pluginFactory, restore } = await loadPluginWithMocks()
+    restoreMocks = restore
+    const plugin = await pluginFactory({ directory: "/repo", client: {} } as never)
     storeToolMetadata("parent-session", undefined, {
       title: "queued child launch",
       metadata: { sessionId: "child-session-runtime" },

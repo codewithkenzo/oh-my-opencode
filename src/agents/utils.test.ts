@@ -314,6 +314,7 @@ describe("buildAgent with category and skills", () => {
 
 describe("non-core tool exclusion from primary agents", () => {
   const { ORCHESTRATOR_DENIED_TOOL_NAMES, RESEARCH_TOOL_NAMES } = require("../tools/tool-profiles")
+  const musashiNativeSearchOverrides = new Set(["ast_grep_search", "ast_grep_replace"])
 
   test("Musashi denies all non-core/non-orchestration tools", async () => {
     // #given
@@ -324,6 +325,10 @@ describe("non-core tool exclusion from primary agents", () => {
 
     // #then
     for (const toolName of ORCHESTRATOR_DENIED_TOOL_NAMES) {
+      if (musashiNativeSearchOverrides.has(toolName)) {
+        expect(permission[toolName]).not.toBe("deny")
+        continue
+      }
       expect(permission[toolName]).toBe("deny")
     }
   })

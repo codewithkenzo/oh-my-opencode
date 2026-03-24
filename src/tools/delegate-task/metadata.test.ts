@@ -1,43 +1,58 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test"
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test"
 
 import { clearPendingStore, consumeToolMetadata } from "../../features/tool-metadata-store"
 
-mock.module("../../features/opencode-skill-loader/skill-content", () => ({
-  resolveMultipleSkillsAsync: async () => ({ resolved: new Map(), notFound: [] }),
-}))
+async function loadCreateDelegateTask() {
+  const restores: unknown[] = []
 
-mock.module("../../features/task-toast-manager", () => ({
-  getTaskToastManager: () => undefined,
-}))
+  restores.push(mock.module("../../features/opencode-skill-loader/skill-content", () => ({
+    resolveMultipleSkillsAsync: async () => ({ resolved: new Map(), notFound: [] }),
+  })))
 
-mock.module("../../features/task-toast-manager/index.ts", () => ({
-  getTaskToastManager: () => undefined,
-}))
+  restores.push(mock.module("../../features/task-toast-manager", () => ({
+    getTaskToastManager: () => undefined,
+  })))
 
-mock.module("/home/kenzo/dev/oh-my-opencode-v3/src/features/task-toast-manager/index.ts", () => ({
-  getTaskToastManager: () => undefined,
-}))
+  restores.push(mock.module("../../features/task-toast-manager/index.ts", () => ({
+    getTaskToastManager: () => undefined,
+  })))
 
-mock.module("../../features/claude-code-session-state", () => ({
-  subagentSessions: new Set<string>(),
-  getSessionAgent: () => undefined,
-}))
+  restores.push(mock.module("/home/kenzo/dev/oh-my-opencode-v3/src/features/task-toast-manager/index.ts", () => ({
+    getTaskToastManager: () => undefined,
+  })))
 
-mock.module("../../features/claude-code-session-state/state", () => ({
-  subagentSessions: new Set<string>(),
-  getSessionAgent: () => undefined,
-}))
+  restores.push(mock.module("../../features/claude-code-session-state", () => ({
+    subagentSessions: new Set<string>(),
+    getSessionAgent: () => undefined,
+  })))
 
-const { createDelegateTask } = await import("./tools")
+  restores.push(mock.module("../../features/claude-code-session-state/state", () => ({
+    subagentSessions: new Set<string>(),
+    getSessionAgent: () => undefined,
+  })))
+
+  const { createDelegateTask } = await import("./tools")
+
+  return {
+    createDelegateTask,
+    restore() {
+      for (const restore of restores.splice(0)) {
+        if (typeof restore === "function") restore()
+      }
+    },
+  }
+}
 
 const SYSTEM_DEFAULT_MODEL = "anthropic/claude-sonnet-4-5"
+
+let createDelegateTaskLocal: Awaited<ReturnType<typeof loadCreateDelegateTask>>["createDelegateTask"]
 
 function createBackgroundTool(options: {
   manager: Record<string, unknown>
   userCategories?: Record<string, { model?: string }>
   userCategorySkills?: Record<string, string[]>
 }) {
-  return createDelegateTask({
+  return createDelegateTaskLocal({
     manager: options.manager as never,
     directory: "/repo",
     client: {
@@ -64,8 +79,18 @@ function createToolContext(options?: {
 }
 
 describe("delegate_task background metadata contract", () => {
-  beforeEach(() => {
+  let restoreMocks: (() => void) | undefined
+
+  beforeEach(async () => {
     clearPendingStore()
+    const loaded = await loadCreateDelegateTask()
+    createDelegateTaskLocal = loaded.createDelegateTask
+    restoreMocks = loaded.restore
+  })
+
+  afterEach(() => {
+    restoreMocks?.()
+    restoreMocks = undefined
   })
 
   test("#given resolved background task #when execute runs #then output includes task metadata block with all ids", async () => {
