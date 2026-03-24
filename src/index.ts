@@ -58,6 +58,7 @@ import {
   mergeSkills,
 } from "./features/opencode-skill-loader";
 import { createBuiltinSkills } from "./features/builtin-skills";
+import { consumeToolMetadata } from "./features/tool-metadata-store";
 import { getSystemMcpServerNames } from "./features/claude-code-mcp-loader";
 import {
   setMainSession,
@@ -740,6 +741,26 @@ export const OhMyOpenCodePlugin: Plugin = async (ctx) => {
     },
 
     "tool.execute.after": async (input, output) => {
+      const storedToolMetadata = consumeToolMetadata(input.sessionID, input.callID);
+
+      if (storedToolMetadata?.title) {
+        output.title = storedToolMetadata.title;
+      }
+
+      if (storedToolMetadata?.metadata) {
+        const existingMetadata =
+          typeof output.metadata === "object" &&
+          output.metadata !== null &&
+          !Array.isArray(output.metadata)
+            ? output.metadata
+            : {};
+
+        output.metadata = {
+          ...existingMetadata,
+          ...storedToolMetadata.metadata,
+        };
+      }
+
       await claudeCodeHooks["tool.execute.after"](input, output);
       await toolOutputTruncator?.["tool.execute.after"](input, output);
       await contextWindowMonitor?.["tool.execute.after"](input, output);
