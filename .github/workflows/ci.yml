@@ -26,7 +26,11 @@ jobs:
           BUN_INSTALL_ALLOW_SCRIPTS: "@ast-grep/napi"
 
       - name: Run tests
-        run: bun test
+        run: |
+          mapfile -t TEST_FILES < <(git ls-files "*.test.ts" | grep -vE '^src/index\.tool-metadata\.test\.ts$|^src/tools/delegate-task/metadata\.test\.ts$')
+          bun test "${TEST_FILES[@]}"
+          bun test src/index.tool-metadata.test.ts
+          bun test src/tools/delegate-task/metadata.test.ts
 
   typecheck:
     runs-on: ubuntu-latest
