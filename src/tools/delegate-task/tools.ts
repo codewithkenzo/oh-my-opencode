@@ -9,8 +9,13 @@ import { findNearestMessageWithFields, findFirstMessageWithAgent, MESSAGE_STORAG
 import { resolveMultipleSkillsAsync } from "../../features/opencode-skill-loader/skill-content"
 import { getTaskToastManager } from "../../features/task-toast-manager"
 import type { ModelFallbackInfo } from "../../features/task-toast-manager/types"
-import { subagentSessions, getSessionAgent } from "../../features/claude-code-session-state"
-import { log, getAgentToolRestrictions, resolveModel, getOpenCodeConfigPaths } from "../../shared"
+import { subagentSessions, getSessionAgent } from "../../features/claude-code-session-state/state"
+import { log } from "../../shared/logger"
+import { getAgentToolRestrictions } from "../../shared/agent-tool-restrictions"
+import { resolveModel } from "../../shared/model-resolver"
+import { getOpenCodeConfigPaths } from "../../shared/opencode-config-dir"
+import { storeToolMetadata, type PendingToolMetadata } from "../../features/tool-metadata-store"
+import { waitForTaskSessionID } from "../shared/wait-for-task-session-id"
 
 type OpencodeClient = PluginInput["client"]
 
@@ -23,6 +28,74 @@ function parseModelString(model: string): { providerID: string; modelID: string 
     return { providerID: parts[0], modelID: parts.slice(1).join("/") }
   }
   return undefined
+}
+
+function stringifyModel(model: { providerID: string; modelID: string } | undefined): string | undefined {
+  if (!model) {
+    return undefined
+  }
+
+  return `${model.providerID}/${model.modelID}`
+}
+
+function buildBackgroundTaskMetadata(input: {
+  args: DelegateTaskArgs
+  agent: string
+  mergedSkills: string[]
+  sessionID?: string
+  categoryModel?: { providerID: string; modelID: string; variant?: string }
+}): Record<string, unknown> {
+  const metadata: Record<string, unknown> = {
+    prompt: input.args.prompt,
+    agent: input.agent,
+    category: input.args.category,
+    load_skills: input.mergedSkills,
+    description: input.args.description,
+    run_in_background: input.args.run_in_background,
+    command: "delegate_task",
+  }
+
+  if (input.sessionID) {
+    metadata.sessionId = input.sessionID
+  }
+
+  const model = stringifyModel(input.categoryModel)
+  if (model) {
+    metadata.model = model
+  }
+
+  return metadata
+}
+
+function formatBackgroundTaskOutput(input: {
+  task: { id: string; description: string; agent: string; status: string }
+  category?: string
+  sessionID?: string
+}): string {
+  const lines = [
+    "Background task launched.",
+    "",
+    `Background Task ID: ${input.task.id}`,
+    `Description: ${input.task.description}`,
+    `Agent: ${input.task.agent}${input.category ? ` (category: ${input.category})` : ""}`,
+    `Status: ${input.task.status}`,
+    "",
+    `System notifies on completion. Use \`background_output\` with task_id=\"${input.task.id}\" to check.`,
+  ]
+
+  if (!input.sessionID) {
+    return lines.join("\n")
+  }
+
+  return [
+    ...lines,
+    "",
+    "<task_metadata>",
+    `session_id: ${input.sessionID}`,
+    `task_id: ${input.sessionID}`,
+    `background_task_id: ${input.task.id}`,
+    "</task_metadata>",
+  ].join("\n")
 }
 
 function getMessageDir(sessionID: string): string | null {
@@ -100,10 +173,21 @@ function formatDetailedError(error: unknown, ctx: ErrorContext): string {
 
 type ToolContextWithMetadata = {
   sessionID: string
+  callID?: string
   messageID: string
   agent: string
   abort: AbortSignal
-  metadata?: (input: { title?: string; metadata?: Record<string, unknown> }) => void
+  metadata?: (input: { title?: string; metadata?: Record<string, unknown> }) => void | Promise<void>
+}
+
+function emitToolMetadata(ctx: ToolContextWithMetadata, data: PendingToolMetadata): void {
+  ctx.metadata?.(data)
+  storeToolMetadata(ctx.sessionID, ctx.callID, data)
+}
+
+async function emitToolMetadataAsync(ctx: ToolContextWithMetadata, data: PendingToolMetadata): Promise<void> {
+  await ctx.metadata?.(data)
+  storeToolMetadata(ctx.sessionID, ctx.callID, data)
 }
 
 export function resolveCategoryConfig(
@@ -259,9 +343,9 @@ export function createDelegateTask(options: DelegateTaskToolOptions): ToolDefini
               parentAgent,
             })
 
-            ctx.metadata?.({
+            emitToolMetadata(ctx, {
               title: `Resume: ${task.description}`,
-              metadata: { sessionId: task.sessionID },
+              metadata: task.sessionID ? { sessionId: task.sessionID } : {},
             })
 
             return `Background task resumed.
@@ -296,7 +380,7 @@ Use \`background_output\` with task_id="${task.id}" to check progress.`
           })
         }
 
-        ctx.metadata?.({
+        emitToolMetadata(ctx, {
           title: `Resume: ${args.description}`,
           metadata: { sessionId: args.resume, sync: true },
         })
@@ -561,20 +645,24 @@ ${textContent || "(No text output)"}`
             skillContent: systemContent,
           })
 
-          ctx.metadata?.({
+          const sessionID = await waitForTaskSessionID(manager, task, ctx.abort)
+
+          await emitToolMetadataAsync(ctx, {
             title: args.description,
-            metadata: { sessionId: task.sessionID, category: args.category },
+            metadata: buildBackgroundTaskMetadata({
+              args,
+              agent: agentToUse,
+              mergedSkills,
+              sessionID,
+              categoryModel,
+            }),
           })
 
-          return `Background task launched.
-
-Task ID: ${task.id}
-Session ID: ${task.sessionID}
-Description: ${task.description}
-Agent: ${task.agent}${args.category ? ` (category: ${args.category})` : ""}
-Status: ${task.status}
-
-System notifies on completion. Use \`background_output\` with task_id="${task.id}" to check.`
+          return formatBackgroundTaskOutput({
+            task,
+            category: args.category,
+            sessionID,
+          })
         } catch (error) {
           return formatDetailedError(error, {
             operation: "Launch background task",
@@ -626,7 +714,7 @@ System notifies on completion. Use \`background_output\` with task_id="${task.id
           })
         }
 
-        ctx.metadata?.({
+        emitToolMetadata(ctx, {
           title: args.description,
           metadata: { sessionId: sessionID, category: args.category, sync: true },
         })
