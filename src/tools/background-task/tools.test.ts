@@ -1,8 +1,14 @@
-import { afterEach, describe, expect, it, spyOn } from "bun:test"
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test"
+
+import { clearPendingStore, consumeToolMetadata } from "../../features/tool-metadata-store"
 import { createBackgroundCancel, createBackgroundOutput, createBackgroundTask } from "./tools"
 
 describe("background-task tools", () => {
   const restores: Array<() => void> = []
+
+  beforeEach(() => {
+    clearPendingStore()
+  })
 
   afterEach(() => {
     for (const restore of restores.splice(0)) restore()
@@ -48,6 +54,218 @@ describe("background-task tools", () => {
     expect(output).toContain("# Task Status")
     expect(output).toContain("**pending**")
     expect(output).toContain("Queued")
+  })
+
+  it("#given resolved child session #when createBackgroundTask executes #then persists metadata for restoration", async () => {
+    // #given
+    const manager = {
+      launch: async () => ({
+        id: "task-1",
+        sessionID: "child-session-1",
+        description: "collect refs",
+        agent: "X1 - explorer",
+        status: "running",
+      }),
+    }
+    const tool = createBackgroundTask(manager as never)
+    const metadataCalls: Array<{ title?: string; metadata?: Record<string, unknown> }> = []
+
+    // #when
+    await tool.execute(
+      { description: "collect refs", prompt: "find references", agent: "X1 - explorer" },
+      {
+        sessionID: "parent-session",
+        callID: "call-bg-1",
+        messageID: "m-bg-1",
+        agent: "Musashi",
+        abort: new AbortController().signal,
+        metadata: (input: { title?: string; metadata?: Record<string, unknown> }) => metadataCalls.push(input),
+      } as never
+    )
+
+    // #then
+    expect(metadataCalls[0]).toEqual({ title: "collect refs", metadata: { sessionId: "child-session-1" } })
+    expect(consumeToolMetadata("parent-session", "call-bg-1")).toEqual({
+      title: "collect refs",
+      metadata: { sessionId: "child-session-1" },
+    })
+  })
+
+  it("#given unresolved child session #when createBackgroundTask executes #then omits sessionId and persists omission", async () => {
+    // #given
+    const manager = {
+      launch: async () => ({
+        id: "task-1",
+        sessionID: undefined,
+        description: "collect refs",
+        agent: "X1 - explorer",
+        status: "running",
+      }),
+    }
+    const tool = createBackgroundTask(manager as never)
+    const metadataCalls: Array<{ title?: string; metadata?: Record<string, unknown> }> = []
+
+    // #when
+    await tool.execute(
+      { description: "collect refs", prompt: "find references", agent: "X1 - explorer" },
+      {
+        sessionID: "parent-session",
+        callID: "call-bg-pending",
+        messageID: "m-bg-2",
+        agent: "Musashi",
+        abort: new AbortController().signal,
+        metadata: (input: { title?: string; metadata?: Record<string, unknown> }) => metadataCalls.push(input),
+      } as never
+    )
+
+    // #then
+    expect(metadataCalls[0]).toEqual({ title: "collect refs", metadata: {} })
+    expect(consumeToolMetadata("parent-session", "call-bg-pending")).toEqual({
+      title: "collect refs",
+      metadata: {},
+    })
+  })
+
+  it("#given delayed child session assignment #when createBackgroundTask executes #then persists resolved session metadata", async () => {
+    // #given
+    let getTaskCalls = 0
+    const manager = {
+      launch: async () => ({
+        id: "task-delayed",
+        sessionID: undefined,
+        description: "collect refs",
+        agent: "X1 - explorer",
+        status: "pending",
+      }),
+      getTask: () => {
+        getTaskCalls += 1
+        return getTaskCalls < 2
+          ? {
+              id: "task-delayed",
+              sessionID: undefined,
+              description: "collect refs",
+              agent: "X1 - explorer",
+              status: "pending",
+            }
+          : {
+              id: "task-delayed",
+              sessionID: "ses_child",
+              description: "collect refs",
+              agent: "X1 - explorer",
+              status: "running",
+            }
+      },
+    }
+    const tool = createBackgroundTask(manager as never)
+    const metadataCalls: Array<{ title?: string; metadata?: Record<string, unknown> }> = []
+
+    // #when
+    const output = await tool.execute(
+      { description: "collect refs", prompt: "find references", agent: "X1 - explorer" },
+      {
+        sessionID: "parent-session",
+        callID: "call-bg-delayed",
+        messageID: "m-bg-3",
+        agent: "Musashi",
+        abort: new AbortController().signal,
+        metadata: (input: { title?: string; metadata?: Record<string, unknown> }) => metadataCalls.push(input),
+      } as never
+    )
+
+    // #then
+    expect(output).toContain("Session ID: ses_child")
+    expect(metadataCalls[0]).toEqual({ title: "collect refs", metadata: { sessionId: "ses_child" } })
+    expect(consumeToolMetadata("parent-session", "call-bg-delayed")).toEqual({
+      title: "collect refs",
+      metadata: { sessionId: "ses_child" },
+    })
+  })
+
+  it("#given runtime context without callID #when createBackgroundTask executes #then queues metadata for later restore", async () => {
+    // #given
+    const manager = {
+      launch: async () => ({
+        id: "task-runtime",
+        sessionID: "child-session-runtime",
+        description: "collect refs",
+        agent: "X1 - explorer",
+        status: "running",
+      }),
+    }
+    const tool = createBackgroundTask(manager as never)
+    const metadataCalls: Array<{ title?: string; metadata?: Record<string, unknown> }> = []
+
+    // #when
+    await tool.execute(
+      { description: "collect refs", prompt: "find references", agent: "X1 - explorer" },
+      {
+        sessionID: "parent-session",
+        messageID: "m-bg-runtime",
+        agent: "Musashi",
+        abort: new AbortController().signal,
+        metadata: (input: { title?: string; metadata?: Record<string, unknown> }) => metadataCalls.push(input),
+      } as never
+    )
+
+    // #then
+    expect(metadataCalls[0]).toEqual({ title: "collect refs", metadata: { sessionId: "child-session-runtime" } })
+    expect(consumeToolMetadata("parent-session", "after-call-bg-runtime")).toEqual({
+      title: "collect refs",
+      metadata: { sessionId: "child-session-runtime" },
+    })
+  })
+
+  it("#given delayed runtime context without callID #when createBackgroundTask executes #then later restore gets resolved child session", async () => {
+    // #given
+    let getTaskCalls = 0
+    const manager = {
+      launch: async () => ({
+        id: "task-runtime-delayed",
+        sessionID: undefined,
+        description: "collect refs",
+        agent: "X1 - explorer",
+        status: "pending",
+      }),
+      getTask: () => {
+        getTaskCalls += 1
+        return getTaskCalls < 2
+          ? {
+              id: "task-runtime-delayed",
+              sessionID: undefined,
+              description: "collect refs",
+              agent: "X1 - explorer",
+              status: "pending",
+            }
+          : {
+              id: "task-runtime-delayed",
+              sessionID: "ses_child_runtime",
+              description: "collect refs",
+              agent: "X1 - explorer",
+              status: "running",
+            }
+      },
+    }
+    const tool = createBackgroundTask(manager as never)
+    const metadataCalls: Array<{ title?: string; metadata?: Record<string, unknown> }> = []
+
+    // #when
+    await tool.execute(
+      { description: "collect refs", prompt: "find references", agent: "X1 - explorer" },
+      {
+        sessionID: "parent-session",
+        messageID: "m-bg-runtime-delayed",
+        agent: "Musashi",
+        abort: new AbortController().signal,
+        metadata: (input: { title?: string; metadata?: Record<string, unknown> }) => metadataCalls.push(input),
+      } as never
+    )
+
+    // #then
+    expect(metadataCalls[0]).toEqual({ title: "collect refs", metadata: { sessionId: "ses_child_runtime" } })
+    expect(consumeToolMetadata("parent-session", "after-call-bg-runtime-delayed")).toEqual({
+      title: "collect refs",
+      metadata: { sessionId: "ses_child_runtime" },
+    })
   })
 
   it("#given no taskId and all=false #when createBackgroundCancel executes #then returns invalid argument error", async () => {

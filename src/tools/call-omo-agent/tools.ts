@@ -4,10 +4,13 @@ import { join } from "node:path"
 import { ALLOWED_AGENTS, CALL_OMO_AGENT_DESCRIPTION } from "./constants"
 import type { CallOmoAgentArgs } from "./types"
 import type { BackgroundManager } from "../../features/background-agent"
-import { log, getAgentToolRestrictions } from "../../shared"
+import { log } from "../../shared/logger"
+import { getAgentToolRestrictions } from "../../shared/agent-tool-restrictions"
 import { consumeNewMessages } from "../../shared/session-cursor"
 import { findFirstMessageWithAgent, findNearestMessageWithFields, MESSAGE_STORAGE } from "../../features/hook-message-injector"
-import { getSessionAgent } from "../../features/claude-code-session-state"
+import { getSessionAgent } from "../../features/claude-code-session-state/state"
+import { storeToolMetadata, type PendingToolMetadata } from "../../features/tool-metadata-store"
+import { waitForTaskSessionID } from "../shared/wait-for-task-session-id"
 
 export interface MessagePart {
   type?: string
@@ -37,10 +40,23 @@ function getMessageDir(sessionID: string): string | null {
 
 type ToolContextWithMetadata = {
   sessionID: string
+  callID?: string
   messageID: string
   agent: string
   abort: AbortSignal
   metadata?: (input: { title?: string; metadata?: Record<string, unknown> }) => void
+}
+
+function emitToolMetadata(ctx: ToolContextWithMetadata, data: PendingToolMetadata): void {
+  ctx.metadata?.(data)
+  storeToolMetadata(ctx.sessionID, ctx.callID, data)
+}
+
+function buildLauncherMetadata(title: string, sessionId?: string): PendingToolMetadata {
+  return {
+    title,
+    metadata: sessionId ? { sessionId } : {},
+  }
 }
 
 export function createCallOmoAgent(
@@ -116,15 +132,14 @@ async function executeBackground(
       parentAgent,
     })
 
-    toolContext.metadata?.({
-      title: args.description,
-      metadata: { sessionId: task.sessionID },
-    })
+    const sessionID = await waitForTaskSessionID(manager, task, toolContext.abort)
+
+    emitToolMetadata(toolContext, buildLauncherMetadata(args.description, sessionID))
 
     return `Background agent task launched successfully.
 
 Task ID: ${task.id}
-Session ID: ${task.sessionID}
+Session ID: ${sessionID}
 Description: ${task.description}
 Agent: ${task.agent} (subagent)
 Status: ${task.status}
@@ -186,10 +201,7 @@ async function executeSync(
     log(`[call_omo_agent] Created session: ${sessionID}`)
   }
 
-  toolContext.metadata?.({
-    title: args.description,
-    metadata: { sessionId: sessionID },
-  })
+  emitToolMetadata(toolContext, buildLauncherMetadata(args.description, sessionID))
 
   log(`[call_omo_agent] Sending prompt to session ${sessionID}`)
   log(`[call_omo_agent] Prompt text:`, args.prompt.substring(0, 100))

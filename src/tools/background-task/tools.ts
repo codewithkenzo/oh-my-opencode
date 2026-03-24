@@ -5,9 +5,11 @@ import type { BackgroundManager, BackgroundTask } from "../../features/backgroun
 import type { BackgroundTaskArgs, BackgroundOutputArgs, BackgroundCancelArgs } from "./types"
 import { BACKGROUND_TASK_DESCRIPTION, BACKGROUND_OUTPUT_DESCRIPTION, BACKGROUND_CANCEL_DESCRIPTION } from "./constants"
 import { findNearestMessageWithFields, findFirstMessageWithAgent, MESSAGE_STORAGE } from "../../features/hook-message-injector"
-import { getSessionAgent } from "../../features/claude-code-session-state"
+import { getSessionAgent } from "../../features/claude-code-session-state/state"
 import { log } from "../../shared/logger"
 import { consumeNewMessages } from "../../shared/session-cursor"
+import { storeToolMetadata, type PendingToolMetadata } from "../../features/tool-metadata-store"
+import { waitForTaskSessionID } from "../shared/wait-for-task-session-id"
 
 type OpencodeClient = PluginInput["client"]
 
@@ -54,10 +56,16 @@ function formatDuration(start: Date, end?: Date): string {
 
 type ToolContextWithMetadata = {
   sessionID: string
+  callID?: string
   messageID: string
   agent: string
   abort: AbortSignal
   metadata?: (input: { title?: string; metadata?: Record<string, unknown> }) => void
+}
+
+function emitToolMetadata(ctx: ToolContextWithMetadata, data: PendingToolMetadata): void {
+  ctx.metadata?.(data)
+  storeToolMetadata(ctx.sessionID, ctx.callID, data)
 }
 
 export function createBackgroundTask(manager: BackgroundManager): ToolDefinition {
@@ -105,15 +113,17 @@ export function createBackgroundTask(manager: BackgroundManager): ToolDefinition
           parentAgent,
         })
 
-        ctx.metadata?.({
+        const sessionID = await waitForTaskSessionID(manager, task, ctx.abort)
+
+        emitToolMetadata(ctx, {
           title: args.description,
-          metadata: { sessionId: task.sessionID },
+          metadata: sessionID ? { sessionId: sessionID } : {},
         })
 
         return `Background task launched successfully.
 
 Task ID: ${task.id}
-Session ID: ${task.sessionID}
+Session ID: ${sessionID}
 Description: ${task.description}
 Agent: ${task.agent}
 Status: ${task.status}
